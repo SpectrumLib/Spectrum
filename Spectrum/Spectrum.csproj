@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>x64</Platforms>
+    <Version>0.1.0</Version>
+    <Authors>Sean Moss</Authors>
+    <Description>Vulkan-powered framework for creating performant cross-platform games and simulations</Description>
+    <Company>N/A</Company>
+    <Copyright>©2018 Sean Moss</Copyright>
+    <PackageProjectUrl>spectrumlib.github.io</PackageProjectUrl>
+    <PackageIconUrl>https://github.com/SpectrumLib/Spectrum/blob/master/Resources/Logo/Thumbnail.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/SpectrumLib/Spectrum</RepositoryUrl>
+    <PackageTags>Vulkan, Gamedev, Simulation, Graphics-Engine</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,6 @@
+# Visual Studio Files
+.vs/
+
+# Build Files
+Spectrum/bin/
+Spectrum/obj/
