@@ -5,12 +5,12 @@ namespace Spectrum
 	/// <summary>
 	/// Object representation of a Major.Minor.Patch version structure, with an optional name for the version.
 	/// </summary>
-	public struct Version : IComparable, IComparable<Version>, IEquatable<Version>
+	public struct AppVersion : IComparable, IComparable<AppVersion>, IEquatable<AppVersion>
 	{
 		/// <summary>
 		/// Default value for the app version, 0.0.0 with no name.
 		/// </summary>
-		public static readonly Version Default = default(Version);
+		public static readonly AppVersion Default = default(AppVersion);
 
 		#region Fields
 		/// <summary>
@@ -47,7 +47,7 @@ namespace Spectrum
 		/// <param name="minor">The minor version number.</param>
 		/// <param name="patch">The optional patch version number, defaults to 0.</param>
 		/// <param name="tag">The optional name of the version, defaults to no name.</param>
-		public Version(uint major, uint minor, uint patch = 0, string tag = null)
+		public AppVersion(uint major, uint minor, uint patch = 0, string tag = null)
 		{
 			Major = major;
 			Minor = minor;
@@ -71,10 +71,10 @@ namespace Spectrum
 
 		public override bool Equals(object obj)
 		{
-			return (obj as IEquatable<Version>)?.Equals(this) ?? false;
+			return (obj as IEquatable<AppVersion>)?.Equals(this) ?? false;
 		}
 
-		bool IEquatable<Version>.Equals(Version other)
+		bool IEquatable<AppVersion>.Equals(AppVersion other)
 		{
 			return other.Value == Value;
 		}
@@ -85,44 +85,44 @@ namespace Spectrum
 		}
 
 		#region IComparable
-		int IComparable<Version>.CompareTo(Version other)
+		int IComparable<AppVersion>.CompareTo(AppVersion other)
 		{
 			return (this < other) ? -1 : (this > other) ? 1 : 0;
 		}
 
 		int IComparable.CompareTo(object obj)
 		{
-			return -((obj as IComparable<Version>)?.CompareTo(this) ?? 1);
+			return -((obj as IComparable<AppVersion>)?.CompareTo(this) ?? 1);
 		}
 		#endregion // IComparable
 
 		#region Operators
-		public static bool operator == (Version l, Version r)
+		public static bool operator == (AppVersion l, AppVersion r)
 		{
 			return l.Value == r.Value;
 		}
 
-		public static bool operator != (Version l, Version r)
+		public static bool operator != (AppVersion l, AppVersion r)
 		{
 			return l.Value != r.Value;
 		}
 
-		public static bool operator < (Version l, Version r)
+		public static bool operator < (AppVersion l, AppVersion r)
 		{
 			return l.Value < r.Value;
 		}
 
-		public static bool operator > (Version l, Version r)
+		public static bool operator > (AppVersion l, AppVersion r)
 		{
 			return l.Value > r.Value;
 		}
 
-		public static bool operator <= (Version l, Version r)
+		public static bool operator <= (AppVersion l, AppVersion r)
 		{
 			return l.Value <= r.Value;
 		}
 
-		public static bool operator >= (Version l, Version r)
+		public static bool operator >= (AppVersion l, AppVersion r)
 		{
 			return l.Value >= r.Value;
 		}

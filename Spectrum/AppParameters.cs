@@ -16,7 +16,7 @@ namespace Spectrum
 		/// <summary>
 		/// The version of the application.
 		/// </summary>
-		public readonly Version Version;
+		public readonly AppVersion Version;
 		#endregion // Fields
 
 		/// <summary>
@@ -24,7 +24,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="name">The name of the application.</param>
 		/// <param name="version">The version of the application.</param>
-		public AppParameters(string name, Version version)
+		public AppParameters(string name, AppVersion version)
 		{
 			Name = name;
 			Version = version;
