@@ -6,7 +6,7 @@ namespace Spectrum
 	/// Used to pass the parameters for the application to the library on startup. The name and version of the
 	/// application are the only required components to provide.
 	/// </summary>
-	public struct ApplicationParameters
+	public struct AppParameters
 	{
 		#region Fields
 		/// <summary>
@@ -24,7 +24,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="name">The name of the application.</param>
 		/// <param name="version">The version of the application.</param>
-		public ApplicationParameters(string name, Version version)
+		public AppParameters(string name, Version version)
 		{
 			Name = name;
 			Version = version;
