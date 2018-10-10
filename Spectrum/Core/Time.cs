@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Spectrum
 {
@@ -78,11 +80,12 @@ namespace Spectrum
 		private static TimeSpan s_lastTime = TimeSpan.Zero;
 
 		// Keeps a history of the deltas for the last n frames to calculate FPS with
-		private const uint FPS_HISTORY_SIZE = 15;
+		private const uint FPS_HISTORY_SIZE = 25;
 		private static readonly float[] s_fpsHistory = new float[FPS_HISTORY_SIZE];
 		// The current frame in the s_fpsHistory array to implement a circular buffer
 		private static uint s_currIndex = 0;
 		private static uint s_nextIndex => (s_currIndex + 1) % FPS_HISTORY_SIZE;
+
 		/// <summary>
 		/// The current FPS of the application, made by averaging the deltas of the last 15 frames.
 		/// </summary>
@@ -94,7 +97,7 @@ namespace Spectrum
 			Precision = Math.Max((uint)(1e9 / Stopwatch.Frequency), 1);
 			IsHighResolution = Precision <= 10_000;
 			s_timer = Stopwatch.StartNew();
-			Array.Clear(s_fpsHistory, 0, s_fpsHistory.Length);
+			Array.Clear(s_fpsHistory, 0, (int)FPS_HISTORY_SIZE);
 		}
 
 		internal static void Frame()
@@ -119,7 +122,10 @@ namespace Spectrum
 			// Update the FPS history and re-calculate
 			float curr = s_fpsHistory[s_currIndex] = 1000f / (float)RealDeltaTime.TotalMilliseconds;
 			float last = s_fpsHistory[s_nextIndex];
-			FPS += ((curr - last) / FPS_HISTORY_SIZE); // Rolling update of FPS average for fast calculation
+			if (FrameCount > FPS_HISTORY_SIZE)
+				FPS += ((curr - last) / FPS_HISTORY_SIZE); // Simple moving average
+			else
+				FPS = (((FrameCount - 1) * FPS + curr) / FrameCount); // Cumulative moving average
 			s_currIndex = s_nextIndex;
 		}
 	}

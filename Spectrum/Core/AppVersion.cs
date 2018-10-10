@@ -3,7 +3,7 @@
 namespace Spectrum
 {
 	/// <summary>
-	/// Object representation of a Major.Minor.Patch version structure, with an optional name for the version.
+	/// Object representation of a Major.Minor.Revision version structure, with an optional name for the version.
 	/// </summary>
 	public struct AppVersion : IComparable, IComparable<AppVersion>, IEquatable<AppVersion>
 	{
@@ -22,9 +22,9 @@ namespace Spectrum
 		/// </summary>
 		public readonly uint Minor;
 		/// <summary>
-		/// Patch version number.
+		/// Revision version number.
 		/// </summary>
-		public readonly uint Patch;
+		public readonly uint Revision;
 		/// <summary>
 		/// Optional string name for this version. Does not factor into version comparisons.
 		/// </summary>
@@ -35,9 +35,9 @@ namespace Spectrum
 		/// </summary>
 		public bool HasName => Name != null;
 		/// <summary>
-		/// Gets the version as a unique integer formatted as 0xVVRRPPPP.
+		/// Gets the version as a unique integer formatted as 0xMMmmRRRR.
 		/// </summary>
-		public uint Value => (Major << 24) & (Minor << 16) & Patch;
+		public uint Value => (Major << 24) & (Minor << 16) & Revision;
 		#endregion // Fields
 
 		/// <summary>
@@ -45,28 +45,28 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="major">The major version number.</param>
 		/// <param name="minor">The minor version number.</param>
-		/// <param name="patch">The optional patch version number, defaults to 0.</param>
+		/// <param name="revision">The optional revision version number, defaults to 0.</param>
 		/// <param name="tag">The optional name of the version, defaults to no name.</param>
-		public AppVersion(uint major, uint minor, uint patch = 0, string tag = null)
+		public AppVersion(uint major, uint minor, uint revision = 0, string tag = null)
 		{
 			Major = major;
 			Minor = minor;
-			Patch = patch;
+			Revision = revision;
 			Name = tag;
 		}
 
 		public override string ToString()
 		{
-			return $"{{{Major}.{Minor}.{Patch}}}";
+			return $"{{{Major}.{Minor}.{Revision}}}";
 		}
 
 		/// <summary>
 		/// Gets a string representation of the version with the name, if it has one.
 		/// </summary>
-		/// <returns>A string formatted as <c>{Major.Minor.Patch (Name)}</c>.</returns>
+		/// <returns>A string formatted as <c>{Major.Minor.Revision (Name)}</c>.</returns>
 		public string ToLongString()
 		{
-			return $"{{{Major}.{Minor}.{Patch}{(HasName ? $" ({Name})" : "")}}}";
+			return $"{{{Major}.{Minor}.{Revision}{(HasName ? $" ({Name})" : "")}}}";
 		}
 
 		public override bool Equals(object obj)
@@ -82,6 +82,78 @@ namespace Spectrum
 		public override int GetHashCode()
 		{
 			return (int)Value;
+		}
+
+		/// <summary>
+		/// Attempts to parse a version string into an AppVersion object. Throws an exception if it cannot. The string
+		/// can be one of the following formats, where whitespace is unimportant:
+		/// <list type="bullet">
+		///		<item><c>major.minor</c></item>
+		///		<item><c>major.minor (name)</c></item>
+		///		<item><c>major.minor.revision</c></item>
+		///		<item><c>major.minor.revision (name)</c></item>
+		/// </list>
+		/// </summary>
+		/// <param name="str">The string to parse.</param>
+		/// <returns>The object representing the version string.</returns>
+		public static AppVersion Parse(string str)
+		{
+			uint maj, min, rev = 0;
+			string name = null;
+			var split = str.Split('.', '(');
+			if (split.Length < 2)
+				throw new FormatException("The version string was malformed.");
+
+			if (!UInt32.TryParse(split[0], out maj))
+				throw new FormatException($"The version string major component was not a valid UInt32 ({split[0]}).");
+			if (!UInt32.TryParse(split[1], out min))
+				throw new FormatException($"The version string minor component was not a valid UInt32 ({split[1]}).");
+
+			if (split.Length == 3)
+			{
+				if (split[2].EndsWith(")"))
+					name = split[2].Substring(0, split[2].Length - 1);
+				else if (!UInt32.TryParse(split[2], out rev))
+					throw new FormatException($"The version string revision component was not a valid UInt32 ({split[2]}).");
+			}
+			else if (split.Length > 3)
+			{
+				if (!UInt32.TryParse(split[2], out rev))
+					throw new FormatException($"The version string revision component was not a valid UInt32 ({split[2]}).");
+				if (split[3].EndsWith(")"))
+					name = split[3].Substring(0, split[3].Length - 1);
+			}
+
+			return new AppVersion(maj, min, rev, name);
+		}
+
+		/// <summary>
+		/// Safe, no-exception version of <see cref="Parse"/>.
+		/// </summary>
+		/// <param name="str">The string to parse.</param>
+		/// <param name="appv">The object to place the parsed version into, <see cref="Default"/> if invalid.</param>
+		/// <returns>If the parse was successful.</returns>
+		public static bool TryParse(string str, out AppVersion appv)
+		{
+			try
+			{
+				appv = Parse(str);
+				return true;
+			}
+			catch
+			{
+				appv = AppVersion.Default;
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Implictly attempts to cast the string to a version object using <see cref="Parse"/>.
+		/// </summary>
+		/// <param name="str">The string to cast.</param>
+		public static implicit operator AppVersion (string str)
+		{
+			return Parse(str);
 		}
 
 		#region IComparable
