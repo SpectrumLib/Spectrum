@@ -23,7 +23,8 @@ namespace Spectrum
 		/// <summary>
 		/// Starts the application and performs platform and library initialization using the passed parameters.
 		/// </summary>
-		protected Application()
+		/// <param name="appParams">The parameters to create the application with.</param>
+		protected Application(ApplicationParameters appParams)
 		{
 			if (Instance != null)
 				throw new InvalidOperationException("Unable to create more than once Application instance at once.");
