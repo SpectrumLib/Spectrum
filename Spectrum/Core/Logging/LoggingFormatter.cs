@@ -35,14 +35,16 @@ namespace Spectrum
 	public sealed class DefaultLogFormatter : ILogFormatter
 	{
 		// Replaces newlines to align messages with the tags
-		private const string INDENT_STRING = "\n                ";
-		private const string TAB_INDENT_STRING = "\n                \t";
-		private const string TAB_TAB_INDENT_STRING = "\n                \t\t";
+		private const string INDENT_STRING = "\n                          ";
+		private const string TAB_INDENT_STRING = "\n                          \t";
+		private const string TAB_TAB_INDENT_STRING = "\n                          \t\t";
 
 		void ILogFormatter.FormatMessage(StringBuilder outStr, Logger logger, LoggingLevel ll, string message)
 		{
 			outStr.Append('[');
 			Logging.PutTimeTag(outStr);
+			outStr.Append("][");
+			outStr.Append(logger.Tag);
 			outStr.Append("][");
 			outStr.Append(ll.GetLevelTag());
 			outStr.Append("]:  ");
@@ -60,6 +62,8 @@ namespace Spectrum
 		{
 			outStr.Append('[');
 			Logging.PutTimeTag(outStr);
+			outStr.Append("][");
+			outStr.Append(logger.Tag);
 			outStr.Append("][X]:  ");
 			outStr.Append(e.GetType().FullName);
 			outStr.Append(INDENT_STRING);

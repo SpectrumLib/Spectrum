@@ -3,29 +3,32 @@
 namespace Spectrum
 {
 	/// <summary>
-	/// Performs the actual formatting and passing of messages to <see cref="ILogPolicy"/> instances. Each logger
-	/// represents a set of logging policies govered by a message mask. Logger instances are thread-safe.
+	/// Acts as a named source of logging messages, with an optional override for <see cref="ILogFormatter"/>, instead
+	/// of using the default formatter.
 	/// </summary>
-	public sealed class Logger : IDisposable
+	public sealed class Logger
 	{
-		private const uint THREAD_SLEEP = 100; // Threaded loggers sleep for X ms between writes
+		#region Fields
+		/// <summary>
+		/// The name of the logger, used to uniquely identify the logger. Appears in the default formatter.
+		/// </summary>
+		public readonly string Name;
+		/// <summary>
+		/// The name of the logger as it appears in the default formatter. Will always have a length of 8, and will be
+		/// <see cref="Name"/> either truncated or left-filled with spaces.
+		/// </summary>
+		public readonly string Tag;
 
-		~Logger()
+		/// <summary>
+		/// The override formatter to use for the messages. Will be ignored if 
+		/// </summary>
+		public readonly ILogFormatter Formatter;
+		#endregion // Fields
+
+		internal Logger(string name, ILogFormatter formatter = null)
 		{
-			dispose(false);
+			Name = name;
+			Tag = name.Length < 8 ? new string(' ', 8 - name.Length) + name : name.Substring(0, 8);
 		}
-
-		#region IDisposable
-		public void Dispose()
-		{
-			dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		private void dispose(bool disposing)
-		{
-
-		}
-		#endregion // IDisposable
 	}
 }
