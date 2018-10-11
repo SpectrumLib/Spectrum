@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -21,6 +22,11 @@ namespace Spectrum
 		public static ILogFormatter BaseFormatter { get; private set; } = null;
 		// String builder to create log messages, with arbitrary initial size
 		private static readonly StringBuilder s_logBuilder = new StringBuilder(512);
+
+		/// <summary>
+		/// The default logger for the application.
+		/// </summary>
+		public static Logger DefaultLogger { get; private set; } = null;
 
 		#region Fields
 		/// <summary>
@@ -229,15 +235,15 @@ namespace Spectrum
 			}
 
 			// Attempt to call the constructor
-			T policy = null;
+			ILogPolicy policy = null;
 			try
 			{
-				policy = cinfo.Invoke(args) as T;
+				policy = cinfo.Invoke(args) as ILogPolicy;
 			}
 			catch (Exception e)
 			{
 				throw new InvalidOperationException($"Unable to create ILogPolicy of type {typeof(T)}, reason: " +
-					$"'{e.Message}'");
+					$"'{(e.InnerException == null ? e.Message : e.InnerException.Message)}'");
 			}
 
 			// Open, save, return
@@ -317,5 +323,42 @@ namespace Spectrum
 			}
 		}
 		#endregion Static Logging
+
+		internal static void Initialize(in AppParameters pars)
+		{
+			BaseFormatter = pars.DefaultLoggingFormatter ?? new DefaultLogFormatter();
+			if (pars.DefaultLoggingPolicy != null)
+			{
+				pars.DefaultLoggingPolicy.Open();
+				s_policies.Add(s_policyId++, pars.DefaultLoggingPolicy);
+			}
+			else
+			{
+				RegisterPolicy<FileLogPolicy>(
+					Path.Combine(pars.LogFileDirectory, pars.LogFileBaseName),
+					LoggingLevel.All,
+					pars.UseThreadedLogging,
+					pars.LogFileTimestamp,
+					pars.LogFileHistorySize
+				);
+			}
+
+			DefaultLogger = CreateLogger("default", pars.DefaultLoggerTag);
+		}
+
+		internal static void Shutdown()
+		{
+			lock (s_logBuilder)
+			{
+				lock (s_policyLock)
+				{
+					s_loggers.Clear();
+					foreach (var pol in s_policies.Values)
+						pol.Close();
+					s_policies.Clear();
+					DefaultLogger = null;
+				}
+			}
+		}
 	}
 }

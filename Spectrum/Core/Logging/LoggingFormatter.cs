@@ -36,9 +36,9 @@ namespace Spectrum
 	public sealed class DefaultLogFormatter : ILogFormatter
 	{
 		// Replaces newlines to align messages with the tags
-		private const string INDENT_STRING = "\n                          ";
-		private const string TAB_INDENT_STRING = "\n                          \t";
-		private const string TAB_TAB_INDENT_STRING = "\n                          \t\t";
+		private static readonly string INDENT_STRING = Environment.NewLine + "                          ";
+		private static readonly string TAB_INDENT_STRING = Environment.NewLine + "                          \t";
+		private static readonly string TAB_TAB_INDENT_STRING = Environment.NewLine + "                          \t\t";
 
 		void ILogFormatter.FormatMessage(StringBuilder outStr, Logger logger, LoggingLevel ll, string message)
 		{

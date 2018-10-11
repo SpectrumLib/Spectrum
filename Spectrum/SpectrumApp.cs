@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Spectrum
 {
@@ -14,6 +14,11 @@ namespace Spectrum
 		public static SpectrumApp Instance { get; private set; } = null;
 
 		#region Fields
+		/// <summary>
+		/// The application parametrs that were used to create the application.
+		/// </summary>
+		public readonly AppParameters AppParameters;
+
 		/// <summary>
 		/// Gets if the application is set to exit at the end of the current update loop.
 		/// </summary>
@@ -32,8 +37,15 @@ namespace Spectrum
 		protected SpectrumApp(AppParameters appParams)
 		{
 			if (Instance != null)
-				throw new InvalidOperationException("Unable to create more than once Application instance at once.");
+				throw new InvalidOperationException("Unable to create more than once Application instance at once");
 			Instance = this;
+
+			// Validate the app parameters
+			AppParameters = appParams;
+			AppParameters.Validate();
+
+			// Open the logging as soon as possible
+			Logger.Initialize(in AppParameters);
 		}
 		~SpectrumApp()
 		{
@@ -143,6 +155,9 @@ namespace Spectrum
 			if (!IsDisposed)
 			{
 				OnDisposing(disposing);
+
+				// Keep the logging available for as long as possible
+				Logger.Shutdown();
 			}
 
 			IsDisposed = true;

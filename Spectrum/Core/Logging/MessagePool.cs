@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 
 namespace Spectrum
 {
@@ -12,7 +12,7 @@ namespace Spectrum
 
 		#region Fields
 		// The queue of waiting messages
-		private MessageRecord[] _queue;
+		private string[] _queue;
 		private uint _queueSize;
 		// The lock object for the queue
 		private readonly object _writeLock = new object();
@@ -22,11 +22,11 @@ namespace Spectrum
 
 		public MessagePool()
 		{
-			_queue = new MessageRecord[INITIAL_POOL_SIZE];
+			_queue = new string[INITIAL_POOL_SIZE];
 			_queueSize = INITIAL_POOL_SIZE;
 		}
 
-		public void AddMessage(DateTime dt, LoggingLevel ll, string msg)
+		public void AddMessage(string msg)
 		{
 			lock (_writeLock)
 			{
@@ -36,14 +36,12 @@ namespace Spectrum
 					_queueSize += INITIAL_POOL_SIZE;
 				}
 
-				_queue[_writeIndex].Time = dt;
-				_queue[_writeIndex].Level = ll;
-				_queue[_writeIndex].Message = msg;
+				_queue[_writeIndex] = msg;
 				++_writeIndex;
 			}
 		}
 
-		public IEnumerator GetMessages()
+		public IEnumerable<string> GetMessages()
 		{
 			uint msgCount = 0;
 			lock (_writeLock) { msgCount = _writeIndex; }
@@ -64,13 +62,5 @@ namespace Spectrum
 				} 
 			}
 		}
-	}
-
-	// Type that holds information for a waiting message
-	internal struct MessageRecord
-	{
-		public DateTime Time; // Time the message was logged
-		public LoggingLevel Level; // The message level
-		public string Message; // The unformatted message itself
 	}
 }
