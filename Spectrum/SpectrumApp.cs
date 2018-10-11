@@ -1,4 +1,5 @@
 using System;
+using static Spectrum.InternalLog;
 
 namespace Spectrum
 {
@@ -46,6 +47,8 @@ namespace Spectrum
 
 			// Open the logging as soon as possible
 			Logger.Initialize(in AppParameters);
+
+			LDEBUG("Application Constructor");
 		}
 		~SpectrumApp()
 		{
@@ -157,6 +160,7 @@ namespace Spectrum
 				OnDisposing(disposing);
 
 				// Keep the logging available for as long as possible
+				LDEBUG("Application Disposal");
 				Logger.Shutdown();
 			}
 

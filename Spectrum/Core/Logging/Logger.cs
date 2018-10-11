@@ -9,6 +9,14 @@ namespace Spectrum
 	/// <summary>
 	/// Represents a named source of messages, with an optional pre-formatter attached. Also statically controls
 	/// the lifetimes of loggers, as well as the forwarding of messages onto the registered policies.
+	/// 
+	/// Logging with Spectrum works by collecting messages logged from multiple named loggers, processing them,
+	/// and then forwarding them to logging policies which take care of the message output. There is a base
+	/// formatter which formats all messages in the library before processing, and individual logger instances
+	/// are allowed to register their own formatter which preprocesses messaged before they are seen by the central
+	/// formatter. There is a logger that is internal to the library, which only the library can use, and there is
+	/// a default logger for the application that is created automatically. The library can also create default
+	/// formatters and policies that can be controlled using the parameters passed to the application.
 	/// </summary>
 	public class Logger
 	{
@@ -344,6 +352,7 @@ namespace Spectrum
 			}
 
 			DefaultLogger = CreateLogger("default", pars.DefaultLoggerTag);
+			InternalLog.Prepare(new Logger("internal", "spectrum", null), pars.LibraryMessageMask);
 		}
 
 		internal static void Shutdown()

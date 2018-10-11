@@ -68,6 +68,11 @@ namespace Spectrum
 		/// manually call <see cref="ILogPolicy.Open"/> on this instance.
 		/// </summary>
 		public ILogPolicy DefaultLoggingPolicy;
+		/// <summary>
+		/// Sets the types of messages from the internal library logger that are forwarded to the policies. Defaults to
+		/// <see cref="LoggingLevel.Standard"/>, which is all messages except debug ones.
+		/// </summary>
+		public LoggingLevel LibraryMessageMask;
 		#endregion // Logger
 		#endregion // Fields
 
@@ -90,6 +95,7 @@ namespace Spectrum
 			LogFileDirectory = "logs";
 			DefaultLoggingFormatter = null;
 			DefaultLoggingPolicy = null;
+			LibraryMessageMask = LoggingLevel.Standard;
 		}
 
 		/// <summary>

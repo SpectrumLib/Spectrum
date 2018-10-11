@@ -119,7 +119,7 @@ namespace Spectrum
 				return;
 
 			_writer = new StreamWriter(
-				File.Open(FilePath, FileMode.Create, FileAccess.Write, FileShare.None), System.Text.Encoding.UTF8
+				File.Open(FilePath, FileMode.Create, FileAccess.Write, FileShare.Write), System.Text.Encoding.UTF8
 			);
 			_thread?.Start();
 		}
