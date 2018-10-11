@@ -10,7 +10,7 @@ namespace Spectrum
 	public interface ILogPolicy
 	{
 		/// <summary>
-		/// The mask of logging levels that this policy should write.
+		/// The mask of logging levels that this policy should handle.
 		/// </summary>
 		LoggingLevel LevelMask { get; }
 
