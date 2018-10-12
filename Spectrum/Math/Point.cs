@@ -44,6 +44,7 @@ namespace Spectrum
 			Y = y;
 		}
 
+		#region Overrides
 		public override bool Equals(object obj)
 		{
 			return (obj as Point?)?.Equals(this) ?? false;
@@ -64,6 +65,12 @@ namespace Spectrum
 		{
 			return $"{{{X} {Y}}}";
 		}
+
+		bool IEquatable<Point>.Equals(Point other)
+		{
+			return (X == other.X) && (Y == other.Y);
+		}
+		#endregion // Overrides
 
 		#region Distance
 		/// <summary>
@@ -139,14 +146,6 @@ namespace Spectrum
 		}
 		#endregion // Distance
 
-		#region IEquatable
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		bool IEquatable<Point>.Equals(Point other)
-		{
-			return (X == other.X) && (Y == other.Y);
-		}
-		#endregion // IEquatable
-
 		#region Operators
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool operator == (in Point l, in Point r)
@@ -196,12 +195,11 @@ namespace Spectrum
 			return new Point3(p.X, p.Y, 0);
 		}
 
-		// TODO
-		//[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		//public static implicit operator Vec2 (in Point p)
-		//{
-		//	return new Vec2(p.X, p.Y);
-		//}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Vec2 (in Point p)
+		{
+			return new Vec2(p.X, p.Y);
+		}
 		#endregion // Operators
 
 		#region Min/Max

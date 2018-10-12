@@ -62,6 +62,12 @@ namespace Spectrum
 			Z = z;
 		}
 
+		#region Overrides
+		bool IEquatable<Point3>.Equals(Point3 other)
+		{
+			return (X == other.X) && (Y == other.Y) && (Z == other.Z);
+		}
+
 		public override bool Equals(object obj)
 		{
 			return (obj as Point3?)?.Equals(this) ?? false;
@@ -83,6 +89,7 @@ namespace Spectrum
 		{
 			return $"{{{X} {Y} {Z}}}";
 		}
+		#endregion // Overrides
 
 		#region Distance
 		/// <summary>
@@ -157,14 +164,6 @@ namespace Spectrum
 			return dx * dx + dy * dy + dz * dz;
 		}
 		#endregion // Distance
-
-		#region IEquatable
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		bool IEquatable<Point3>.Equals(Point3 other)
-		{
-			return (X == other.X) && (Y == other.Y) && (Z == other.Z);
-		}
-		#endregion // IEquatable
 
 		#region Operators
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
