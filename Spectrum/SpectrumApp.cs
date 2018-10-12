@@ -109,6 +109,7 @@ namespace Spectrum
 		private void doUpdate()
 		{
 			PreUpdate();
+			CoroutineManager.Tick();
 			Update();
 		}
 
@@ -158,6 +159,8 @@ namespace Spectrum
 			if (!IsDisposed)
 			{
 				OnDisposing(disposing);
+
+				CoroutineManager.Cleanup();
 
 				// Keep the logging available for as long as possible
 				LDEBUG("Application Disposal");

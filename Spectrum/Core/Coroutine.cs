@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections;
-using System.Runtime.InteropServices;
 
 namespace Spectrum
 {
 	/// <summary>
 	/// Base class used to implement functionality that happens over time in steps, allowing for suspending
 	/// and resuming execution and state. Can be subclassed to implement custom ticking, but also contains
-	/// functionality for implementing timers and enumerators.
+	/// functionality for implementing timers and enumerators. Coroutines are ticked between the PreUpdate
+	/// and Update stages of the main loop.
 	/// </summary>
 	public abstract class Coroutine
 	{
@@ -20,15 +20,12 @@ namespace Spectrum
 		/// <summary>
 		/// Object returned from <see cref="Tick"/> to signal the coroutine to stop.
 		/// </summary>
-		protected static readonly object END = new object();
+		protected internal static readonly object END = new object();
 
 		// Manages the references to data used by coroutine waiting
-		[StructLayout(LayoutKind.Explicit)]
 		internal struct WaitObjects
 		{
-			[FieldOffset(0)]
 			public float Time;
-			[FieldOffset(0)]
 			public Coroutine Coroutine;
 		}
 
@@ -40,7 +37,7 @@ namespace Spectrum
 
 		#region Fields
 		// Manages the objects that this coroutine can wait on
-		internal WaitObjects Wait = new WaitObjects();
+		internal WaitObjects Wait = new WaitObjects { Time = 0, Coroutine = null };
 
 		/// <summary>
 		/// Gets the number of times that this coroutine has been ticked.
