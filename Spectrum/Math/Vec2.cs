@@ -10,10 +10,15 @@ namespace Spectrum
 	[StructLayout(LayoutKind.Explicit, Size=(2*sizeof(float)))]
 	public struct Vec2 : IEquatable<Vec2>
 	{
+		#region Vector Constants
 		/// <summary>
 		/// The vector with both components as zero.
 		/// </summary>
 		public static readonly Vec2 Zero = new Vec2(0, 0);
+		/// <summary>
+		/// The vector with both components as one.
+		/// </summary>
+		public static readonly Vec2 One = new Vec2(1, 1);
 		/// <summary>
 		/// A unit vector along the positive x-axis.
 		/// </summary>
@@ -22,10 +27,7 @@ namespace Spectrum
 		/// A unit vector along the positive y-axis.
 		/// </summary>
 		public static readonly Vec2 UnitY = new Vec2(0, 1);
-		/// <summary>
-		/// The vector with both components as one.
-		/// </summary>
-		public static readonly Vec2 One = new Vec2(1, 1);
+		#endregion // Vector Constants
 
 		#region Fields
 		/// <summary>
@@ -146,7 +148,7 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public Vec2 Normalized()
 		{
-			float len = Length();
+			float len = (float)Math.Sqrt(X * X + Y * Y);
 			return new Vec2(X / len, Y / len);
 		}
 
@@ -157,7 +159,7 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec2 Normalized(in Vec2 vec)
 		{
-			float len = vec.Length();
+			float len = (float)Math.Sqrt(vec.X * vec.X + vec.Y * vec.Y);
 			return new Vec2(vec.X / len, vec.Y / len);
 		}
 
@@ -169,7 +171,7 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Normalized(in Vec2 vec, out Vec2 o)
 		{
-			float len = vec.Length();
+			float len = (float)Math.Sqrt(vec.X * vec.X + vec.Y * vec.Y);
 			o = new Vec2(vec.X / len, vec.Y / len);
 		}
 
@@ -300,6 +302,12 @@ namespace Spectrum
 		public static Vec2 operator - (in Vec2 v)
 		{
 			return new Vec2(-v.X, -v.Y);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Vec3 (in Vec2 v)
+		{
+			return new Vec3(v.X, v.Y, 0);
 		}
 		#endregion // Operators
 
