@@ -96,14 +96,14 @@ namespace Spectrum
 		/// Returns the distance from the point to the origin.
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public float Distance() => (float)Math.Sqrt(X * X + Y * Y + Z * Z);
+		public float Distance() => Mathf.Sqrt(X * X + Y * Y + Z * Z);
 
 		/// <summary>
 		/// Returns the distance from the point to the origin.
 		/// </summary>
 		/// <param name="p">The point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static float Distance(in Point3 p) => (float)Math.Sqrt(p.X * p.X + p.Y * p.Y + p.Z * p.Z);
+		public static float Distance(in Point3 p) => Mathf.Sqrt(p.X * p.X + p.Y * p.Y + p.Z * p.Z);
 
 		/// <summary>
 		/// Returns the distance squared from the point to the origin.
@@ -126,7 +126,7 @@ namespace Spectrum
 		public float DistanceTo(in Point3 p)
 		{
 			int dx = X - p.X, dy = Y - p.Y, dz = Z - p.Z;
-			return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+			return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
 		}
 
 		/// <summary>
@@ -138,7 +138,7 @@ namespace Spectrum
 		public static float DistanceTo(in Point3 l, in Point3 r)
 		{
 			int dx = l.X - r.X, dy = l.Y - r.Y, dz = l.Z - r.Z;
-			return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+			return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
 		}
 
 		/// <summary>

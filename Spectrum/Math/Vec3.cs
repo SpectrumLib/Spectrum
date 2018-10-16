@@ -143,7 +143,7 @@ namespace Spectrum
 		/// Gets the length of the vector.
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public float Length() => (float)Math.Sqrt(X * X + Y * Y + Z * Z);
+		public float Length() => Mathf.Sqrt(X * X + Y * Y + Z * Z);
 
 		/// <summary>
 		/// Gets the square of the length of the vector.
@@ -156,7 +156,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="vec">The vector to get the length of.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static float Length(in Vec3 vec) => (float)Math.Sqrt(vec.X * vec.X + vec.Y * vec.Y + vec.Z * vec.Z);
+		public static float Length(in Vec3 vec) => Mathf.Sqrt(vec.X * vec.X + vec.Y * vec.Y + vec.Z * vec.Z);
 
 		/// <summary>
 		/// Gets the square of the length of the vector.
@@ -173,7 +173,7 @@ namespace Spectrum
 		public float DistanceTo(in Vec3 v)
 		{
 			float dx = v.X - X, dy = v.Y - Y, dz = v.Z - Z;
-			return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+			return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
 		}
 
 		/// <summary>
@@ -185,7 +185,7 @@ namespace Spectrum
 		public static float DistanceTo(in Vec3 l, ref Vec3 r)
 		{
 			float dx = l.X - r.X, dy = l.Y - r.Y, dz = l.Z - r.Z;
-			return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+			return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
 		}
 		#endregion // Length
 
@@ -196,7 +196,7 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public Vec3 Normalized()
 		{
-			float len = (float)Math.Sqrt(X * X + Y * Y + Z * Z);
+			float len = Mathf.Sqrt(X * X + Y * Y + Z * Z);
 			return new Vec3(X / len, Y / len, Z / len);
 		}
 
@@ -207,7 +207,7 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec3 Normalized(in Vec3 vec)
 		{
-			float len = (float)Math.Sqrt(vec.X * vec.X + vec.Y * vec.Y + vec.Z * vec.Z);
+			float len = Mathf.Sqrt(vec.X * vec.X + vec.Y * vec.Y + vec.Z * vec.Z);
 			return new Vec3(vec.X / len, vec.Y / len, vec.Z / len);
 		}
 
@@ -219,7 +219,7 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Normalized(in Vec3 vec, out Vec3 o)
 		{
-			float len = (float)Math.Sqrt(vec.X * vec.X + vec.Y * vec.Y + vec.Z * vec.Z);
+			float len = Mathf.Sqrt(vec.X * vec.X + vec.Y * vec.Y + vec.Z * vec.Z);
 			o = new Vec3(vec.X / len, vec.Y / len, vec.Z / len);
 		}
 
@@ -272,7 +272,7 @@ namespace Spectrum
 		/// <param name="r">The vector to project onto.</param>
 		public static Vec3 Project(in Vec3 l, in Vec3 r)
 		{
-			float rlen = (float)Math.Sqrt(r.X * r.X + r.Y * r.Y + r.Z * r.Z);
+			float rlen = Mathf.Sqrt(r.X * r.X + r.Y * r.Y + r.Z * r.Z);
 			Vec3 unitr = new Vec3(r.X / rlen, r.Y / rlen, r.Z / rlen);
 			float a = l.X * unitr.X + l.Y * unitr.Y + l.Z * unitr.Z;
 			return new Vec3(unitr.X * a, unitr.Y * a, unitr.Z * a);
@@ -286,7 +286,7 @@ namespace Spectrum
 		/// <param name="o">The projected vector.</param>
 		public static void Project(in Vec3 l, in Vec3 r, out Vec3 o)
 		{
-			float rlen = (float)Math.Sqrt(r.X * r.X + r.Y * r.Y + r.Z * r.Z);
+			float rlen = Mathf.Sqrt(r.X * r.X + r.Y * r.Y + r.Z * r.Z);
 			Vec3 unitr = new Vec3(r.X / rlen, r.Y / rlen, r.Z / rlen);
 			float a = l.X * unitr.X + l.Y * unitr.Y + l.Z * unitr.Z;
 			o.X = unitr.X * a;
@@ -302,9 +302,9 @@ namespace Spectrum
 		public static float AngleBetween(in Vec3 l, in Vec3 r)
 		{
 			float dot = l.X * r.X + l.Y * r.Y + l.Z * r.Z;
-			float llen = (float)Math.Sqrt(l.X * l.X + l.Y * l.Y + l.Z * l.Z);
-			float rlen = (float)Math.Sqrt(r.X * r.X + r.Y * r.Y + r.Z * r.Z);
-			return (float)Math.Acos(dot / (llen * rlen));
+			float llen = Mathf.Sqrt(l.X * l.X + l.Y * l.Y + l.Z * l.Z);
+			float rlen = Mathf.Sqrt(r.X * r.X + r.Y * r.Y + r.Z * r.Z);
+			return Mathf.Acos(dot / (llen * rlen));
 		}
 
 		/// <summary>
