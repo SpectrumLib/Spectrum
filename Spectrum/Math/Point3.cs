@@ -214,12 +214,11 @@ namespace Spectrum
 			return new Point(p.X, p.Y);
 		}
 
-		// TODO
-		//[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		//public static implicit operator Vec3 (in Point3 p)
-		//{
-		//	return new Vec2(p.X, p.Y);
-		//}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Vec3 (in Point3 p)
+		{
+			return new Vec3(p.X, p.Y, p.Z);
+		}
 		#endregion // Operators
 
 		#region Min/Max

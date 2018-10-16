@@ -78,7 +78,7 @@ namespace Spectrum
 		/// <summary>
 		/// Creates a new vector with all components with the same value.
 		/// </summary>
-		/// <param name="f">The value for both components.</param>
+		/// <param name="f">The value for all components.</param>
 		public Vec3(float f)
 		{
 			X = Y = Z = f;
@@ -101,7 +101,7 @@ namespace Spectrum
 		/// Creates a vector from a 2D vector appended with a z-axis coordinate.
 		/// </summary>
 		/// <param name="v">The 2D vector for the X and Y coordinates.</param>
-		/// <param name="z">The z coordinate.</param>
+		/// <param name="z">The z-component.</param>
 		public Vec3(in Vec2 v, float z)
 		{
 			X = v.X;
@@ -170,7 +170,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="v">The other vector to get the distance to.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public float DistanceTo(in Vec3 v)
+		public float Distance(in Vec3 v)
 		{
 			float dx = v.X - X, dy = v.Y - Y, dz = v.Z - Z;
 			return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
@@ -182,10 +182,33 @@ namespace Spectrum
 		/// <param name="l">The first vector.</param>
 		/// <param name="r">The second vector.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static float DistanceTo(in Vec3 l, ref Vec3 r)
+		public static float Distance(in Vec3 l, in Vec3 r)
 		{
 			float dx = l.X - r.X, dy = l.Y - r.Y, dz = l.Z - r.Z;
 			return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
+		}
+
+		/// <summary>
+		/// Gets the distance squared between this and another vector.
+		/// </summary>
+		/// <param name="v">The other vector to get the distance to.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public float DistanceSquared(in Vec3 v)
+		{
+			float dx = v.X - X, dy = v.Y - Y, dz = v.Z - Z;
+			return dx * dx + dy * dy + dz * dz;
+		}
+
+		/// <summary>
+		/// Gets the distance squared between two vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static float DistanceSquared(in Vec3 l, in Vec3 r)
+		{
+			float dx = l.X - r.X, dy = l.Y - r.Y, dz = l.Z - r.Z;
+			return dx * dx + dy * dy + dz * dz;
 		}
 		#endregion // Length
 
@@ -385,6 +408,12 @@ namespace Spectrum
 		public static explicit operator Vec2 (in Vec3 v)
 		{
 			return new Vec2(v.X, v.Y);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Vec4 (in Vec3 v)
+		{
+			return new Vec4(v.X, v.Y, v.Z, 0);
 		}
 		#endregion // Operators
 
