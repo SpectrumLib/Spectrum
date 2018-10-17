@@ -34,6 +34,14 @@ namespace Spectrum
 		/// The mathematical constant representing the golden ratio.
 		/// </summary>
 		public const float PHI = 1.6180339887498948482f;
+		/// <summary>
+		/// Multiplicitive constant for converting degrees to radians.
+		/// </summary>
+		public const float Deg2Rad = (float)(Math.PI / 180);
+		/// <summary>
+		/// Multiplicitive constant for converting radians to degrees.
+		/// </summary>
+		public const float Rad2Deg = (float)(180 / Math.PI);
 		#endregion // Constants
 
 		#region Single Precision Math
@@ -270,6 +278,62 @@ namespace Spectrum
 		{
 			double diff = l - r;
 			return (diff < 0 ? -diff : diff) <= eps;
+		}
+
+		/// <summary>
+		/// Checks if the passed integer is a power of two. Works for negative integers.
+		/// </summary>
+		/// <param name="l">The integer value to check.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsPowerOfTwo(long l)
+		{
+			l = Math.Abs(l);
+			return (l & (l - 1)) == 0;
+		}
+		/// <summary>
+		/// Checks if a passed integer value is a power of two.
+		/// </summary>
+		/// <param name="l">The integer value to check.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsPowerOfTwo(ulong l)
+		{
+			return (l & (l - 1)) == 0;
+		}
+
+		/// <summary>
+		/// General version to check if an integer value is a power of another integer value.
+		/// </summary>
+		/// <param name="l">The integer value to check.</param>
+		/// <param name="power">The integer value base power to check against.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsPowerOf(long l, long power)
+		{
+			if (power == 2)
+			{
+				l = Math.Abs(l);
+				return (l & (l - 1)) == 0;
+			}
+			else
+			{
+				double log = Math.Log10(l) / Math.Log10(power);
+				return (log == Math.Floor(log));
+			}
+		}
+		/// <summary>
+		/// General version to check if an integer value is a power of another integer value.
+		/// </summary>
+		/// <param name="l">The integer value to check.</param>
+		/// <param name="power">The integer value base power to check against.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsPowerOf(ulong l, ulong power)
+		{
+			if (power == 2)
+				return (l & (l - 1)) == 0;
+			else
+			{
+				double log = Math.Log10(l) / Math.Log10(power);
+				return (log == Math.Floor(log));
+			}
 		}
 		#endregion // Comparisons
 	}
