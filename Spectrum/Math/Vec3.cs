@@ -266,7 +266,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="v">The vector to cross product with.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Vec3 Cross(ref Vec3 v) => new Vec3(Y * v.Z - Z * v.Y, X * v.Z - Z * v.X, X * v.Y - Y * v.X);
+		public Vec3 Cross(in Vec3 v) => new Vec3(Y * v.Z - Z * v.Y, X * v.Z - Z * v.X, X * v.Y - Y * v.X);
 
 		/// <summary>
 		/// Calculates the cross product of the two vectors.
@@ -274,7 +274,7 @@ namespace Spectrum
 		/// <param name="l">The first vector.</param>
 		/// <param name="r">The second vector.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Vec3 Cross(ref Vec3 l, ref Vec3 r) => new Vec3(l.Y * r.Z - l.Z * r.Y, l.X * r.Z - l.Z * r.X, l.X * r.Y - l.Y * r.X);
+		public static Vec3 Cross(in Vec3 l, in Vec3 r) => new Vec3(l.Y * r.Z - l.Z * r.Y, l.X * r.Z - l.Z * r.X, l.X * r.Y - l.Y * r.X);
 
 		/// <summary>
 		/// Calculates the cross product of the two vectors.
@@ -283,7 +283,7 @@ namespace Spectrum
 		/// <param name="r">The second vector.</param>
 		/// <param name="o">The cross product.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Cross(ref Vec3 l, ref Vec3 r, out Vec3 o)
+		public static void Cross(in Vec3 l, in Vec3 r, out Vec3 o)
 		{
 			o = new Vec3(l.Y * r.Z - l.Z * r.Y, l.X * r.Z - l.Z * r.X, l.X * r.Y - l.Y * r.X);
 		}
