@@ -338,8 +338,8 @@ namespace Spectrum
 		/// <param name="eps">The maximum difference between elements to be considered nearly equal.</param>
 		public static bool NearlyEqual(in Vec3 l, in Vec3 r, float eps = 1e-5f)
 		{
-			return Mathf.NearlyEqual(l.X, r.X, eps) && Mathf.NearlyEqual(l.Y, r.Y, eps) && 
-				Mathf.NearlyEqual(l.Z, r.Z, eps);
+			return MathUtils.NearlyEqual(l.X, r.X, eps) && MathUtils.NearlyEqual(l.Y, r.Y, eps) &&
+				MathUtils.NearlyEqual(l.Z, r.Z, eps);
 		}
 		#endregion // Vector Functions
 
