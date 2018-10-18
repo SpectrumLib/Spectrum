@@ -12,7 +12,7 @@
     <PackageIconUrl>https://github.com/SpectrumLib/Spectrum/blob/master/Resources/Logo/Thumbnail.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/SpectrumLib/Spectrum</RepositoryUrl>
     <PackageTags>Vulkan, Gamedev, Simulation, Graphics-Engine</PackageTags>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

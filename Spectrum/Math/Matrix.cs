@@ -16,7 +16,7 @@ namespace Spectrum
 	/// </code>
 	/// </remarks>
 	[StructLayout(LayoutKind.Explicit, Size=(16*sizeof(float)))]
-	public struct Matrix : IEquatable<Matrix>
+	public unsafe struct Matrix : IEquatable<Matrix>
 	{
 		/// <summary>
 		/// The identity matrix.
@@ -115,6 +115,10 @@ namespace Spectrum
 		/// </summary>
 		[FieldOffset(15 * sizeof(float))]
 		public float M33;
+
+		// Fixed size buffer for fast access to the values
+		[FieldOffset(0)]
+		private fixed float _values[16];
 		#endregion // Fields
 
 		#region Indexers
@@ -128,13 +132,13 @@ namespace Spectrum
 			{
 				if (i < 0 || i > 15)
 					throw new IndexOutOfRangeException($"Matrix indices must be in the range [0,15] ({i})");
-				unsafe { fixed (float* vals = &M00) { return *(vals + i); } }
+				return _values[i];
 			}
 			set
 			{
 				if (i < 0 || i > 15)
 					throw new IndexOutOfRangeException($"Matrix indices must be in the range [0,15] ({i})");
-				unsafe { fixed (float* vals = &M00) { *(vals + i) = value; } }
+				_values[i] = value;
 			}
 		}
 
@@ -150,14 +154,14 @@ namespace Spectrum
 				if (r < 0 || r > 3 || c < 0 || c > 3)
 					throw new IndexOutOfRangeException($"Matrix indices must be in the range [0,3] ({r},{c})");
 				int i = (c * 4) + r;
-				unsafe { fixed (float* vals = &M00) { return *(vals + i); } }
+				return _values[i];
 			}
 			set
 			{
 				if (r < 0 || r > 3 || c < 0 || c > 3)
 					throw new IndexOutOfRangeException($"Matrix indices must be in the range [0,3] ({r},{c})");
 				int i = (c * 4) + r;
-				unsafe { fixed (float* vals = &M00) { *(vals + i) = value; } }
+				_values[i] = value;
 			}
 		}
 		#endregion // Indexers
@@ -328,6 +332,12 @@ namespace Spectrum
 				   (m.M02 * m.M10 * m.M21 * m.M33) - (m.M00 * m.M12 * m.M21 * m.M33) -
 				   (m.M01 * m.M10 * m.M22 * m.M33) + (m.M00 * m.M11 * m.M22 * m.M33);
 		}
+
+		/// <summary>
+		/// Calculates the trace of the matrix (sum of diagonals).
+		/// </summary>
+		/// <param name="m">The matrix to find the trace of.</param>
+		public static float Trace(in Matrix m) => m.M00 + m.M11 + m.M22 + m.M33;
 
 		/// <summary>
 		/// Adds two matricies together element-wise.
@@ -623,6 +633,9 @@ namespace Spectrum
 			o.M20 = 0; o.M21 =  0; o.M22 = 1; o.M23 = 0;
 			o.M30 = 0; o.M31 =  0; o.M32 = 0; o.M33 = 1;
 		}
+
+
+
 		#endregion // Rotation
 
 		#region Scaling
@@ -776,6 +789,138 @@ namespace Spectrum
 			o.M30 =        0; o.M31 =        0; o.M32 =        0; o.M33 =     1;
 		}
 		#endregion // World Matrices
+
+		#region Camera Matrices
+		/// <summary>
+		/// Creates a view matrix that represents a camera in a certain location, looking at a target position.
+		/// </summary>
+		/// <param name="pos">The camera position.</param>
+		/// <param name="targ">The camera target.</param>
+		/// <param name="up">The "up" direction for the camera, used to control the roll.</param>
+		public static Matrix CreateLookAt(in Vec3 pos, in Vec3 targ, in Vec3 up)
+		{
+			CreateLookAt(pos, targ, up, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Creates a view matrix that represents a camera in a certain location, looking at a target position.
+		/// </summary>
+		/// <param name="pos">The camera position.</param>
+		/// <param name="targ">The camera target.</param>
+		/// <param name="up">The "up" direction for the camera, used to control the roll.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void CreateLookAt(in Vec3 pos, in Vec3 targ, in Vec3 up, out Matrix o)
+		{
+			Vec3.Normalized((pos - targ), out Vec3 forward);
+			Vec3.Cross(forward, up, out Vec3 right);
+			Vec3.Cross(forward, right, out Vec3 trueup);
+
+			o.M00 =   right.X; o.M01 =   right.Y; o.M02 =   right.Z; o.M03 =   -Vec3.Dot(right, pos);
+			o.M10 =  trueup.X; o.M11 =  trueup.Y; o.M12 =  trueup.Z; o.M13 =  -Vec3.Dot(trueup, pos);
+			o.M20 = forward.X; o.M21 = forward.Y; o.M22 = forward.Z; o.M23 = -Vec3.Dot(forward, pos);
+			o.M30 =         0; o.M31 =         0; o.M32 =         0; o.M33 =                       1;
+		}
+
+		/// <summary>
+		/// Creates a matrix that represents a perspective projection (more distant objects are smaller).
+		/// </summary>
+		/// <param name="fov">The field of view of the projection.</param>
+		/// <param name="aspect">The aspect ratio of the projections.</param>
+		/// <param name="near">The distance to the near clipping plane.</param>
+		/// <param name="far">The distance to the far clipping plane.</param>
+		public static Matrix CreatePerspective(float fov, float aspect, float near, float far)
+		{
+			CreatePerspective(fov, aspect, near, far, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Creates a matrix that represents a perspective projection (more distant objects are smaller).
+		/// </summary>
+		/// <param name="fov">The field of view of the projection.</param>
+		/// <param name="aspect">The aspect ratio of the projections.</param>
+		/// <param name="near">The distance to the near clipping plane.</param>
+		/// <param name="far">The distance to the far clipping plane.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void CreatePerspective(float fov, float aspect, float near, float far, out Matrix o)
+		{
+			float f = 1f / Mathf.Atan(fov / 2);
+
+			o.M00 = f / aspect; o.M01 =  0; o.M02 =                  0; o.M03 =                           0;
+			o.M10 =          0; o.M11 = -f; o.M12 =                  0; o.M13 =                           0;
+			o.M20 =          0; o.M21 =  0; o.M22 = far / (near - far); o.M23 = (near * far) / (near - far);
+			o.M30 =          0; o.M31 =  0; o.M32 =                 -1; o.M33 =                           0;
+		}
+
+		/// <summary>
+		/// Creates a matrix that represents an orthographic projection (all distances are the same size).
+		/// </summary>
+		/// <param name="width">The width of the projection.</param>
+		/// <param name="height">The height of the projection.</param>
+		/// <param name="near">The distance to the near clipping plane.</param>
+		/// <param name="far">The distance to the far clipping plane.</param>
+		public static Matrix CreateOrthographic(float width, float height, float near, float far)
+		{
+			CreateOrthographic(width, height, near, far, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Creates a matrix that represents an orthographic projection (all distances are the same size).
+		/// </summary>
+		/// <param name="width">The width of the projection.</param>
+		/// <param name="height">The height of the projection.</param>
+		/// <param name="near">The distance to the near clipping plane.</param>
+		/// <param name="far">The distance to the far clipping plane.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void CreateOrthographic(float width, float height, float near, float far, out Matrix o)
+		{
+			float depth = near - far;
+
+			o.M00 = 2 / width; o.M01 =          0; o.M02 =         0; o.M03 =           -1;
+			o.M10 =         0; o.M11 = 2 / height; o.M12 =         0; o.M13 =           -1;
+			o.M20 =         0; o.M21 =          0; o.M22 = 1 / depth; o.M23 = near / depth;
+			o.M30 =         0; o.M31 =          0; o.M32 =         0; o.M33 =            1;
+		}
+
+		/// <summary>
+		/// Creates a matrix that represents an orthographic projection (all distances are the same size). This
+		/// function allows off-center projections to be made.
+		/// </summary>
+		/// <param name="left">The coordinate of the left view plane.</param>
+		/// <param name="right">The coordinate of the right view plane.</param>
+		/// <param name="bottom">The coordinate of the bottom view plane.</param>
+		/// <param name="top">The coordinate of the top view plane.</param>
+		/// <param name="near">The distance to the near clipping plane.</param>
+		/// <param name="far">The distance to the far clipping plane.</param>
+		public static Matrix CreateOrthographicOffCenter(float left, float right, float bottom, float top, float near, float far)
+		{
+			CreateOrthographicOffCenter(left, right, bottom, top, near, far, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Creates a matrix that represents an orthographic projection (all distances are the same size). This
+		/// function allows off-center projections to be made.
+		/// </summary>
+		/// <param name="left">The coordinate of the left view plane.</param>
+		/// <param name="right">The coordinate of the right view plane.</param>
+		/// <param name="bottom">The coordinate of the bottom view plane.</param>
+		/// <param name="top">The coordinate of the top view plane.</param>
+		/// <param name="near">The distance to the near clipping plane.</param>
+		/// <param name="far">The distance to the far clipping plane.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void CreateOrthographicOffCenter(float left, float right, float bottom, float top, float near, float far, out Matrix o)
+		{
+			float width = right - left, height = bottom - top, depth = near - far;
+
+			o.M00 = 2 / width; o.M01 =          0; o.M02 =         0; o.M03 =  -(right + left) / width;
+			o.M10 =         0; o.M11 = 2 / height; o.M12 =         0; o.M13 = -(bottom + top) / height;
+			o.M20 =         0; o.M21 =          0; o.M22 = 1 / depth; o.M23 =             near / depth;
+			o.M30 =         0; o.M31 =          0; o.M32 =         0; o.M33 =                        1;
+		}
+		#endregion // Camera Matrices
 
 		#region Operators
 		public static bool operator == (in Matrix l, in Matrix r)
