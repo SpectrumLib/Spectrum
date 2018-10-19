@@ -478,6 +478,31 @@ namespace Spectrum
 		}
 
 		/// <summary>
+		/// Performs an element-wise division of a matrix by a scalar.
+		/// </summary>
+		/// <param name="l">The numerator matrix.</param>
+		/// <param name="r">The denominator scalar.</param>
+		public static Matrix Divide(in Matrix l, float r)
+		{
+			Divide(l, r, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Performs an element-wise division of a matrix by a scalar.
+		/// </summary>
+		/// <param name="l">The numerator matrix.</param>
+		/// <param name="r">The denominator scalar.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void Divide(in Matrix l, float r, out Matrix o)
+		{
+			o.M00 = l.M00 / r; o.M01 = l.M01 / r; o.M02 = l.M02 / r; o.M03 = l.M03 / r;
+			o.M10 = l.M10 / r; o.M11 = l.M11 / r; o.M12 = l.M12 / r; o.M13 = l.M13 / r;
+			o.M20 = l.M20 / r; o.M21 = l.M21 / r; o.M22 = l.M22 / r; o.M23 = l.M23 / r;
+			o.M30 = l.M30 / r; o.M31 = l.M31 / r; o.M32 = l.M32 / r; o.M33 = l.M33 / r;
+		}
+
+		/// <summary>
 		/// Transforms a vector by multiplying it by a matrix.
 		/// </summary>
 		/// <param name="l">The matrix.</param>
@@ -634,8 +659,37 @@ namespace Spectrum
 			o.M30 = 0; o.M31 =  0; o.M32 = 0; o.M33 = 1;
 		}
 
+		/// <summary>
+		/// Creates a rotation matrix representing the same rotation as the quaternion.
+		/// </summary>
+		/// <param name="q">The quaternion to convert.</param>
+		public static Matrix CreateFromQuaternion(in Quaternion q)
+		{
+			CreateFromQuaternion(q, out Matrix o);
+			return o;
+		}
 
-
+		/// <summary>
+		/// Creates a rotation matrix representing the same rotation as the quaternion.
+		/// </summary>
+		/// <param name="q">The quaternion to convert.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void CreateFromQuaternion(in Quaternion q, out Matrix o)
+		{
+			float xx = q.X * q.X;
+			float yy = q.Y * q.Y;
+			float zz = q.Z * q.Z;
+			float xy = q.X * q.Y;
+			float xz = q.X * q.Z;
+			float xw = q.X * q.W;
+			float yz = q.Y * q.Z;
+			float yw = q.Y * q.W;
+			float zw = q.Z * q.W;
+			o.M00 = 1 - (2 * (yy + zz)); o.M01 =       2 * (xy - zw); o.M02 =       2 * (xz + yw); o.M03 = 0;
+			o.M10 =       2 * (xy + zw); o.M11 = 1 - (2 * (xx + zz)); o.M12 =       2 * (yz - xw); o.M13 = 0;
+			o.M20 =       2 * (xz - yw); o.M21 =       2 * (yz + xw); o.M22 = 1 - (2 * (xx + yy)); o.M23 = 0;
+			o.M30 =                   0; o.M31 =                   0; o.M32 =                   0; o.M33 = 1;
+		}
 		#endregion // Rotation
 
 		#region Scaling
@@ -777,11 +831,11 @@ namespace Spectrum
 		/// <param name="o">The world matrix (combined translation and rotation matrices).</param>
 		public static void CreateWorld(in Vec3 pos, in Vec3 forward, in Vec3 up, out Matrix o)
 		{
-			Vec3.Normalized(forward, out Vec3 truef);
+			Vec3.Normalize(forward, out Vec3 truef);
 			Vec3.Cross(forward, up, out Vec3 right);
-			Vec3.Normalized(right, out right);
+			Vec3.Normalize(right, out right);
 			Vec3.Cross(right, forward, out Vec3 trueup);
-			Vec3.Normalized(trueup, out trueup);
+			Vec3.Normalize(trueup, out trueup);
 
 			o.M00 =  right.X; o.M01 =  right.Y; o.M02 =  right.Z; o.M03 = pos.X;
 			o.M10 = trueup.X; o.M11 = trueup.Y; o.M12 = trueup.Z; o.M13 = pos.Y;
@@ -812,7 +866,7 @@ namespace Spectrum
 		/// <param name="o">The output matrix.</param>
 		public static void CreateLookAt(in Vec3 pos, in Vec3 targ, in Vec3 up, out Matrix o)
 		{
-			Vec3.Normalized((pos - targ), out Vec3 forward);
+			Vec3.Normalize((pos - targ), out Vec3 forward);
 			Vec3.Cross(forward, up, out Vec3 right);
 			Vec3.Cross(forward, right, out Vec3 trueup);
 
@@ -920,7 +974,7 @@ namespace Spectrum
 			o.M20 =         0; o.M21 =          0; o.M22 = 1 / depth; o.M23 =             near / depth;
 			o.M30 =         0; o.M31 =          0; o.M32 =         0; o.M33 =                        1;
 		}
-		#endregion // Camera Matrices
+		#endregion // Camera Matrices	
 
 		#region Operators
 		public static bool operator == (in Matrix l, in Matrix r)
@@ -972,6 +1026,12 @@ namespace Spectrum
 		public static Matrix operator * (in Matrix l, in Matrix r)
 		{
 			Multiply(l, r, out Matrix o);
+			return o;
+		}
+
+		public static Matrix operator / (in Matrix l, float r)
+		{
+			Divide(l, r, out Matrix o);
 			return o;
 		}
 

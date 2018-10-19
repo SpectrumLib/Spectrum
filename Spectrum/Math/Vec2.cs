@@ -168,19 +168,9 @@ namespace Spectrum
 		/// <summary>
 		/// Returns the vector in the same direction with a length of one.
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Vec2 Normalized()
-		{
-			float len = Mathf.Sqrt(X * X + Y * Y);
-			return new Vec2(X / len, Y / len);
-		}
-
-		/// <summary>
-		/// Returns the vector in the same direction with a length of one.
-		/// </summary>
 		/// <param name="vec">The vector to normalize.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Vec2 Normalized(in Vec2 vec)
+		public static Vec2 Normalize(in Vec2 vec)
 		{
 			float len = Mathf.Sqrt(vec.X * vec.X + vec.Y * vec.Y);
 			return new Vec2(vec.X / len, vec.Y / len);
@@ -192,7 +182,7 @@ namespace Spectrum
 		/// <param name="vec">The vector to normalize.</param>
 		/// <param name="o">The normalized vector.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Normalized(in Vec2 vec, out Vec2 o)
+		public static void Normalize(in Vec2 vec, out Vec2 o)
 		{
 			float len = Mathf.Sqrt(vec.X * vec.X + vec.Y * vec.Y);
 			o = new Vec2(vec.X / len, vec.Y / len);
