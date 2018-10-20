@@ -39,7 +39,7 @@ namespace Spectrum
 		/// <param name="amt1">The first normalized barycentric coordinate, the weighting factor for coordinate 2.</param>
 		/// <param name="amt2">The second normalized barycentric coordinate, the weighting factor for coordinate 3.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static float Barycentric(float f1, float f2, float f3, float amt1, float amt2) => 
+		public static float Barycentric(float f1, float f2, float f3, float amt1, float amt2) =>
 			f1 + ((f2 - f1) * amt1) + ((f3 - f1) * amt2);
 
 		/// <summary>
@@ -56,7 +56,7 @@ namespace Spectrum
 			// Using formula from http://www.mvps.org/directx/articles/catmull/, pointed to from MonoGame
 			// Use doubles to not lose precision in the multitude of coming floating point calculations
 			double a2 = amt * amt, a3 = a2 * amt;
-			double i = (2 * f2) + ((f3 - f1) * amt) + ((2 * f1 - 5 * f2 + 4 * f3 - f4) * a2) + 
+			double i = (2 * f2) + ((f3 - f1) * amt) + ((2 * f1 - 5 * f2 + 4 * f3 - f4) * a2) +
 				((3 * f2 - f1 - 3 * f3 + f4) * a3);
 			return (float)(i * 0.5);
 		}
@@ -76,7 +76,7 @@ namespace Spectrum
 			if (amt == 1) return f2;
 
 			double a2 = amt * amt, a3 = a2 * amt;
-			double i = f1 + (t1 * amt) + ((3 * f2 - 3 * f1 - 2 * t1 - t2) * a2) + 
+			double i = f1 + (t1 * amt) + ((3 * f2 - 3 * f1 - 2 * t1 - t2) * a2) +
 				((2 * f1 - 2 * f2 + t2 + t1) * a3);
 			return (float)i;
 		}
@@ -660,5 +660,223 @@ namespace Spectrum
 			o.W = Hermite(f1.W, 0, f2.W, 0, amt);
 		}
 		#endregion // Vec4
+
+		#region Matrix
+		/// <summary>
+		/// Component-wise linear interpolation between the matrices.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		public static Matrix Lerp(in Matrix m1, in Matrix m2, float amt)
+		{
+			Lerp(m1, m2, amt, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Component-wise linear interpolation between the matrices.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void Lerp(in Matrix m1, in Matrix m2, float amt, out Matrix o)
+		{
+			o.M00 = m1.M00 + ((m2.M00 - m1.M00) * amt);
+			o.M10 = m1.M10 + ((m2.M10 - m1.M10) * amt);
+			o.M20 = m1.M20 + ((m2.M20 - m1.M20) * amt);
+			o.M30 = m1.M30 + ((m2.M30 - m1.M30) * amt);
+			o.M01 = m1.M01 + ((m2.M01 - m1.M01) * amt);
+			o.M11 = m1.M11 + ((m2.M11 - m1.M11) * amt);
+			o.M21 = m1.M21 + ((m2.M21 - m1.M21) * amt);
+			o.M31 = m1.M31 + ((m2.M31 - m1.M31) * amt);
+			o.M02 = m1.M02 + ((m2.M02 - m1.M02) * amt);
+			o.M12 = m1.M12 + ((m2.M12 - m1.M12) * amt);
+			o.M22 = m1.M22 + ((m2.M22 - m1.M22) * amt);
+			o.M32 = m1.M32 + ((m2.M32 - m1.M32) * amt);
+			o.M03 = m1.M03 + ((m2.M03 - m1.M03) * amt);
+			o.M13 = m1.M13 + ((m2.M13 - m1.M13) * amt);
+			o.M23 = m1.M23 + ((m2.M23 - m1.M23) * amt);
+			o.M33 = m1.M33 + ((m2.M33 - m1.M33) * amt);
+		}
+
+		/// <summary>
+		/// Component-wise linear interpolation between the matrices, with better edge case handling for values that are
+		/// greatly mismatched in magnitude.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		public static Matrix LerpPrecise(in Matrix m1, in Matrix m2, float amt)
+		{
+			LerpPrecise(m1, m2, amt, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Component-wise linear interpolation between the matrices, with better edge case handling for values that are
+		/// greatly mismatched in magnitude.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void LerpPrecise(in Matrix m1, in Matrix m2, float amt, out Matrix o)
+		{
+			float amt2 = 1 - amt;
+
+			o.M00 = (amt2 * m1.M00) + (m2.M00 * amt);
+			o.M10 = (amt2 * m1.M10) + (m2.M10 * amt);
+			o.M20 = (amt2 * m1.M20) + (m2.M20 * amt);
+			o.M30 = (amt2 * m1.M30) + (m2.M30 * amt);
+			o.M01 = (amt2 * m1.M01) + (m2.M01 * amt);
+			o.M11 = (amt2 * m1.M11) + (m2.M11 * amt);
+			o.M21 = (amt2 * m1.M21) + (m2.M21 * amt);
+			o.M31 = (amt2 * m1.M31) + (m2.M31 * amt);
+			o.M02 = (amt2 * m1.M02) + (m2.M02 * amt);
+			o.M12 = (amt2 * m1.M12) + (m2.M12 * amt);
+			o.M22 = (amt2 * m1.M22) + (m2.M22 * amt);
+			o.M32 = (amt2 * m1.M32) + (m2.M32 * amt);
+			o.M03 = (amt2 * m1.M03) + (m2.M03 * amt);
+			o.M13 = (amt2 * m1.M13) + (m2.M13 * amt);
+			o.M23 = (amt2 * m1.M23) + (m2.M23 * amt);
+			o.M33 = (amt2 * m1.M33) + (m2.M33 * amt);
+		}
+
+		/// <summary>
+		/// Performs a smooth cubic-interpolation between the matrices.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		public static Matrix SmoothLerp(in Matrix m1, in Matrix m2, float amt)
+		{
+			SmoothLerp(m1, m2, amt, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Performs a smooth cubic-interpolation between the matrices.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void SmoothLerp(in Matrix m1, in Matrix m2, float amt, out Matrix o)
+		{
+			float norm = Mathf.UnitClamp(amt);
+
+			o.M00 = Hermite(m1.M00, 0, m2.M00, 0, norm);
+			o.M10 = Hermite(m1.M10, 0, m2.M10, 0, norm);
+			o.M20 = Hermite(m1.M20, 0, m2.M20, 0, norm);
+			o.M30 = Hermite(m1.M30, 0, m2.M30, 0, norm);
+			o.M01 = Hermite(m1.M01, 0, m2.M01, 0, norm);
+			o.M11 = Hermite(m1.M11, 0, m2.M11, 0, norm);
+			o.M21 = Hermite(m1.M21, 0, m2.M21, 0, norm);
+			o.M31 = Hermite(m1.M31, 0, m2.M31, 0, norm);
+			o.M02 = Hermite(m1.M02, 0, m2.M02, 0, norm);
+			o.M12 = Hermite(m1.M12, 0, m2.M12, 0, norm);
+			o.M22 = Hermite(m1.M22, 0, m2.M22, 0, norm);
+			o.M32 = Hermite(m1.M32, 0, m2.M32, 0, norm);
+			o.M03 = Hermite(m1.M03, 0, m2.M03, 0, norm);
+			o.M13 = Hermite(m1.M13, 0, m2.M13, 0, norm);
+			o.M23 = Hermite(m1.M23, 0, m2.M23, 0, norm);
+			o.M33 = Hermite(m1.M33, 0, m2.M33, 0, norm);
+		}
+		#endregion // Matrix
+
+		#region Quaternion
+		/// <summary>
+		/// Performs a linear interpolation between the rotations represented by the quaternions.
+		/// </summary>
+		/// <param name="q1">The source quaternion.</param>
+		/// <param name="q2">The destination quaternion.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		public static Quaternion Lerp(in Quaternion q1, in Quaternion q2, float amt)
+		{
+			Lerp(q1, q2, amt, out Quaternion o);
+			return o;
+		}
+
+		/// <summary>
+		/// Performs a linear interpolation between the rotations represented by the quaternions.
+		/// </summary>
+		/// <param name="q1">The source quaternion.</param>
+		/// <param name="q2">The destination quaternion.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output quaternion.</param>
+		public static void Lerp(in Quaternion q1, in Quaternion q2, float amt, out Quaternion o)
+		{
+			float a2 = 1 - amt;
+			float dot = (q1.X * q2.X) + (q1.Y * q2.Y) + (q1.Z * q2.Z) + (q1.W * q2.W);
+
+			if (dot >= 0)
+			{
+				o.X = (a2 * q1.X) + (amt * q2.X);
+				o.Y = (a2 * q1.Y) + (amt * q2.Y);
+				o.Z = (a2 * q1.Z) + (amt * q2.Z);
+				o.W = (a2 * q1.W) + (amt * q2.W);
+			}
+			else
+			{
+				o.X = (a2 * q1.X) - (amt * q2.X);
+				o.Y = (a2 * q1.Y) - (amt * q2.Y);
+				o.Z = (a2 * q1.Z) - (amt * q2.Z);
+				o.W = (a2 * q1.W) - (amt * q2.W);
+			}
+
+			dot = Mathf.Sqrt((o.X * o.X) + (o.Y * o.Y) + (o.Z * o.Z) + (o.W * o.W));
+			o.X /= dot;
+			o.Y /= dot;
+			o.Z /= dot;
+			o.W /= dot;
+		}
+
+		/// <summary>
+		/// Performs a spherical linear interpolation between the rotations represented by the quaternions.
+		/// </summary>
+		/// <param name="q1">The source quaternion.</param>
+		/// <param name="q2">The destination quaternion.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		public static Quaternion Slerp(in Quaternion q1, in Quaternion q2, float amt)
+		{
+			Slerp(q1, q2, amt, out Quaternion o);
+			return o;
+		}
+
+		/// <summary>
+		/// Performs a spherical linear interpolation between the rotations represented by the quaternions.
+		/// </summary>
+		/// <param name="q1">The source quaternion.</param>
+		/// <param name="q2">The destination quaternion.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output quaternion.</param>
+		public static void Slerp(in Quaternion q1, in Quaternion q2, float amt, out Quaternion o)
+		{
+			float dot = (q1.X * q2.X) + (q1.Y * q2.Y) + (q1.Z * q2.Z) + (q1.W * q2.W);
+			bool ltz = (dot < 0);
+			if (ltz) dot = -dot;
+			float a1, a2;
+
+			if (dot >= 1)
+			{
+				a2 = 1 - amt;
+				a1 = ltz ? -amt : amt;
+			}
+			else
+			{
+				float acos = Mathf.Acos(dot);
+				float isin = 1 / Mathf.Sin(acos);
+				a2 = Mathf.Sin((1 - amt) * acos) * isin;
+				a1 = ltz ? (-Mathf.Sin(amt * acos) * isin) : (Mathf.Sin(amt * acos) * isin);
+			}
+
+			o.X = (a2 * q1.X) + (a1 * q2.X);
+			o.Y = (a2 * q1.Y) + (a1 * q2.Y);
+			o.Z = (a2 * q1.Z) + (a1 * q2.Z);
+			o.W = (a2 * q1.W) + (a1 * q2.W);
+		}
+		#endregion // Quaternion
 	}
 }
