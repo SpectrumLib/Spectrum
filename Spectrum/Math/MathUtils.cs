@@ -8,6 +8,97 @@ namespace Spectrum
 	/// </summary>
 	public static class MathUtils
 	{
+		#region Clamping
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte Clamp(byte val, byte lo, byte hi = byte.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static sbyte Clamp(sbyte val, sbyte lo, sbyte hi = sbyte.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static short Clamp(short val, short lo, short hi = short.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static ushort Clamp(ushort val, ushort lo, ushort hi = ushort.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static int Clamp(int val, int lo, int hi = int.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static uint Clamp(uint val, uint lo, uint hi = uint.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static long Clamp(long val, long lo, long hi = long.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static ulong Clamp(ulong val, ulong lo, ulong hi = ulong.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static float Clamp(float val, float lo, float hi = float.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static double Clamp(double val, double lo, double hi = double.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		/// <summary>
+		/// Clamps the value into the given range.
+		/// </summary>
+		/// <param name="val">The value to clamp.</param>
+		/// <param name="lo">The low end of the clamp range.</param>
+		/// <param name="hi">The high end of the clamp range.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static decimal Clamp(decimal val, decimal lo, decimal hi = decimal.MaxValue) => val < lo ? lo : val > hi ? hi : val;
+		#endregion // Clamping
+
 		#region Comparisons
 		/// <summary>
 		/// Checks if two numbers are equal to each other within a small error.

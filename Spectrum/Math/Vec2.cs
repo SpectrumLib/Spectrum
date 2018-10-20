@@ -445,6 +445,12 @@ namespace Spectrum
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static explicit operator Point (in Vec2 v)
+		{
+			return new Point((int)v.X, (int)v.Y);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static implicit operator Vec3 (in Vec2 v)
 		{
 			return new Vec3(v.X, v.Y, 0);
