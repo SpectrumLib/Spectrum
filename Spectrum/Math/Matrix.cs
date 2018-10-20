@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Spectrum
@@ -232,6 +233,7 @@ namespace Spectrum
 		/// Calculates the transpose of the matrix.
 		/// </summary>
 		/// <param name="m">The matrix to transpose.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Transpose(in Matrix m)
 		{
 			Transpose(m, out Matrix o);
@@ -255,6 +257,7 @@ namespace Spectrum
 		/// Calculates the inverse of the matrix.
 		/// </summary>
 		/// <param name="m">The matrix to invert, or <see cref="Matrix.Zero"/> if it cannot be inverted.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Invert(in Matrix m)
 		{
 			Invert(m, out Matrix o);
@@ -337,6 +340,7 @@ namespace Spectrum
 		/// Calculates the trace of the matrix (sum of diagonals).
 		/// </summary>
 		/// <param name="m">The matrix to find the trace of.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float Trace(in Matrix m) => m.M00 + m.M11 + m.M22 + m.M33;
 
 		/// <summary>
@@ -344,6 +348,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first matrix.</param>
 		/// <param name="r">The second matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Add(in Matrix l, in Matrix r)
 		{
 			Add(l, r, out Matrix o);
@@ -369,6 +374,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first matrix.</param>
 		/// <param name="r">The second matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Subtract(in Matrix l, in Matrix r)
 		{
 			Subtract(l, r, out Matrix o);
@@ -393,6 +399,7 @@ namespace Spectrum
 		/// Performs the element-wise negation of the matrix.
 		/// </summary>
 		/// <param name="m">The matrix to negate.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Negate(in Matrix m)
 		{
 			Negate(m, out Matrix o);
@@ -417,6 +424,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The matrix.</param>
 		/// <param name="r">The scalar.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Multiply(in Matrix l, float r)
 		{
 			Multiply(l, r, out Matrix o);
@@ -442,6 +450,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first matrix.</param>
 		/// <param name="r">The second matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Multiply(in Matrix l, in Matrix r)
 		{
 			Multiply(l, r, out Matrix o);
@@ -482,6 +491,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The numerator matrix.</param>
 		/// <param name="r">The denominator scalar.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Divide(in Matrix l, float r)
 		{
 			Divide(l, r, out Matrix o);
@@ -507,6 +517,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The matrix.</param>
 		/// <param name="r">The vector to transform.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec3 Transform(in Matrix l, in Vec3 r)
 		{
 			Transform(l, r, out Vec3 o);
@@ -531,6 +542,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The matrix.</param>
 		/// <param name="r">The vector to transform.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec4 Transform(in Matrix l, in Vec4 r)
 		{
 			Transform(l, r, out Vec4 o);
@@ -585,6 +597,7 @@ namespace Spectrum
 		/// Creates a matrix describing a rotation around the x-axis.
 		/// </summary>
 		/// <param name="angle">The angle of rotation, in radians.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateRotationX(float angle)
 		{
 			CreateRotationX(angle, out Matrix o);
@@ -611,6 +624,7 @@ namespace Spectrum
 		/// Creates a matrix describing a rotation around the y-axis.
 		/// </summary>
 		/// <param name="angle">The angle of rotation, in radians.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateRotationY(float angle)
 		{
 			CreateRotationY(angle, out Matrix o);
@@ -637,6 +651,7 @@ namespace Spectrum
 		/// Creates a matrix describing a rotation around the z-axis.
 		/// </summary>
 		/// <param name="angle">The angle of rotation, in radians.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateRotationZ(float angle)
 		{
 			CreateRotationZ(angle, out Matrix o);
@@ -663,6 +678,7 @@ namespace Spectrum
 		/// Creates a rotation matrix representing the same rotation as the quaternion.
 		/// </summary>
 		/// <param name="q">The quaternion to convert.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateFromQuaternion(in Quaternion q)
 		{
 			CreateFromQuaternion(q, out Matrix o);
@@ -697,6 +713,7 @@ namespace Spectrum
 		/// Creates a new scaling matrix with all three dimensions scaled identically.
 		/// </summary>
 		/// <param name="s">The scale factor.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateScale(float s)
 		{
 			CreateScale(s, s, s, out Matrix o);
@@ -708,6 +725,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="s">The scale factor.</param>
 		/// <param name="o">The scaling matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void CreateScale(float s, out Matrix o)
 		{
 			CreateScale(s, s, s, out o);
@@ -719,6 +737,7 @@ namespace Spectrum
 		/// <param name="sx">The x-axis scaling factor.</param>
 		/// <param name="sy">The y-axis scaling factor.</param>
 		/// <param name="sz">The z-axis scaling factor.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateScale(float sx, float sy, float sz)
 		{
 			CreateScale(sx, sy, sz, out Matrix o);
@@ -744,6 +763,7 @@ namespace Spectrum
 		/// Creates a new scaling matrix with the axis scaling factors given by a vector.
 		/// </summary>
 		/// <param name="s">The scaling factors.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateScale(in Vec3 s)
 		{
 			CreateScale(s.X, s.Y, s.Z, out Matrix o);
@@ -755,6 +775,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="s">The scaling factors.</param>
 		/// <param name="o">The scaling matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void CreateScale(in Vec3 s, out Matrix o)
 		{
 			CreateScale(s.X, s.Y, s.Z, out o);
@@ -768,6 +789,7 @@ namespace Spectrum
 		/// <param name="x">The x-coordinate.</param>
 		/// <param name="y">The y-coordinate.</param>
 		/// <param name="z">The z-coordinate.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateTranslation(float x, float y, float z)
 		{
 			CreateTranslation(x, y, z, out Matrix o);
@@ -793,6 +815,7 @@ namespace Spectrum
 		/// Creates a new matrix describing a translation to the given coordinates.
 		/// </summary>
 		/// <param name="pos">The translation coordinates.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateTranslation(in Vec3 pos)
 		{
 			CreateTranslation(pos.X, pos.Y, pos.Z, out Matrix o);
@@ -804,6 +827,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="pos">The translation coordinates.</param>
 		/// <param name="o">The translation matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void CreateTranslation(in Vec3 pos, out Matrix o)
 		{
 			CreateTranslation(pos.X, pos.Y, pos.Z, out o);
@@ -816,6 +840,7 @@ namespace Spectrum
 		/// <param name="pos">The world position of the matrix.</param>
 		/// <param name="forward">The forward vector of the matrix.</param>
 		/// <param name="up">The upward vector of the matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateWorld(in Vec3 pos, in Vec3 forward, in Vec3 up)
 		{
 			CreateWorld(pos, forward, up, out Matrix o);
@@ -837,10 +862,44 @@ namespace Spectrum
 			Vec3.Cross(right, forward, out Vec3 trueup);
 			Vec3.Normalize(trueup, out trueup);
 
-			o.M00 =  right.X; o.M01 =  right.Y; o.M02 =  right.Z; o.M03 = pos.X;
-			o.M10 = trueup.X; o.M11 = trueup.Y; o.M12 = trueup.Z; o.M13 = pos.Y;
-			o.M20 =  truef.X; o.M21 =  truef.Y; o.M22 =  truef.Z; o.M23 = pos.Z;
-			o.M30 =        0; o.M31 =        0; o.M32 =        0; o.M33 =     1;
+			o.M00 = right.X; o.M01 = trueup.X; o.M02 = truef.X; o.M03 = pos.X;
+			o.M10 = right.Y; o.M11 = trueup.Y; o.M12 = truef.Y; o.M13 = pos.Y;
+			o.M20 = right.Z; o.M21 = trueup.Z; o.M22 = truef.Z; o.M23 = pos.Z;
+			o.M30 =       0; o.M31 =        0; o.M32 =       0; o.M33 =     1;
+		}
+
+		/// <summary>
+		/// Creates a world matrix for an object to sperically billboard to point towards the camera.
+		/// </summary>
+		/// <param name="objPos">The position of the object.</param>
+		/// <param name="camPos">The position of the camera.</param>
+		/// <param name="camUp">The up vector of the camera.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Matrix CreateBillboard(in Vec3 objPos, in Vec3 camPos, in Vec3 camUp)
+		{
+			CreateBillboard(objPos, camPos, camUp, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Creates a world matrix for an object to sperically billboard to point towards the camera.
+		/// </summary>
+		/// <param name="objPos">The position of the object.</param>
+		/// <param name="camPos">The position of the camera.</param>
+		/// <param name="camUp">The up vector of the camera.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void CreateBillboard(in Vec3 objPos, in Vec3 camPos, in Vec3 camUp, out Matrix o)
+		{
+			Vec3.Subtract(objPos, camPos, out Vec3 dir);
+			Vec3.Normalize(dir, out dir);
+			Vec3.Cross(camUp, dir, out Vec3 right);
+			Vec3.Normalize(right, out right);
+			Vec3.Cross(dir, right, out Vec3 trueup);
+
+			o.M00 = right.X; o.M01 = trueup.X; o.M02 = dir.X; o.M03 = objPos.X;
+			o.M10 = right.Y; o.M11 = trueup.Y; o.M12 = dir.Y; o.M13 = objPos.Y;
+			o.M20 = right.Z; o.M21 = trueup.Z; o.M22 = dir.Z; o.M23 = objPos.Z;
+			o.M30 =       0; o.M31 =        0; o.M32 =     0; o.M33 =        1;
 		}
 		#endregion // World Matrices
 
@@ -851,6 +910,7 @@ namespace Spectrum
 		/// <param name="pos">The camera position.</param>
 		/// <param name="targ">The camera target.</param>
 		/// <param name="up">The "up" direction for the camera, used to control the roll.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateLookAt(in Vec3 pos, in Vec3 targ, in Vec3 up)
 		{
 			CreateLookAt(pos, targ, up, out Matrix o);
@@ -883,6 +943,7 @@ namespace Spectrum
 		/// <param name="aspect">The aspect ratio of the projections.</param>
 		/// <param name="near">The distance to the near clipping plane.</param>
 		/// <param name="far">The distance to the far clipping plane.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreatePerspective(float fov, float aspect, float near, float far)
 		{
 			CreatePerspective(fov, aspect, near, far, out Matrix o);
@@ -914,6 +975,7 @@ namespace Spectrum
 		/// <param name="height">The height of the projection.</param>
 		/// <param name="near">The distance to the near clipping plane.</param>
 		/// <param name="far">The distance to the far clipping plane.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateOrthographic(float width, float height, float near, float far)
 		{
 			CreateOrthographic(width, height, near, far, out Matrix o);
@@ -948,6 +1010,7 @@ namespace Spectrum
 		/// <param name="top">The coordinate of the top view plane.</param>
 		/// <param name="near">The distance to the near clipping plane.</param>
 		/// <param name="far">The distance to the far clipping plane.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix CreateOrthographicOffCenter(float left, float right, float bottom, float top, float near, float far)
 		{
 			CreateOrthographicOffCenter(left, right, bottom, top, near, far, out Matrix o);
@@ -993,54 +1056,63 @@ namespace Spectrum
 				   (l.M30 != r.M30) || (l.M31 != r.M31) || (l.M32 != r.M32) || (l.M33 != r.M33);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix operator + (in Matrix l, in Matrix r)
 		{
 			Add(l, r, out Matrix o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix operator - (in Matrix l, in Matrix r)
 		{
 			Subtract(l, r, out Matrix o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix operator - (in Matrix m)
 		{
 			Negate(m, out Matrix o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix operator * (in Matrix l, float r)
 		{
 			Multiply(l, r, out Matrix o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix operator * (float l, in Matrix r)
 		{
 			Multiply(r, l, out Matrix o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix operator * (in Matrix l, in Matrix r)
 		{
 			Multiply(l, r, out Matrix o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix operator / (in Matrix l, float r)
 		{
 			Divide(l, r, out Matrix o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec3 operator * (in Matrix l, in Vec3 r)
 		{
 			Transform(l, r, out Vec3 o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec4 operator * (in Matrix l, in Vec4 r)
 		{
 			Transform(l, r, out Vec4 o);

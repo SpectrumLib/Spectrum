@@ -164,6 +164,133 @@ namespace Spectrum
 		}
 		#endregion // Length
 
+		#region Base Mathematic Operations
+		/// <summary>
+		/// Gives the component-wise sum of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Add(in Vec2 l, in Vec2 r) => new Vec2(l.X + r.X, l.Y + r.Y);
+
+		/// <summary>
+		/// Gives the component-wise sum of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Add(in Vec2 l, in Vec2 r, out Vec2 o)
+		{
+			o.X = l.X + r.X;
+			o.Y = l.Y + r.Y;
+		}
+
+		/// <summary>
+		/// Gives the component-wise difference of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Subtract(in Vec2 l, in Vec2 r) => new Vec2(l.X - r.X, l.Y - r.Y);
+
+		/// <summary>
+		/// Gives the component-wise difference of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Subtract(in Vec2 l, in Vec2 r, out Vec2 o)
+		{
+			o.X = l.X - r.X;
+			o.Y = l.Y - r.Y;
+		}
+
+		/// <summary>
+		/// Gives the component-wise product of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Multiply(in Vec2 l, in Vec2 r) => new Vec2(l.X * r.X, l.Y * r.Y);
+
+		/// <summary>
+		/// Gives the component-wise product of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Multiply(in Vec2 l, in Vec2 r, out Vec2 o)
+		{
+			o.X = l.X * r.X;
+			o.Y = l.Y * r.Y;
+		}
+
+		/// <summary>
+		/// Gives the component-wise product of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Multiply(in Vec2 l, float r) => new Vec2(l.X * r, l.Y * r);
+
+		/// <summary>
+		/// Gives the component-wise product of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		public static void Multiply(in Vec2 l, float r, out Vec2 o)
+		{
+			o.X = l.X * r;
+			o.Y = l.Y * r;
+		}
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Divide(in Vec2 l, in Vec2 r) => new Vec2(l.X / r.X, l.Y / r.Y);
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Divide(in Vec2 l, in Vec2 r, out Vec2 o)
+		{
+			o.X = l.X / r.X;
+			o.Y = l.Y / r.Y;
+		}
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Divide(in Vec2 l, float r) => new Vec2(l.X / r, l.Y / r);
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Divide(in Vec2 l, float r, out Vec2 o)
+		{
+			o.X = l.X / r;
+			o.Y = l.Y / r;
+		}
+		#endregion // Base Mathematic Operations
+
 		#region Vector Functions
 		/// <summary>
 		/// Returns the vector in the same direction with a length of one.

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Spectrum
 {
@@ -107,6 +108,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first quaternion to add.</param>
 		/// <param name="r">The second quaternion to add.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Add(in Quaternion l, in Quaternion r) => new Quaternion(l.X + r.X, l.Y + r.Y, l.Z + r.Z, l.W + r.W);
 
 		/// <summary>
@@ -128,6 +130,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first quaternion to subtract.</param>
 		/// <param name="r">The second quaternion to subtract.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Subtract(in Quaternion l, in Quaternion r) => new Quaternion(l.X - r.X, l.Y - r.Y, l.Z - r.Z, l.W - r.W);
 
 		/// <summary>
@@ -150,6 +153,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first quaternion.</param>
 		/// <param name="r">The second quaternion.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Multiply(in Quaternion l, in Quaternion r)
 		{
 			Multiply(l, r, out Quaternion o);
@@ -180,6 +184,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The quaternion to multiply.</param>
 		/// <param name="r">The scalar to multiply.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Multiply(in Quaternion l, float r) => new Quaternion(l.X * r, l.Y * r, l.Z * r, l.W * r);
 
 		/// <summary>
@@ -200,6 +205,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The numerator quaternion.</param>
 		/// <param name="r">The denominator quaternion.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Divide(in Quaternion l, in Quaternion r)
 		{
 			Divide(l, r, out Quaternion o);
@@ -227,6 +233,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The quaternion numerator.</param>
 		/// <param name="r">The scalar denominator.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Divide(in Quaternion l, float r) => new Quaternion(l.X / r, l.Y / r, l.Z / r, l.W / r);
 
 		/// <summary>
@@ -246,6 +253,7 @@ namespace Spectrum
 		/// Negates the quaternion components.
 		/// </summary>
 		/// <param name="q">The quaternion to negate.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Negate(in Quaternion q) => new Quaternion(-q.X, -q.Y, -q.Z, -q.W);
 
 		/// <summary>
@@ -267,6 +275,7 @@ namespace Spectrum
 		/// Calculates the conjugate to the passed quaternion.
 		/// </summary>
 		/// <param name="q">The quaternion to conjugate.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Conjugate(in Quaternion q) => new Quaternion(-q.X, -q.Y, -q.Z, q.W);
 
 		/// <summary>
@@ -287,12 +296,14 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first quaternion.</param>
 		/// <param name="r">The second quaternion.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float Dot(in Quaternion l, in Quaternion r) => (l.X * r.X) + (l.Y * r.Y) + (l.Z * r.Z) + (l.W * r.W);
 
 		/// <summary>
 		/// Caluclates the inverse quaterion, which represents the oppposite rotation.
 		/// </summary>
 		/// <param name="q">The quaternion to invert.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Inverse(in Quaternion q)
 		{
 			Inverse(q, out Quaternion o);
@@ -316,29 +327,34 @@ namespace Spectrum
 		/// <summary>
 		/// Gets the magnitude of the quaternion components.
 		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float Length() => Mathf.Sqrt(X * X + Y * Y + Z * Z + W * W);
 
 		/// <summary>
 		/// Gets the magnitude of the quaternion components.
 		/// </summary>
 		/// <param name="q">The quaternion.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float Length(in Quaternion q) => Mathf.Sqrt(q.X * q.X + q.Y * q.Y + q.Z * q.Z + q.W * q.W);
 
 		/// <summary>
 		/// Gets the magnitude squared of the quaternion components.
 		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float LengthSquared() => X * X + Y * Y + Z * Z + W * W;
 
 		/// <summary>
 		/// Gets the magnitude squared of the quaternion components.
 		/// </summary>
 		/// <param name="q">The quaternion.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float LengthSquared(in Quaternion q) => q.X * q.X + q.Y * q.Y + q.Z * q.Z + q.W * q.W;
 
 		/// <summary>
 		/// Normalizes the quaternion so the component magnitudes are one.
 		/// </summary>
 		/// <param name="q">The quaternion to normalize.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Normalize(in Quaternion q)
 		{
 			Normalize(q, out Quaternion o);
@@ -367,6 +383,7 @@ namespace Spectrum
 		/// <param name="yaw">The yaw (left/right rotation around y-axis), in radians.</param>
 		/// <param name="pitch">The pitch (up/down rotation around x-axis), in radians.</param>
 		/// <param name="roll">The roll (rotation around z-axis), in radians.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion CreateFromYawPitchRoll(float yaw, float pitch, float roll)
 		{
 			CreateFromYawPitchRoll(yaw, pitch, roll, out Quaternion o);
@@ -399,6 +416,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="axis">The axis of rotation.</param>
 		/// <param name="a">The rotation in radians.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion CreateFromAxisAngle(in Vec3 axis, float a)
 		{
 			CreateFromAxisAngle(axis, a, out Quaternion o);
@@ -425,6 +443,7 @@ namespace Spectrum
 		/// Creates a quaternion from the rotation components of the matrix.
 		/// </summary>
 		/// <param name="m">The matrix extract the rotation components from.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion CreateFromRotationMatrix(in Matrix m)
 		{
 			CreateFromRotationMatrix(m, out Quaternion o);
@@ -481,58 +500,68 @@ namespace Spectrum
 		#endregion // Creation
 
 		#region Operators
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool operator == (in Quaternion l, in Quaternion r)
 		{
 			return (l.X == r.X) && (l.Y == r.Y) && (l.Z == r.Z) && (l.W == r.W);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool operator != (in Quaternion l, in Quaternion r)
 		{
 			return (l.X != r.X) || (l.Y != r.Y) || (l.Z != r.Z) || (l.W != r.W);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion operator + (in Quaternion l, in Quaternion r)
 		{
 			Add(l, r, out Quaternion o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion operator - (in Quaternion l, in Quaternion r)
 		{
 			Subtract(l, r, out Quaternion o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion operator - (in Quaternion m)
 		{
 			Negate(m, out Quaternion o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion operator * (in Quaternion l, float r)
 		{
 			Multiply(l, r, out Quaternion o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion operator * (in Quaternion l, in Quaternion r)
 		{
 			Multiply(l, r, out Quaternion o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion operator / (in Quaternion l, float r)
 		{
 			Divide(l, r, out Quaternion o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion operator / (in Quaternion l, in Quaternion r)
 		{
 			Divide(l, r, out Quaternion o);
 			return o;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static explicit operator Vec4 (in Quaternion q)
 		{
 			return new Vec4(q.X, q.Y, q.Z, q.W);

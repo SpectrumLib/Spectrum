@@ -215,6 +215,146 @@ namespace Spectrum
 		}
 		#endregion // Length
 
+		#region Base Mathematic Operations
+		/// <summary>
+		/// Gives the component-wise sum of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Add(in Vec4 l, in Vec4 r) => new Vec4(l.X + r.X, l.Y + r.Y, l.Z + r.Z, l.W + r.W);
+
+		/// <summary>
+		/// Gives the component-wise sum of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Add(in Vec4 l, in Vec4 r, out Vec4 o)
+		{
+			o.X = l.X + r.X;
+			o.Y = l.Y + r.Y;
+			o.Z = l.Z + r.Z;
+			o.W = l.W + r.W;
+		}
+
+		/// <summary>
+		/// Gives the component-wise difference of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Subtract(in Vec4 l, in Vec4 r) => new Vec4(l.X - r.X, l.Y - r.Y, l.Z - r.Z, l.W - r.W);
+
+		/// <summary>
+		/// Gives the component-wise difference of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Subtract(in Vec4 l, in Vec4 r, out Vec4 o)
+		{
+			o.X = l.X - r.X;
+			o.Y = l.Y - r.Y;
+			o.Z = l.Z - r.Z;
+			o.W = l.W - r.W;
+		}
+
+		/// <summary>
+		/// Gives the component-wise product of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Multiply(in Vec4 l, in Vec4 r) => new Vec4(l.X * r.X, l.Y * r.Y, l.Z * r.Z, l.W * r.W);
+
+		/// <summary>
+		/// Gives the component-wise product of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Multiply(in Vec4 l, in Vec4 r, out Vec4 o)
+		{
+			o.X = l.X * r.X;
+			o.Y = l.Y * r.Y;
+			o.Z = l.Z * r.Z;
+			o.W = l.W * r.W;
+		}
+
+		/// <summary>
+		/// Gives the component-wise product of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Multiply(in Vec4 l, float r) => new Vec4(l.X * r, l.Y * r, l.Z * r, l.W * r);
+
+		/// <summary>
+		/// Gives the component-wise product of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Multiply(in Vec4 l, float r, out Vec4 o)
+		{
+			o.X = l.X * r;
+			o.Y = l.Y * r;
+			o.Z = l.Z * r;
+			o.W = l.W * r;
+		}
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Divide(in Vec4 l, in Vec4 r) => new Vec4(l.X / r.X, l.Y / r.Y, l.Z / r.Z, l.W / r.W);
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Divide(in Vec4 l, in Vec4 r, out Vec4 o)
+		{
+			o.X = l.X / r.X;
+			o.Y = l.Y / r.Y;
+			o.Z = l.Z / r.Z;
+			o.W = l.W / r.W;
+		}
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Divide(in Vec4 l, float r) => new Vec4(l.X / r, l.Y / r, l.Z / r, l.W / r);
+
+		/// <summary>
+		/// Gives the component-wise quotient of the vector and a scalar.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <param name="o">The output vector.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Divide(in Vec4 l, float r, out Vec4 o)
+		{
+			o.X = l.X / r;
+			o.Y = l.Y / r;
+			o.Z = l.Z / r;
+			o.W = l.W / r;
+		}
+		#endregion // Base Mathematic Operationss
+
 		#region Vector Functions
 		/// <summary>
 		/// Returns the vector in the same direction with a length of one.
