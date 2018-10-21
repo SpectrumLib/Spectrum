@@ -5,6 +5,12 @@ namespace Spectrum
 	/// <summary>
 	/// Describes a rectangle on a 2D cartesian integer grid.
 	/// </summary>
+	/// <remarks>
+	/// Note that while the dimensions of the rectangle can be negative, this is not accounted for by the struct and
+	/// will give incorrect results. However, the struct will never produce rectangles with negative dimensions from
+	/// non-negative inputs, so it is up to the programmer to ensure that they do not create rectangles with
+	/// negative dimensions.
+	/// </remarks>
 	public struct Rect : IEquatable<Rect>
 	{
 		/// <summary>
@@ -89,6 +95,11 @@ namespace Spectrum
 		/// Gets the center point of the rectangle, using floating point instead of rounding.
 		/// </summary>
 		public Vec2 CenterF => new Vec2(X + (Width / 2f), Y - (Height / 2f));
+
+		/// <summary>
+		/// Gets if the rectangle has zero dimensions and is at the origin.
+		/// </summary>
+		public bool IsEmpty => (X == 0) && (Y == 0) && (Width == 0) && (Height == 0);
 		#endregion // Fields
 
 		/// <summary>
@@ -117,6 +128,11 @@ namespace Spectrum
 			Y = pos.Y;
 			Width = size.X;
 			Height = size.Y;
+		}
+
+		public static implicit operator Rectf (in Rect r)
+		{
+			return new Rectf(r.X, r.Y, r.Width, r.Height);
 		}
 
 		#region Overrides
@@ -148,5 +164,67 @@ namespace Spectrum
 			return $"{{{X} {Y} {Width} {Height}}}";
 		}
 		#endregion // Overrides
+
+		#region Combining
+		/// <summary>
+		/// Returns a rectangle covering the overlap between the two passed rectangles.
+		/// </summary>
+		/// <param name="r1">The first rectangle.</param>
+		/// <param name="r2">The second rectangle.</param>
+		/// <returns>The overlap, or <see cref="Rect.Empty"/> if there is no overlap.</returns>
+		public static Rect Intersect(in Rect r1, in Rect r2)
+		{
+			Intersect(r1, r2, out Rect o);
+			return o;
+		}
+
+		/// <summary>
+		/// Returns a rectangle covering the overlap between the two passed rectangles.
+		/// </summary>
+		/// <param name="r1">The first rectangle.</param>
+		/// <param name="r2">The second rectangle.</param>
+		/// <param name="o">The overlap, or <see cref="Rect.Empty"/> if there is no overlap.</param>
+		public static void Intersect(in Rect r1, in Rect r2, out Rect o)
+		{
+			if (r2.Left < r1.Right && r1.Left < r2.Right && r2.Top < r1.Bottom && r1.Top < r2.Bottom)
+			{
+				int r = Math.Min(r1.X + r1.Width, r2.X + r2.Width);
+				int l = Math.Max(r1.X, r2.X);
+				int t = Math.Min(r1.Y, r2.Y);
+				int b = Math.Max(r1.Y - r1.Height, r2.Y - r2.Height);
+				o.X = l;
+				o.Y = t;
+				o.Width = r - l;
+				o.Height = t - b;
+			}
+			else
+				o = Rect.Empty;
+		}
+
+		/// <summary>
+		/// Returns a rectangle that contains both passed rectangles within it.
+		/// </summary>
+		/// <param name="r1">The first rectangle.</param>
+		/// <param name="r2">The second rectangle.</param>
+		public static Rect Union(in Rect r1, in Rect r2)
+		{
+			Union(r1, r2, out Rect o);
+			return o;
+		}
+
+		/// <summary>
+		/// Returns a rectangle that contains both passed rectangles within it.
+		/// </summary>
+		/// <param name="r1">The first rectangle.</param>
+		/// <param name="r2">The second rectangle.</param>
+		/// <param name="o">The output rectangle.</param>
+		public static void Union(in Rect r1, in Rect r2, out Rect o)
+		{
+			o.X = Math.Min(r1.X, r2.X);
+			o.Y = Math.Max(r1.Y, r2.Y);
+			o.Width = Math.Max(r1.X + r1.Width, r2.X + r2.Width) - o.X;
+			o.Height = o.Y - Math.Min(r1.Y - r1.Height, r2.Y - r2.Height);
+		}
+		#endregion // Combining
 	}
 }

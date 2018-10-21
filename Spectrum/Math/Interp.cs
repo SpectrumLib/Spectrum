@@ -87,8 +87,15 @@ namespace Spectrum
 		/// <param name="f1">The source value.</param>
 		/// <param name="f2">The destination value.</param>
 		/// <param name="amt">The normalized weight, values outside [0, 1] are clamped.</param>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static float SmoothLerp(float f1, float f2, float amt) => Hermite(f1, 0, f2, 0, Mathf.UnitClamp(amt));
+		public static float SmoothLerp(float f1, float f2, float amt)
+		{
+			if (amt == 0) return f1;
+			if (amt == 1) return f2;
+
+			double a2 = amt * amt, a3 = a2 * amt;
+			double i = f1  + ((3 * f2 - 3 * f1) * a2) + ((2 * f1 - 2 * f2) * a3);
+			return (float)i;
+		}
 		#endregion // Single-Precision
 
 		#region Vec2
@@ -250,8 +257,8 @@ namespace Spectrum
 		/// <param name="amt">The normalized weight, values outside [0, 1] are clamped.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec2 SmoothLerp(in Vec2 f1, in Vec2 f2, float amt) => new Vec2(
-			Hermite(f1.X, 0, f2.X, 0, amt),
-			Hermite(f1.Y, 0, f2.Y, 0, amt)
+			SmoothLerp(f1.X, f2.X, amt),
+			SmoothLerp(f1.Y, f2.Y, amt)
 		);
 
 		/// <summary>
@@ -264,8 +271,8 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void SmoothLerp(in Vec2 f1, in Vec2 f2, float amt, out Vec2 o)
 		{
-			o.X = Hermite(f1.X, 0, f2.X, 0, amt);
-			o.Y = Hermite(f1.Y, 0, f2.Y, 0, amt);
+			o.X = SmoothLerp(f1.X, f2.X, amt);
+			o.Y = SmoothLerp(f1.Y, f2.Y, amt);
 		}
 		#endregion // Vec2
 
@@ -438,9 +445,9 @@ namespace Spectrum
 		/// <param name="amt">The normalized weight, values outside [0, 1] are clamped.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec3 SmoothLerp(in Vec3 f1, in Vec3 f2, float amt) => new Vec3(
-			Hermite(f1.X, 0, f2.X, 0, amt),
-			Hermite(f1.Y, 0, f2.Y, 0, amt),
-			Hermite(f1.Z, 0, f2.Z, 0, amt)
+			SmoothLerp(f1.X, f2.X, amt),
+			SmoothLerp(f1.Y, f2.Y, amt),
+			SmoothLerp(f1.Z, f2.Z, amt)
 		);
 
 		/// <summary>
@@ -453,9 +460,9 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void SmoothLerp(in Vec3 f1, in Vec3 f2, float amt, out Vec3 o)
 		{
-			o.X = Hermite(f1.X, 0, f2.X, 0, amt);
-			o.Y = Hermite(f1.Y, 0, f2.Y, 0, amt);
-			o.Z = Hermite(f1.Z, 0, f2.Z, 0, amt);
+			o.X = SmoothLerp(f1.X, f2.X, amt);
+			o.Y = SmoothLerp(f1.Y, f2.Y, amt);
+			o.Z = SmoothLerp(f1.Z, f2.Z, amt);
 		}
 		#endregion // Vec3
 
@@ -638,10 +645,10 @@ namespace Spectrum
 		/// <param name="amt">The normalized weight, values outside [0, 1] are clamped.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec4 SmoothLerp(in Vec4 f1, in Vec4 f2, float amt) => new Vec4(
-			Hermite(f1.X, 0, f2.X, 0, amt),
-			Hermite(f1.Y, 0, f2.Y, 0, amt),
-			Hermite(f1.Z, 0, f2.Z, 0, amt),
-			Hermite(f1.W, 0, f2.W, 0, amt)
+			SmoothLerp(f1.X, f2.X, amt),
+			SmoothLerp(f1.Y, f2.Y, amt),
+			SmoothLerp(f1.Z, f2.Z, amt),
+			SmoothLerp(f1.W, f2.W, amt)
 		);
 
 		/// <summary>
@@ -654,10 +661,10 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void SmoothLerp(in Vec4 f1, in Vec4 f2, float amt, out Vec4 o)
 		{
-			o.X = Hermite(f1.X, 0, f2.X, 0, amt);
-			o.Y = Hermite(f1.Y, 0, f2.Y, 0, amt);
-			o.Z = Hermite(f1.Z, 0, f2.Z, 0, amt);
-			o.W = Hermite(f1.W, 0, f2.W, 0, amt);
+			o.X = SmoothLerp(f1.X, f2.X, amt);
+			o.Y = SmoothLerp(f1.Y, f2.Y, amt);
+			o.Z = SmoothLerp(f1.Z, f2.Z, amt);
+			o.W = SmoothLerp(f1.W, f2.W, amt);
 		}
 		#endregion // Vec4
 
@@ -668,6 +675,7 @@ namespace Spectrum
 		/// <param name="m1">The source matrix.</param>
 		/// <param name="m2">The destination matrix.</param>
 		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Lerp(in Matrix m1, in Matrix m2, float amt)
 		{
 			Lerp(m1, m2, amt, out Matrix o);
@@ -708,6 +716,7 @@ namespace Spectrum
 		/// <param name="m1">The source matrix.</param>
 		/// <param name="m2">The destination matrix.</param>
 		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix LerpPrecise(in Matrix m1, in Matrix m2, float amt)
 		{
 			LerpPrecise(m1, m2, amt, out Matrix o);
@@ -750,6 +759,7 @@ namespace Spectrum
 		/// <param name="m1">The source matrix.</param>
 		/// <param name="m2">The destination matrix.</param>
 		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix SmoothLerp(in Matrix m1, in Matrix m2, float amt)
 		{
 			SmoothLerp(m1, m2, amt, out Matrix o);
@@ -767,22 +777,22 @@ namespace Spectrum
 		{
 			float norm = Mathf.UnitClamp(amt);
 
-			o.M00 = Hermite(m1.M00, 0, m2.M00, 0, norm);
-			o.M10 = Hermite(m1.M10, 0, m2.M10, 0, norm);
-			o.M20 = Hermite(m1.M20, 0, m2.M20, 0, norm);
-			o.M30 = Hermite(m1.M30, 0, m2.M30, 0, norm);
-			o.M01 = Hermite(m1.M01, 0, m2.M01, 0, norm);
-			o.M11 = Hermite(m1.M11, 0, m2.M11, 0, norm);
-			o.M21 = Hermite(m1.M21, 0, m2.M21, 0, norm);
-			o.M31 = Hermite(m1.M31, 0, m2.M31, 0, norm);
-			o.M02 = Hermite(m1.M02, 0, m2.M02, 0, norm);
-			o.M12 = Hermite(m1.M12, 0, m2.M12, 0, norm);
-			o.M22 = Hermite(m1.M22, 0, m2.M22, 0, norm);
-			o.M32 = Hermite(m1.M32, 0, m2.M32, 0, norm);
-			o.M03 = Hermite(m1.M03, 0, m2.M03, 0, norm);
-			o.M13 = Hermite(m1.M13, 0, m2.M13, 0, norm);
-			o.M23 = Hermite(m1.M23, 0, m2.M23, 0, norm);
-			o.M33 = Hermite(m1.M33, 0, m2.M33, 0, norm);
+			o.M00 = SmoothLerp(m1.M00, m2.M00, norm);
+			o.M10 = SmoothLerp(m1.M10, m2.M10, norm);
+			o.M20 = SmoothLerp(m1.M20, m2.M20, norm);
+			o.M30 = SmoothLerp(m1.M30, m2.M30, norm);
+			o.M01 = SmoothLerp(m1.M01, m2.M01, norm);
+			o.M11 = SmoothLerp(m1.M11, m2.M11, norm);
+			o.M21 = SmoothLerp(m1.M21, m2.M21, norm);
+			o.M31 = SmoothLerp(m1.M31, m2.M31, norm);
+			o.M02 = SmoothLerp(m1.M02, m2.M02, norm);
+			o.M12 = SmoothLerp(m1.M12, m2.M12, norm);
+			o.M22 = SmoothLerp(m1.M22, m2.M22, norm);
+			o.M32 = SmoothLerp(m1.M32, m2.M32, norm);
+			o.M03 = SmoothLerp(m1.M03, m2.M03, norm);
+			o.M13 = SmoothLerp(m1.M13, m2.M13, norm);
+			o.M23 = SmoothLerp(m1.M23, m2.M23, norm);
+			o.M33 = SmoothLerp(m1.M33, m2.M33, norm);
 		}
 		#endregion // Matrix
 
@@ -793,6 +803,7 @@ namespace Spectrum
 		/// <param name="q1">The source quaternion.</param>
 		/// <param name="q2">The destination quaternion.</param>
 		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Lerp(in Quaternion q1, in Quaternion q2, float amt)
 		{
 			Lerp(q1, q2, amt, out Quaternion o);
@@ -839,6 +850,7 @@ namespace Spectrum
 		/// <param name="q1">The source quaternion.</param>
 		/// <param name="q2">The destination quaternion.</param>
 		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quaternion Slerp(in Quaternion q1, in Quaternion q2, float amt)
 		{
 			Slerp(q1, q2, amt, out Quaternion o);
@@ -878,5 +890,155 @@ namespace Spectrum
 			o.W = (a2 * q1.W) + (a1 * q2.W);
 		}
 		#endregion // Quaternion
+
+		#region Rect
+		/// <summary>
+		/// Linearly interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rect Lerp(in Rect r1, in Rect r2, float amt)
+		{
+			Lerp(r1, r2, amt, out Rect o);
+			return o;
+		}
+
+		/// <summary>
+		/// Linearly interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output rectangle.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Lerp(in Rect r1, in Rect r2, float amt, out Rect o)
+		{
+			o.X      = r1.X + (int)((r2.X - r1.X) * amt);
+			o.Y      = r1.Y + (int)((r2.Y - r1.Y) * amt);
+			o.Width  = r1.Width + (int)((r2.Width - r1.Width) * amt);
+			o.Height = r1.Height + (int)((r2.Height - r1.Height) * amt);
+		}
+
+		/// <summary>
+		/// Smoothly cubic-interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rect SmoothLerp(in Rect r1, in Rect r2, float amt)
+		{
+			SmoothLerp(r1, r2, amt, out Rect o);
+			return o;
+		}
+
+		/// <summary>
+		/// Smoothly cubic-interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output rectangle.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void SmoothLerp(in Rect r1, in Rect r2, float amt, out Rect o)
+		{
+			o.X      = (int)SmoothLerp(r1.X, r1.X, amt);
+			o.Y      = (int)SmoothLerp(r1.Y, r1.Y, amt);
+			o.Width  = (int)SmoothLerp(r1.Width, r1.Width, amt);
+			o.Height = (int)SmoothLerp(r1.Height, r1.Height, amt);
+		}
+		#endregion // Rect
+
+		#region Rectf
+		/// <summary>
+		/// Linearly interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rectf Lerp(in Rectf r1, in Rectf r2, float amt)
+		{
+			Lerp(r1, r2, amt, out Rectf o);
+			return o;
+		}
+
+		/// <summary>
+		/// Linearly interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output rectangle.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Lerp(in Rectf r1, in Rectf r2, float amt, out Rectf o)
+		{
+			o.X      = r1.X + ((r2.X - r1.X) * amt);
+			o.Y      = r1.Y + ((r2.Y - r1.Y) * amt);
+			o.Width  = r1.Width + ((r2.Width - r1.Width) * amt);
+			o.Height = r1.Height + ((r2.Height - r1.Height) * amt);
+		}
+
+		/// <summary>
+		/// Linearly interpolates between two rectangles, with better edge case handling for values that are
+		/// greatly mismatched in magnitude.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rectf LerpPrecise(in Rectf r1, in Rectf r2, float amt)
+		{
+			LerpPrecise(r1, r2, amt, out Rectf o);
+			return o;
+		}
+
+		/// <summary>
+		/// Linearly interpolates between two rectangles, with better edge case handling for values that are
+		/// greatly mismatched in magnitude.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void LerpPrecise(in Rectf r1, in Rectf r2, float amt, out Rectf o)
+		{
+			o.X      = ((1 - amt) * r1.X) + (amt * r2.X);
+			o.Y      = ((1 - amt) * r1.Y) + (amt * r2.Y);
+			o.Width  = ((1 - amt) * r1.Width) + (amt * r2.Width);
+			o.Height = ((1 - amt) * r1.Height) + (amt * r2.Height);
+		}
+
+		/// <summary>
+		/// Smoothly cubic-interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rectf SmoothLerp(in Rectf r1, in Rectf r2, float amt)
+		{
+			SmoothLerp(r1, r2, amt, out Rectf o);
+			return o;
+		}
+
+		/// <summary>
+		/// Smoothly cubic-interpolates between two rectangles.
+		/// </summary>
+		/// <param name="r1">The source rectangle.</param>
+		/// <param name="r2">The destination rectangle.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output rectangle.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void SmoothLerp(in Rectf r1, in Rectf r2, float amt, out Rectf o)
+		{
+			o.X      = SmoothLerp(r1.X, r1.X, amt);
+			o.Y      = SmoothLerp(r1.Y, r1.Y, amt);
+			o.Width  = SmoothLerp(r1.Width, r1.Width, amt);
+			o.Height = SmoothLerp(r1.Height, r1.Height, amt);
+		}
+		#endregion // Rect
 	}
 }
