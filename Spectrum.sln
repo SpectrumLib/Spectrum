@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2041
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectrum", "Spectrum\Spectrum.csproj", "{DB773159-AF86-4B06-949E-9564769E5A32}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectrum", "Spectrum\Spectrum.csproj", "{DB773159-AF86-4B06-949E-9564769E5A32}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectrum.Native", "Spectrum.Native\Spectrum.Native.csproj", "{C5738CAC-DBA5-448F-9B27-5A874F1C73EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{DB773159-AF86-4B06-949E-9564769E5A32}.Debug|x64.Build.0 = Debug|x64
 		{DB773159-AF86-4B06-949E-9564769E5A32}.Release|x64.ActiveCfg = Release|x64
 		{DB773159-AF86-4B06-949E-9564769E5A32}.Release|x64.Build.0 = Release|x64
+		{C5738CAC-DBA5-448F-9B27-5A874F1C73EB}.Debug|x64.ActiveCfg = Debug|x64
+		{C5738CAC-DBA5-448F-9B27-5A874F1C73EB}.Debug|x64.Build.0 = Debug|x64
+		{C5738CAC-DBA5-448F-9B27-5A874F1C73EB}.Release|x64.ActiveCfg = Release|x64
+		{C5738CAC-DBA5-448F-9B27-5A874F1C73EB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
