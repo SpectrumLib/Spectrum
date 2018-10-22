@@ -186,7 +186,7 @@ namespace Spectrum
 		/// <param name="o">The overlap, or <see cref="Rect.Empty"/> if there is no overlap.</param>
 		public static void Intersect(in Rect r1, in Rect r2, out Rect o)
 		{
-			if (r2.Left < r1.Right && r1.Left < r2.Right && r2.Top < r1.Bottom && r1.Top < r2.Bottom)
+			if (r2.Left < r1.Right && r1.Left < r2.Right && r2.Top > r1.Bottom && r1.Top > r2.Bottom)
 			{
 				int r = Math.Min(r1.X + r1.Width, r2.X + r2.Width);
 				int l = Math.Max(r1.X, r2.X);
