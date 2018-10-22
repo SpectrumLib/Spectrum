@@ -48,6 +48,10 @@ namespace Spectrum
 			// Open the logging as soon as possible
 			Logger.Initialize(in AppParameters);
 
+			// TODO: Move this later
+			NativeLoader.LoadUnmanagedLibrary("glfw3", "glfw.dll", false);
+			LINFO($"Loaded native library for glfw3 (took {NativeLoader.LastLoadTime.TotalMilliseconds:.00} ms).");
+
 			LDEBUG("Application Constructor");
 		}
 		~SpectrumApp()

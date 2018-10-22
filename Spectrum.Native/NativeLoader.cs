@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -25,6 +26,9 @@ namespace Spectrum
 
 		private static readonly Dictionary<string, IntPtr> s_loadedLibs = new Dictionary<string, IntPtr>();
 		private static readonly Dictionary<string, string> s_libPaths = new Dictionary<string, string>();
+
+		// The last load time
+		public static TimeSpan LastLoadTime { get; private set; } = TimeSpan.Zero;
 		#endregion // Fields
 
 		static NativeLoader()
@@ -41,6 +45,8 @@ namespace Spectrum
 		{
 			if (s_loadedLibs.ContainsKey(resourceBaseName))
 				return;
+
+			Stopwatch timer = Stopwatch.StartNew();
 
 			string outPath = makeExt ? GetOutputName(outBaseName) : outBaseName;
 
@@ -78,11 +84,13 @@ namespace Spectrum
 			if (s_loadedLibs.Count == 0)
 			{
 				// Unloads the libraries in the event of a crash (or the user forgets)
-				AppDomain.CurrentDomain.DomainUnload += (sender, e) => UnloadLibraries();
+				AppDomain.CurrentDomain.ProcessExit += (sender, e) => UnloadLibraries();
 			}
 
 			s_loadedLibs.Add(resourceBaseName, handle);
 			s_libPaths.Add(resourceBaseName, outPath);
+
+			LastLoadTime = timer.Elapsed;
 		}
 
 		// Unloads all of the loaded libraries
@@ -110,13 +118,18 @@ namespace Spectrum
 				}
 			}
 
+			foreach (var pair in s_libPaths)
+			{
+				File.Delete(pair.Value);
+			}
+
 			s_loadedLibs.Clear();
 			s_libPaths.Clear();
 		}
 
 		// Appends the platform extension for the embedded resource
 		private static string GetResourceName(string baseName) =>
-			baseName + (s_platform == PlatformOS.Windows ? ".win" : s_platform == PlatformOS.OSX ? ".mac" : ".linux");
+			"Spectrum.Native." + baseName + (s_platform == PlatformOS.Windows ? ".win" : s_platform == PlatformOS.OSX ? ".mac" : ".linux");
 
 		// Appends the default platform dynamic library extension
 		private static string GetOutputName(string outBaseName) => outBaseName + (s_platform == PlatformOS.Windows ? ".dll" : ".so");
