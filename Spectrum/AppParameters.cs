@@ -106,7 +106,7 @@ namespace Spectrum
 		{
 			// Check the general settings
 			if (String.IsNullOrWhiteSpace(Name))
-				throw new AppParameterException(nameof(Name), "Cannot use a null or whitespace parmeter name");
+				throw new AppParameterException(nameof(Name), "Cannot use a null or whitespace application name");
 
 			// Check the logging settings
 			if (!IsValidFS(LogFileBaseName))

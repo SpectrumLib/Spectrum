@@ -19,6 +19,9 @@ namespace Spectrum
 		/// The application parametrs that were used to create the application.
 		/// </summary>
 		public readonly AppParameters AppParameters;
+		
+		// The application driver instance
+		internal readonly AppDriver Driver;
 
 		/// <summary>
 		/// Gets if the application is set to exit at the end of the current update loop.
@@ -46,13 +49,11 @@ namespace Spectrum
 			AppParameters.Validate();
 
 			// Open the logging as soon as possible
-			Logger.Initialize(in AppParameters);
+			Logger.Initialize(AppParameters);
+			LDEBUG("Application startup.");
 
-			// TODO: Move this later
-			NativeLoader.LoadUnmanagedLibrary("glfw3", "glfw.dll", false);
-			LINFO($"Loaded native library for glfw3 (took {NativeLoader.LastLoadTime.TotalMilliseconds:.00} ms).");
-
-			LDEBUG("Application Constructor");
+			// Create the driver
+			Driver = new AppDriver(this);
 		}
 		~SpectrumApp()
 		{
@@ -65,6 +66,9 @@ namespace Spectrum
 		/// </summary>
 		public void Run()
 		{
+			// Initialize the driver
+			Driver.Initialize();
+
 			doInitialize();
 
 			while (true)
@@ -166,8 +170,10 @@ namespace Spectrum
 
 				CoroutineManager.Cleanup();
 
+				Driver.Dispose();
+
 				// Keep the logging available for as long as possible
-				LDEBUG("Application Disposal");
+				LDEBUG("Application disposal.");
 				Logger.Shutdown();
 			}
 
