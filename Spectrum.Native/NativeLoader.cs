@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -12,8 +12,7 @@ using System.Runtime.InteropServices;
 namespace Spectrum
 {
 	// Performs extraction, loading, and unloading of the native libraries contained as embedded resources
-	// Embedded resources should be named <name>.<platform>, where <platform> is one of `win`, `macos`, or `linux`.
-	// The output name for each library will be <base>.<ext>, where <ext> is `dll` for windows, and `so` otherwise.
+	// Embedded resources should be named <name>.<platform>, where <platform> is one of `w`, `m`, or `l`.
 	internal static class NativeLoader
 	{
 		#region Fields
@@ -45,13 +44,16 @@ namespace Spectrum
 		{
 			if (s_loadedLibs.ContainsKey(resourceBaseName))
 				return;
+			string resName = GetResourceName(resourceBaseName);
+			if (!s_resourceList.Contains(resName))
+				throw new Exception($"The native library {resourceBaseName} does not exist as an embedded resource.");
 
 			Stopwatch timer = Stopwatch.StartNew();
 
 			string outPath = Path.Combine(s_thisDir, outFile);
 			try
 			{
-				WriteResourceStream(GetResourceName(resourceBaseName), outPath);
+				WriteResourceStream(resName, outPath);
 			}
 			catch (Exception)
 			{
@@ -126,9 +128,12 @@ namespace Spectrum
 			s_libPaths.Clear();
 		}
 
+		// Gets the handle of the loaded library
+		public static IntPtr GetLibraryHandle(string lib) => s_loadedLibs[lib];
+
 		// Appends the platform extension for the embedded resource
 		private static string GetResourceName(string baseName) =>
-			"Spectrum.Native." + baseName + (s_platform == PlatformOS.Windows ? ".win" : s_platform == PlatformOS.OSX ? ".mac" : ".linux");
+			"Spectrum.Native." + baseName + (s_platform == PlatformOS.Windows ? ".w" : s_platform == PlatformOS.OSX ? ".m" : ".l");
 
 		// Copies the embedded resource into the filesystem
 		private static void WriteResourceStream(string resBase, string outPath)
@@ -166,11 +171,11 @@ namespace Spectrum
 		// Native loader methods for *nix
 		private static class Dl
 		{
-			[DllImport("dl", EntryPoint = "dlopen")]
+			[DllImport("libdl.so", EntryPoint = "dlopen")]
 			public static extern IntPtr Open(string fileName, int flags);
-			[DllImport("dl", EntryPoint = "dlclose")]
+			[DllImport("libdl.so", EntryPoint = "dlclose")]
 			public static extern int Close(IntPtr handle);
-			[DllImport("dl", EntryPoint = "dlerror")]
+			[DllImport("libdl.so", EntryPoint = "dlerror")]
 			public static extern IntPtr Error();
 			public const int RTLD_NOW = 2;
 		}

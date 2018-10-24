@@ -18,6 +18,17 @@ namespace Spectrum
 
 			// Report/Load the unmanaged libraries
 			loadNativeLibraries();
+
+			// Initialize GLFW3
+			if (Glfw.Init() != Glfw.TRUE)
+			{
+				LFATAL("Failed to initialize GLFW3.");
+				throw new Exception("Unable to initialize the GLFW3 library, check log for error");
+			}
+			else
+			{
+				LINFO($"Loaded glfw3 function pointers (took {Glfw.LoadTime.TotalMilliseconds:.00} ms).");
+			}
 		}
 		~AppDriver()
 		{
@@ -69,6 +80,8 @@ namespace Spectrum
 		{
 			if (!_isDisposed)
 			{
+				Glfw.Terminate();
+
 				NativeLoader.UnloadLibraries();
 				_isDisposed = true;
 			}
