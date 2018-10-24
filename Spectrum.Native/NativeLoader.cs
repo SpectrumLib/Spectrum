@@ -41,15 +41,14 @@ namespace Spectrum
 		}
 
 		// Extracts and loads a resource with the base name into the same directory with the base output name
-		public static void LoadUnmanagedLibrary(string resourceBaseName, string outBaseName, bool makeExt)
+		public static void LoadUnmanagedLibrary(string resourceBaseName, string outFile)
 		{
 			if (s_loadedLibs.ContainsKey(resourceBaseName))
 				return;
 
 			Stopwatch timer = Stopwatch.StartNew();
 
-			string outPath = makeExt ? GetOutputName(outBaseName) : outBaseName;
-
+			string outPath = Path.Combine(s_thisDir, outFile);
 			try
 			{
 				WriteResourceStream(GetResourceName(resourceBaseName), outPath);
@@ -131,9 +130,6 @@ namespace Spectrum
 		private static string GetResourceName(string baseName) =>
 			"Spectrum.Native." + baseName + (s_platform == PlatformOS.Windows ? ".win" : s_platform == PlatformOS.OSX ? ".mac" : ".linux");
 
-		// Appends the default platform dynamic library extension
-		private static string GetOutputName(string outBaseName) => outBaseName + (s_platform == PlatformOS.Windows ? ".dll" : ".so");
-		
 		// Copies the embedded resource into the filesystem
 		private static void WriteResourceStream(string resBase, string outPath)
 		{

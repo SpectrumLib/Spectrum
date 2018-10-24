@@ -30,6 +30,18 @@ namespace Spectrum
 			
 		}
 
+		public void MainLoop()
+		{
+			while (true)
+			{
+				Time.Frame();
+				Application.DoFrame();
+
+				if (Application.IsExiting)
+					break;
+			}
+		}
+
 		private void loadNativeLibraries()
 		{
 			foreach (var lib in NativeLoader.AvailableResources)
@@ -37,7 +49,7 @@ namespace Spectrum
 
 			try
 			{
-				NativeLoader.LoadUnmanagedLibrary("glfw3", "glfw3.dll", false);
+				NativeLoader.LoadUnmanagedLibrary("glfw3", "glfw3.dll");
 				LINFO($"Loaded native library for glfw3 (took {NativeLoader.LastLoadTime.TotalMilliseconds:.00} ms).");
 			}
 			catch (Exception e)

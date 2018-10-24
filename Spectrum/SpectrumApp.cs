@@ -71,14 +71,7 @@ namespace Spectrum
 
 			doInitialize();
 
-			while (true)
-			{
-				Time.Frame();
-				doFrame();
-
-				if (IsExiting)
-					break;
-			}
+			Driver.MainLoop();
 		}
 
 		/// <summary>
@@ -106,7 +99,7 @@ namespace Spectrum
 
 		#region Main Loop
 		// Performs a single frame
-		private void doFrame()
+		internal void DoFrame()
 		{
 			doUpdate();
 			if (!IsExiting)
