@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using static Spectrum.InternalLog;
@@ -257,12 +256,27 @@ namespace Spectrum
 			public delegate void glfwTerminate();
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwSetErrorCallback(GLFWerrorfun cbfun);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwWindowHint(int hint, int value);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate IntPtr glfwCreateWindow(int width, int height, string title, IntPtr monitor, IntPtr share);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwDestroyWindow(IntPtr window);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate int glfwWindowShouldClose(IntPtr window);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwPollEvents();
 		}
 
 		#region Umanaged Delegates
 		private static Delegates.glfwInit _glfwInit;
 		private static Delegates.glfwTerminate _glfwTerminate;
 		private static Delegates.glfwSetErrorCallback _glfwSetErrorCallback;
+		private static Delegates.glfwWindowHint _glfwWindowHint;
+		private static Delegates.glfwCreateWindow _glfwCreateWindow;
+		private static Delegates.glfwDestroyWindow _glfwDestroyWindow;
+		private static Delegates.glfwWindowShouldClose _glfwWindowShouldClose;
+		private static Delegates.glfwPollEvents _glfwPollEvents;
 		#endregion // Unmanaged Delegates
 
 		#region Interop Functions
@@ -273,8 +287,17 @@ namespace Spectrum
 			return _glfwInit();
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Terminate() => _glfwTerminate();
+
+		public static void WindowHint(int hint, int value) => _glfwWindowHint(hint, value);
+
+		public static IntPtr CreateWindow(int width, int height, string title) => _glfwCreateWindow(width, height, title, IntPtr.Zero, IntPtr.Zero);
+
+		public static void DestroyWindow(IntPtr window) => _glfwDestroyWindow(window);
+
+		public static bool WindowShouldClose(IntPtr window) => (_glfwWindowShouldClose(window) == TRUE);
+
+		public static void PollEvents() => _glfwPollEvents();
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -289,6 +312,11 @@ namespace Spectrum
 			_glfwInit = LoadFunc<Delegates.glfwInit>(module, "glfwInit");
 			_glfwTerminate = LoadFunc<Delegates.glfwTerminate>(module, "glfwTerminate");
 			_glfwSetErrorCallback = LoadFunc<Delegates.glfwSetErrorCallback>(module, "glfwSetErrorCallback");
+			_glfwWindowHint = LoadFunc<Delegates.glfwWindowHint>(module, "glfwWindowHint");
+			_glfwCreateWindow = LoadFunc<Delegates.glfwCreateWindow>(module, "glfwCreateWindow");
+			_glfwDestroyWindow = LoadFunc<Delegates.glfwDestroyWindow>(module, "glfwDestroyWindow");
+			_glfwWindowShouldClose = LoadFunc<Delegates.glfwWindowShouldClose>(module, "glfwWindowShouldClose");
+			_glfwPollEvents = LoadFunc<Delegates.glfwPollEvents>(module, "glfwPollEvents");
 
 			LoadTime = timer.Elapsed;
 		}

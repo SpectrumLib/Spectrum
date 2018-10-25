@@ -9,6 +9,8 @@ namespace Spectrum
 		#region Fields
 		public readonly SpectrumApp Application = null;
 
+		public AppWindow Window { get; private set; } = null;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
@@ -29,6 +31,9 @@ namespace Spectrum
 			{
 				LINFO($"Loaded glfw3 function pointers (took {Glfw.LoadTime.TotalMilliseconds:.00} ms).");
 			}
+
+			// Create the window (but keep it hidden)
+			Window = new AppWindow(app);
 		}
 		~AppDriver()
 		{
@@ -46,8 +51,11 @@ namespace Spectrum
 			while (true)
 			{
 				Time.Frame();
+				Glfw.PollEvents(); // Also raises the input events
 				Application.DoFrame();
 
+				if (Glfw.WindowShouldClose(Window.Handle))
+					break;
 				if (Application.IsExiting)
 					break;
 			}
@@ -80,6 +88,8 @@ namespace Spectrum
 		{
 			if (!_isDisposed)
 			{
+				Window.Dispose();
+
 				Glfw.Terminate();
 
 				NativeLoader.UnloadLibraries();
