@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\Lib\Win\glfw3.dll" Link="glfw3.w" />
+    <EmbeddedResource Include="..\Lib\glfw3.w" Link="glfw3.w" />
   </ItemGroup>
 
 </Project>

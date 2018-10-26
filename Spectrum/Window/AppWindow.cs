@@ -26,7 +26,7 @@ namespace Spectrum
 
 			// Prepare the window hints
 			Glfw.WindowHint(Glfw.RESIZABLE, Glfw.FALSE);
-			//Glfw.WindowHint(Glfw.VISIBLE, Glfw.FALSE);
+			Glfw.WindowHint(Glfw.VISIBLE, Glfw.FALSE);
 			Glfw.WindowHint(Glfw.DECORATED, Glfw.TRUE);
 			Glfw.WindowHint(Glfw.CLIENT_API, Glfw.NO_API);
 
@@ -36,6 +36,11 @@ namespace Spectrum
 		~AppWindow()
 		{
 			dispose(false);
+		}
+
+		internal void ShowWindow()
+		{
+			Glfw.ShowWindow(Handle);
 		}
 
 		#region IDisposable

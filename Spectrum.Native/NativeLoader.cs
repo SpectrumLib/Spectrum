@@ -131,6 +131,14 @@ namespace Spectrum
 		// Gets the handle of the loaded library
 		public static IntPtr GetLibraryHandle(string lib) => s_loadedLibs[lib];
 
+		// Loads a function from the passed C library handle (see GetLibraryHandle())
+		public static T LoadFunction<T>(IntPtr library, string function)
+			where T : Delegate
+		{
+			IntPtr handle = (s_platform == PlatformOS.Windows) ? Kernel32.GetProcAddress(library, function) : Dl.Symbol(library, function);
+			return (handle == IntPtr.Zero) ? null : Marshal.GetDelegateForFunctionPointer(handle, typeof(T)) as T;
+		}
+
 		// Appends the platform extension for the embedded resource
 		private static string GetResourceName(string baseName) =>
 			"Spectrum.Native." + baseName + (s_platform == PlatformOS.Windows ? ".w" : s_platform == PlatformOS.OSX ? ".m" : ".l");
@@ -166,6 +174,8 @@ namespace Spectrum
 			public static extern IntPtr LoadLibrary(string lpFileName);
 			[DllImport("kernel32.dll", SetLastError = true)]
 			public static extern int FreeLibrary(IntPtr hModule);
+			[DllImport("kernel32.dll", SetLastError = true)]
+			public static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
 		}
 
 		// Native loader methods for *nix
@@ -177,6 +187,8 @@ namespace Spectrum
 			public static extern int Close(IntPtr handle);
 			[DllImport("libdl.so", EntryPoint = "dlerror")]
 			public static extern IntPtr Error();
+			[DllImport("libdl.so", EntryPoint = "dlsym")]
+			public static extern IntPtr Symbol(IntPtr handle, string symbol);
 			public const int RTLD_NOW = 2;
 		}
 

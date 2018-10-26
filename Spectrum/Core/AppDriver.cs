@@ -22,7 +22,7 @@ namespace Spectrum
 			loadNativeLibraries();
 
 			// Initialize GLFW3
-			if (Glfw.Init() != Glfw.TRUE)
+			if (!Glfw.Init())
 			{
 				LFATAL("Failed to initialize GLFW3.");
 				throw new Exception("Unable to initialize the GLFW3 library, check log for error");
@@ -30,6 +30,13 @@ namespace Spectrum
 			else
 			{
 				LINFO($"Loaded glfw3 function pointers (took {Glfw.LoadTime.TotalMilliseconds:.00} ms).");
+			}
+
+			// Check for the vulkan runtime
+			if (!Glfw.VulkanSupported())
+			{
+				LFATAL("Vulkan runtime not found.");
+				throw new Exception("Vulkan runtime not located on this system, please ensure your graphics drivers are up to date");
 			}
 
 			// Create the window (but keep it hidden)
@@ -48,10 +55,12 @@ namespace Spectrum
 
 		public void MainLoop()
 		{
+			Window.ShowWindow();
+
 			while (true)
 			{
 				Time.Frame();
-				Glfw.PollEvents(); // Also raises the input events
+				Glfw.PollEvents(); // Raises input and window events
 				Application.DoFrame();
 
 				if (Glfw.WindowShouldClose(Window.Handle))

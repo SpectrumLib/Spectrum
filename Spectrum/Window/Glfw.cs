@@ -11,11 +11,6 @@ namespace Spectrum
 	// That project is licensed under the MIT license.
 	internal static class Glfw
 	{
-		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
-		[DllImport("libdl.so", EntryPoint = "dlsym")]
-		private static extern IntPtr dlsym(IntPtr handle, string symbol);
-
 		#region Constant Values
 		public const int VERSION_MAJOR = 3;
 		public const int VERSION_MINOR = 2;
@@ -266,6 +261,10 @@ namespace Spectrum
 			public delegate int glfwWindowShouldClose(IntPtr window);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwPollEvents();
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwShowWindow(IntPtr window);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate int glfwVulkanSupported();
 		}
 
 		#region Umanaged Delegates
@@ -277,14 +276,16 @@ namespace Spectrum
 		private static Delegates.glfwDestroyWindow _glfwDestroyWindow;
 		private static Delegates.glfwWindowShouldClose _glfwWindowShouldClose;
 		private static Delegates.glfwPollEvents _glfwPollEvents;
+		private static Delegates.glfwShowWindow _glfwShowWindow;
+		private static Delegates.glfwVulkanSupported _glfwVulkanSupported;
 		#endregion // Unmanaged Delegates
 
 		#region Interop Functions
-		public static int Init()
+		public static bool Init()
 		{
 			LoadFunctions();
 			_glfwSetErrorCallback((error, desc) => { LERROR($"GLFW error code {error}: {desc}."); });
-			return _glfwInit();
+			return (_glfwInit() == TRUE);
 		}
 
 		public static void Terminate() => _glfwTerminate();
@@ -298,6 +299,10 @@ namespace Spectrum
 		public static bool WindowShouldClose(IntPtr window) => (_glfwWindowShouldClose(window) == TRUE);
 
 		public static void PollEvents() => _glfwPollEvents();
+
+		public static void ShowWindow(IntPtr window) => _glfwShowWindow(window);
+
+		public static bool VulkanSupported() => (_glfwVulkanSupported() == TRUE);
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -309,23 +314,18 @@ namespace Spectrum
 
 			IntPtr module = NativeLoader.GetLibraryHandle("glfw3");
 
-			_glfwInit = LoadFunc<Delegates.glfwInit>(module, "glfwInit");
-			_glfwTerminate = LoadFunc<Delegates.glfwTerminate>(module, "glfwTerminate");
-			_glfwSetErrorCallback = LoadFunc<Delegates.glfwSetErrorCallback>(module, "glfwSetErrorCallback");
-			_glfwWindowHint = LoadFunc<Delegates.glfwWindowHint>(module, "glfwWindowHint");
-			_glfwCreateWindow = LoadFunc<Delegates.glfwCreateWindow>(module, "glfwCreateWindow");
-			_glfwDestroyWindow = LoadFunc<Delegates.glfwDestroyWindow>(module, "glfwDestroyWindow");
-			_glfwWindowShouldClose = LoadFunc<Delegates.glfwWindowShouldClose>(module, "glfwWindowShouldClose");
-			_glfwPollEvents = LoadFunc<Delegates.glfwPollEvents>(module, "glfwPollEvents");
+			_glfwInit = NativeLoader.LoadFunction<Delegates.glfwInit>(module, "glfwInit");
+			_glfwTerminate = NativeLoader.LoadFunction<Delegates.glfwTerminate>(module, "glfwTerminate");
+			_glfwSetErrorCallback = NativeLoader.LoadFunction<Delegates.glfwSetErrorCallback>(module, "glfwSetErrorCallback");
+			_glfwWindowHint = NativeLoader.LoadFunction<Delegates.glfwWindowHint>(module, "glfwWindowHint");
+			_glfwCreateWindow = NativeLoader.LoadFunction<Delegates.glfwCreateWindow>(module, "glfwCreateWindow");
+			_glfwDestroyWindow = NativeLoader.LoadFunction<Delegates.glfwDestroyWindow>(module, "glfwDestroyWindow");
+			_glfwWindowShouldClose = NativeLoader.LoadFunction<Delegates.glfwWindowShouldClose>(module, "glfwWindowShouldClose");
+			_glfwPollEvents = NativeLoader.LoadFunction<Delegates.glfwPollEvents>(module, "glfwPollEvents");
+			_glfwShowWindow = NativeLoader.LoadFunction<Delegates.glfwShowWindow>(module, "glfwShowWindow");
+			_glfwVulkanSupported = NativeLoader.LoadFunction<Delegates.glfwVulkanSupported>(module, "glfwVulkanSupported");
 
 			LoadTime = timer.Elapsed;
-		}
-
-		private static T LoadFunc<T>(IntPtr module, string symbol)
-			where T : Delegate
-		{
-			IntPtr handle = Platform.IsWindows ? GetProcAddress(module, symbol) : dlsym(module, symbol);
-			return (handle == IntPtr.Zero) ? null : Marshal.GetDelegateForFunctionPointer(handle, typeof(T)) as T;
 		}
 	}
 }
