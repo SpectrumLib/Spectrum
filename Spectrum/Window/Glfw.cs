@@ -265,6 +265,20 @@ namespace Spectrum
 			public delegate void glfwShowWindow(IntPtr window);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate int glfwVulkanSupported();
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate int glfwGetWindowAttrib(IntPtr window, int attrib);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetWindowAttrib(IntPtr window, int attrib, int value);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwGetWindowSize(IntPtr window, out int width, out int height);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetWindowSize(IntPtr window, int width, int height);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwGetWindowPos(IntPtr window, out int x, out int y);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetWindowPos(IntPtr window, int w, int y);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate IntPtr glfwGetPrimaryMonitor();
 		}
 
 		#region Umanaged Delegates
@@ -278,6 +292,13 @@ namespace Spectrum
 		private static Delegates.glfwPollEvents _glfwPollEvents;
 		private static Delegates.glfwShowWindow _glfwShowWindow;
 		private static Delegates.glfwVulkanSupported _glfwVulkanSupported;
+		private static Delegates.glfwGetWindowAttrib _glfwGetWindowAttrib;
+		private static Delegates.glfwSetWindowAttrib _glfwSetWindowAttrib;
+		private static Delegates.glfwGetWindowSize _glfwGetWindowSize;
+		private static Delegates.glfwSetWindowSize _glfwSetWindowSize;
+		private static Delegates.glfwGetWindowPos _glfwGetWindowPos;
+		private static Delegates.glfwSetWindowPos _glfwSetWindowPos;
+		private static Delegates.glfwGetPrimaryMonitor _glfwGetPrimaryMonitor;
 		#endregion // Unmanaged Delegates
 
 		#region Interop Functions
@@ -303,6 +324,20 @@ namespace Spectrum
 		public static void ShowWindow(IntPtr window) => _glfwShowWindow(window);
 
 		public static bool VulkanSupported() => (_glfwVulkanSupported() == TRUE);
+
+		public static int GetWindowAttrib(IntPtr window, int attrib) => _glfwGetWindowAttrib(window, attrib);
+
+		public static void SetWindowAttrib(IntPtr window, int attrib, int value) => _glfwSetWindowAttrib(window, attrib, value);
+
+		public static void GetWindowSize(IntPtr window, out int w, out int h) => _glfwGetWindowSize(window, out w, out h);
+
+		public static void SetWindowSize(IntPtr window, int w, int h) => _glfwSetWindowSize(window, w, h);
+
+		public static void GetWindowPos(IntPtr window, out int x, out int y) => _glfwGetWindowPos(window, out x, out y);
+
+		public static void SetWindowPos(IntPtr window, int x, int y) => _glfwSetWindowPos(window, x, y);
+
+		public static IntPtr GetPrimaryMonitor() => _glfwGetPrimaryMonitor();
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -324,6 +359,13 @@ namespace Spectrum
 			_glfwPollEvents = NativeLoader.LoadFunction<Delegates.glfwPollEvents>(module, "glfwPollEvents");
 			_glfwShowWindow = NativeLoader.LoadFunction<Delegates.glfwShowWindow>(module, "glfwShowWindow");
 			_glfwVulkanSupported = NativeLoader.LoadFunction<Delegates.glfwVulkanSupported>(module, "glfwVulkanSupported");
+			_glfwGetWindowAttrib = NativeLoader.LoadFunction<Delegates.glfwGetWindowAttrib>(module, "glfwGetWindowAttrib");
+			_glfwSetWindowAttrib = NativeLoader.LoadFunction<Delegates.glfwSetWindowAttrib>(module, "glfwSetWindowAttrib");
+			_glfwGetWindowSize = NativeLoader.LoadFunction<Delegates.glfwGetWindowSize>(module, "glfwGetWindowSize");
+			_glfwSetWindowSize = NativeLoader.LoadFunction<Delegates.glfwSetWindowSize>(module, "glfwSetWindowSize");
+			_glfwGetWindowPos = NativeLoader.LoadFunction<Delegates.glfwGetWindowPos>(module, "glfwGetWindowPos");
+			_glfwSetWindowPos = NativeLoader.LoadFunction<Delegates.glfwSetWindowPos>(module, "glfwSetWindowPos");
+			_glfwGetPrimaryMonitor = NativeLoader.LoadFunction<Delegates.glfwGetPrimaryMonitor>(module, "glfwGetPrimaryMonitor");
 
 			LoadTime = timer.Elapsed;
 		}

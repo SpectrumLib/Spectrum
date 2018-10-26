@@ -50,7 +50,7 @@ namespace Spectrum
 		// Performs the runtime initialization
 		public void Initialize()
 		{
-			
+			Window.CreateWindow();
 		}
 
 		public void MainLoop()

@@ -22,6 +22,10 @@ namespace Spectrum
 		
 		// The application driver instance
 		internal readonly AppDriver Driver;
+		/// <summary>
+		/// The window for this application. You can set some window parameters before it is opened.
+		/// </summary>
+		public AppWindow Window => Driver.Window;
 
 		/// <summary>
 		/// Gets if the application is set to exit at the end of the current update loop.
