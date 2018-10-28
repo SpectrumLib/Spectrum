@@ -279,6 +279,14 @@ namespace Spectrum
 			public delegate void glfwSetWindowPos(IntPtr window, int w, int y);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate IntPtr glfwGetPrimaryMonitor();
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate IntPtr glfwGetMonitors(out int count);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwGetMonitorPos(IntPtr monitor, out int x, out int y);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate IntPtr glfwGetVideoModes(IntPtr monitor, out int count);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate IntPtr glfwGetVideoMode(IntPtr monitor);
 		}
 
 		#region Umanaged Delegates
@@ -299,7 +307,30 @@ namespace Spectrum
 		private static Delegates.glfwGetWindowPos _glfwGetWindowPos;
 		private static Delegates.glfwSetWindowPos _glfwSetWindowPos;
 		private static Delegates.glfwGetPrimaryMonitor _glfwGetPrimaryMonitor;
+		private static Delegates.glfwGetMonitors _glfwGetMonitors;
+		private static Delegates.glfwGetMonitorPos _glfwGetMonitorPos;
+		private static Delegates.glfwGetVideoModes _glfwGetVideoModes;
+		private static Delegates.glfwGetVideoMode _glfwGetVideoMode;
 		#endregion // Unmanaged Delegates
+
+		#region Structs
+		[StructLayout(LayoutKind.Explicit, Size=(6*sizeof(int)))]
+		public struct VidMode
+		{
+			[FieldOffset(0)]
+			public int Width;
+			[FieldOffset(1*sizeof(int))]
+			public int Height;
+			[FieldOffset(2*sizeof(int))]
+			public int RedBits;
+			[FieldOffset(3*sizeof(int))]
+			public int GreenBits;
+			[FieldOffset(4*sizeof(int))]
+			public int BlueBits;
+			[FieldOffset(5*sizeof(int))]
+			public int RefreshRate;
+		}
+		#endregion // Structs
 
 		#region Interop Functions
 		public static bool Init()
@@ -338,6 +369,34 @@ namespace Spectrum
 		public static void SetWindowPos(IntPtr window, int x, int y) => _glfwSetWindowPos(window, x, y);
 
 		public static IntPtr GetPrimaryMonitor() => _glfwGetPrimaryMonitor();
+
+		public static IntPtr[] GetMonitors()
+		{
+			IntPtr mptr = _glfwGetMonitors(out int count);
+
+			IntPtr[] mons = new IntPtr[count];
+			for (int i = 0; i < count; ++i, mptr += IntPtr.Size)
+				mons[i] = Marshal.ReadIntPtr(mptr);
+			return mons;
+		}
+
+		public static void GetMonitorPos(IntPtr monitor, out int x, out int y) => _glfwGetMonitorPos(monitor, out x, out y);
+
+		public static VidMode[] GetVideoModes(IntPtr monitor)
+		{
+			IntPtr mptr = _glfwGetVideoModes(monitor, out int count);
+
+			VidMode[] modes = new VidMode[count];
+			for (int i = 0; i < count; ++i, mptr += (6*sizeof(int)))
+				modes[i] = Marshal.PtrToStructure<VidMode>(mptr);
+			return modes;
+		}
+
+		public static VidMode GetVideoMode(IntPtr monitor)
+		{
+			IntPtr mptr = _glfwGetVideoMode(monitor);
+			return Marshal.PtrToStructure<VidMode>(mptr);
+		}
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -366,6 +425,10 @@ namespace Spectrum
 			_glfwGetWindowPos = NativeLoader.LoadFunction<Delegates.glfwGetWindowPos>(module, "glfwGetWindowPos");
 			_glfwSetWindowPos = NativeLoader.LoadFunction<Delegates.glfwSetWindowPos>(module, "glfwSetWindowPos");
 			_glfwGetPrimaryMonitor = NativeLoader.LoadFunction<Delegates.glfwGetPrimaryMonitor>(module, "glfwGetPrimaryMonitor");
+			_glfwGetMonitors = NativeLoader.LoadFunction<Delegates.glfwGetMonitors>(module, "glfwGetMonitors");
+			_glfwGetMonitorPos = NativeLoader.LoadFunction<Delegates.glfwGetMonitorPos>(module, "glfwGetMonitorPos");
+			_glfwGetVideoModes = NativeLoader.LoadFunction<Delegates.glfwGetVideoModes>(module, "glfwGetVideoModes");
+			_glfwGetVideoMode = NativeLoader.LoadFunction<Delegates.glfwGetVideoMode>(module, "glfwGetVideoMode");
 
 			LoadTime = timer.Elapsed;
 		}

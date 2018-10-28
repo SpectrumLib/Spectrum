@@ -20,7 +20,7 @@ Thanks to the following projects/groups for being sources of design ideas:
 * [MonoGame](http://www.monogame.net/)
 * [MonoGame Extended](https://github.com/craftworkgames/MonoGame.Extended)
 * [Nez](https://github.com/prime31/Nez)
-* [GLFWDotNet](https://github.com/smack0007/GLFWDotNet) - Used as the basis of the custom GLFW3 bindings
 
-Thanks to the following projects/groups for their libraries and tools used in this project:
+Thanks to the following projects/groups for their libraries and tools used in or adapted for this project:
 * [VulkanCore](https://github.com/discosultan/VulkanCore) - C# wrapper for the Vulkan C API
+* [GLFWDotNet](https://github.com/smack0007/GLFWDotNet) - Used as the basis of the custom GLFW3 bindings

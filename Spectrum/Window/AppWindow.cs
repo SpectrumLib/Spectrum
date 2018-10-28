@@ -18,7 +18,12 @@ namespace Spectrum
 		internal IntPtr Handle { get; private set; } = IntPtr.Zero;
 
 		// Gets the primary monitor for the system.
-		internal IntPtr PrimaryMonitor => Glfw.GetPrimaryMonitor();
+		internal static IntPtr PrimaryMonitor => Glfw.GetPrimaryMonitor();
+		// Gets the current monitor based on the window's center-point
+		internal IntPtr Monitor => getCurrentMonitor(out Rect bb);
+
+		// Gets if the monitor has been shown yet
+		internal bool IsShown => (Handle == IntPtr.Zero) && (Glfw.GetWindowAttrib(Handle, Glfw.VISIBLE) == Glfw.TRUE);
 
 		#region Window Parameters
 		// Window parameters come with cached parameters, which are used to store user changes to the window before the
@@ -87,9 +92,8 @@ namespace Spectrum
 			Glfw.WindowHint(Glfw.DECORATED, Glfw.TRUE);
 			Glfw.WindowHint(Glfw.CLIENT_API, Glfw.NO_API);
 
-			// Open the hidden window and position it
+			// Open the hidden window
 			Handle = Glfw.CreateWindow(_cachedSize.X, _cachedSize.Y, "Spectrum");
-			// TODO: Position window after creation
 		}
 
 		internal void ShowWindow()
@@ -99,6 +103,39 @@ namespace Spectrum
 
 		#region Window Control
 		#endregion // Window Control
+
+		// This calcates the window's current monitor using the center-point of the window. This is needed because
+		//   GLFW does not have functionaly for doing this right out of the box. It returns the GLFW handle to the
+		//   current monitor, as well as the bounding box describing the monitor's position and size.
+		private IntPtr getCurrentMonitor(out Rect bb)
+		{
+			if (!IsShown)
+			{
+				getMonitorRect(PrimaryMonitor, out bb);
+				return PrimaryMonitor;
+			}
+
+			IntPtr[] monitors = Glfw.GetMonitors();
+			Point center = Position + (Size / 2);
+			for (int i = 0; i < monitors.Length; ++i)
+			{
+				getMonitorRect(monitors[i], out bb);
+				if (Space2D.Contains(bb, center))
+					return monitors[i];
+			}
+
+			// Should never get here
+			bb = Rect.Empty;
+			return IntPtr.Zero;
+		}
+
+		private void getMonitorRect(IntPtr monitor, out Rect bb)
+		{
+			Glfw.VidMode mode = Glfw.GetVideoMode(monitor);
+			Glfw.GetMonitorPos(monitor, out bb.X, out bb.Y);
+			bb.Width = mode.Width;
+			bb.Height = mode.Height;
+		}
 
 		#region IDisposable
 		public void Dispose()
