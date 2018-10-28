@@ -16,7 +16,7 @@ namespace Spectrum
 		/// <param name="x">The x-coordinate to check.</param>
 		/// <param name="y">The y-coordinate to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rect r, int x, int y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
+		public static bool Contains(this in Rect r, int x, int y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
 		/// <summary>
 		/// Checks if the coordinates are inside of the rectangle.
 		/// </summary>
@@ -24,7 +24,7 @@ namespace Spectrum
 		/// <param name="x">The x-coordinate to check.</param>
 		/// <param name="y">The y-coordinate to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rect r, float x, float y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
+		public static bool Contains(this in Rect r, float x, float y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
 
 		/// <summary>
 		/// Checks if the point is inside of the rectangle.
@@ -32,14 +32,14 @@ namespace Spectrum
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="p">The point to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rect r, in Point p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
+		public static bool Contains(this in Rect r, in Point p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
 		/// <summary>
 		/// Checks if the vector is inside of the rectangle.
 		/// </summary>
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="p">The vector to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rect r, in Vec2 p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
+		public static bool Contains(this in Rect r, in Vec2 p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
 
 		/// <summary>
 		/// Checks if the second rectangle is completely contained by the first.
@@ -47,14 +47,14 @@ namespace Spectrum
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="o">The rectangle to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rect r, in Rect o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
+		public static bool Contains(this in Rect r, in Rect o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
 		/// <summary>
 		/// Checks if the second rectangle is completely contained by the first.
 		/// </summary>
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="o">The rectangle to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rect r, in Rectf o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
+		public static bool Contains(this in Rect r, in Rectf o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
 
 		/// <summary>
 		/// Checks if the two rectangles share any overlap in their area.
@@ -62,14 +62,14 @@ namespace Spectrum
 		/// <param name="r1">The first rectangle.</param>
 		/// <param name="r2">The second rectangle.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Intersects(in Rect r1, in Rect r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
+		public static bool Intersects(this in Rect r1, in Rect r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
 		/// <summary>
 		/// Checks if the two rectangles share any overlap in their area.
 		/// </summary>
 		/// <param name="r1">The first rectangle.</param>
 		/// <param name="r2">The second rectangle.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Intersects(in Rect r1, in Rectf r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
+		public static bool Intersects(this in Rect r1, in Rectf r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
 		#endregion // Rect
 
 		#region Rectf
@@ -80,7 +80,7 @@ namespace Spectrum
 		/// <param name="x">The x-coordinate to check.</param>
 		/// <param name="y">The y-coordinate to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rectf r, int x, int y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
+		public static bool Contains(this in Rectf r, int x, int y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
 		/// <summary>
 		/// Checks if the coordinates are inside of the rectangle.
 		/// </summary>
@@ -88,7 +88,7 @@ namespace Spectrum
 		/// <param name="x">The x-coordinate to check.</param>
 		/// <param name="y">The y-coordinate to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rectf r, float x, float y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
+		public static bool Contains(this in Rectf r, float x, float y) => (x >= r.Left) && (x <= r.Right) && (y >= r.Bottom) && (y <= r.Top);
 
 		/// <summary>
 		/// Checks if the point is inside of the rectangle.
@@ -96,14 +96,14 @@ namespace Spectrum
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="p">The point to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rectf r, in Point p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
+		public static bool Contains(this in Rectf r, in Point p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
 		/// <summary>
 		/// Checks if the vector is inside of the rectangle.
 		/// </summary>
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="p">The vector to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rectf r, in Vec2 p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
+		public static bool Contains(this in Rectf r, in Vec2 p) => (p.X >= r.Left) && (p.X <= r.Right) && (p.Y >= r.Bottom) && (p.Y <= r.Top);
 
 		/// <summary>
 		/// Checks if the second rectangle is completely contained by the first.
@@ -111,14 +111,14 @@ namespace Spectrum
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="o">The rectangle to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rectf r, in Rect o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
+		public static bool Contains(this in Rectf r, in Rect o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
 		/// <summary>
 		/// Checks if the second rectangle is completely contained by the first.
 		/// </summary>
 		/// <param name="r">The bounding rectangle.</param>
 		/// <param name="o">The rectangle to check.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Contains(in Rectf r, in Rectf o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
+		public static bool Contains(this in Rectf r, in Rectf o) => (r.Left <= o.Left) && (r.Right >= o.Right) && (r.Bottom <= o.Bottom) && (r.Top >= o.Top);
 
 		/// <summary>
 		/// Checks if the two rectangles share any overlap in their area.
@@ -126,14 +126,14 @@ namespace Spectrum
 		/// <param name="r1">The first rectangle.</param>
 		/// <param name="r2">The second rectangle.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Intersects(in Rectf r1, in Rect r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
+		public static bool Intersects(this in Rectf r1, in Rect r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
 		/// <summary>
 		/// Checks if the two rectangles share any overlap in their area.
 		/// </summary>
 		/// <param name="r1">The first rectangle.</param>
 		/// <param name="r2">The second rectangle.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool Intersects(in Rectf r1, in Rectf r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
+		public static bool Intersects(this in Rectf r1, in Rectf r2) => (r2.Left < r1.Right) && (r1.Left < r2.Right) && (r2.Top > r1.Bottom) && (r1.Top > r2.Bottom);
 		#endregion // Rectf
 	}
 }

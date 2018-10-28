@@ -23,7 +23,7 @@ namespace Spectrum
 		internal IntPtr Monitor => getCurrentMonitor(out Rect bb);
 
 		// Gets if the monitor has been shown yet
-		internal bool IsShown => (Handle == IntPtr.Zero) && (Glfw.GetWindowAttrib(Handle, Glfw.VISIBLE) == Glfw.TRUE);
+		internal bool IsShown => (Handle != IntPtr.Zero) && (Glfw.GetWindowAttrib(Handle, Glfw.VISIBLE) == Glfw.TRUE);
 
 		#region Window Parameters
 		// Window parameters come with cached parameters, which are used to store user changes to the window before the
@@ -51,10 +51,10 @@ namespace Spectrum
 			}
 		}
 
-		private Point _cachedPos = Point.Zero;
+		private Point _cachedPos = new Point(-1, -1);
 		/// <summary>
 		/// Gets or sets the top-left position of the window. If the window has not yet been created, setting this value
-		/// to (0, 0) will center the window on the screen when it is opened (this is default).
+		/// to (-1, -1) will center the window on the screen when it is opened (this is default).
 		/// </summary>
 		public Point Position
 		{
@@ -67,6 +67,21 @@ namespace Spectrum
 			{
 				if (Handle == IntPtr.Zero) _cachedPos = value;
 				else Glfw.SetWindowPos(Handle, value.X, value.Y);
+			}
+		}
+
+		private string _title = "Spectrum";
+		/// <summary>
+		/// Get or sets the title of the window, and supports UTF-8 characters. Note the title will not update until
+		/// the next frame.
+		/// </summary>
+		public string Title
+		{
+			get => _title;
+			set
+			{
+				_title = value;
+				if (Handle != IntPtr.Zero) Glfw.SetWindowTitle(Handle, value);
 			}
 		}
 		#endregion // Window Parameters
@@ -93,15 +108,32 @@ namespace Spectrum
 			Glfw.WindowHint(Glfw.CLIENT_API, Glfw.NO_API);
 
 			// Open the hidden window
-			Handle = Glfw.CreateWindow(_cachedSize.X, _cachedSize.Y, "Spectrum");
+			Handle = Glfw.CreateWindow(_cachedSize.X, _cachedSize.Y, _title);
 		}
 
 		internal void ShowWindow()
 		{
+			if (_cachedPos.X == -1 && _cachedPos.Y == -1)
+				centerWindow(PrimaryMonitor);
+			else
+				Glfw.SetWindowPos(Handle, _cachedPos.X, _cachedPos.Y);
+
 			Glfw.ShowWindow(Handle);
 		}
 
 		#region Window Control
+		private void centerWindow(IntPtr monitor)
+		{
+			getMonitorRect(monitor, out Rect mbb);
+			Point hsize = Size / 2;
+			Glfw.SetWindowPos(Handle, mbb.X + (mbb.Width / 2) - hsize.X, mbb.Y + (mbb.Height / 2) - hsize.Y);
+		}
+
+		/// <summary>
+		/// Centers the window on the current monitor. Note that the window will not change it's own size if it is
+		/// too big to fit in the monitor.
+		/// </summary>
+		public void CenterWindow() => centerWindow(Monitor);
 		#endregion // Window Control
 
 		// This calcates the window's current monitor using the center-point of the window. This is needed because
@@ -120,11 +152,11 @@ namespace Spectrum
 			for (int i = 0; i < monitors.Length; ++i)
 			{
 				getMonitorRect(monitors[i], out bb);
-				if (Space2D.Contains(bb, center))
+				if (bb.Contains(center))
 					return monitors[i];
 			}
 
-			// Should never get here
+			// Should never get here unless the window has somehow ended up far away in screen-space
 			bb = Rect.Empty;
 			return IntPtr.Zero;
 		}

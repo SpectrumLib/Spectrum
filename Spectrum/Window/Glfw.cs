@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Text;
 using static Spectrum.InternalLog;
 
 namespace Spectrum
@@ -254,7 +255,7 @@ namespace Spectrum
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwWindowHint(int hint, int value);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
-			public delegate IntPtr glfwCreateWindow(int width, int height, string title, IntPtr monitor, IntPtr share);
+			public delegate IntPtr glfwCreateWindow(int width, int height, IntPtr title, IntPtr monitor, IntPtr share);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwDestroyWindow(IntPtr window);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
@@ -287,6 +288,8 @@ namespace Spectrum
 			public delegate IntPtr glfwGetVideoModes(IntPtr monitor, out int count);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate IntPtr glfwGetVideoMode(IntPtr monitor);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetWindowTitle(IntPtr window, IntPtr title);
 		}
 
 		#region Umanaged Delegates
@@ -311,6 +314,7 @@ namespace Spectrum
 		private static Delegates.glfwGetMonitorPos _glfwGetMonitorPos;
 		private static Delegates.glfwGetVideoModes _glfwGetVideoModes;
 		private static Delegates.glfwGetVideoMode _glfwGetVideoMode;
+		private static Delegates.glfwSetWindowTitle _glfwSetWindowTitle;
 		#endregion // Unmanaged Delegates
 
 		#region Structs
@@ -344,7 +348,18 @@ namespace Spectrum
 
 		public static void WindowHint(int hint, int value) => _glfwWindowHint(hint, value);
 
-		public static IntPtr CreateWindow(int width, int height, string title) => _glfwCreateWindow(width, height, title, IntPtr.Zero, IntPtr.Zero);
+		public static IntPtr CreateWindow(int width, int height, string title)
+		{
+			byte[] tstr = Encoding.UTF8.GetBytes(title + '\0');
+
+			unsafe
+			{
+				fixed (byte* tptr = tstr)
+				{
+					return _glfwCreateWindow(width, height, (IntPtr)tptr, IntPtr.Zero, IntPtr.Zero);
+				}
+			}
+		}
 
 		public static void DestroyWindow(IntPtr window) => _glfwDestroyWindow(window);
 
@@ -397,6 +412,18 @@ namespace Spectrum
 			IntPtr mptr = _glfwGetVideoMode(monitor);
 			return Marshal.PtrToStructure<VidMode>(mptr);
 		}
+
+		public static void SetWindowTitle(IntPtr window, string title)
+		{
+			byte[] tstr = Encoding.UTF8.GetBytes(title + '\0');
+			unsafe
+			{
+				fixed (byte* tptr = tstr)
+				{
+					_glfwSetWindowTitle(window, (IntPtr)tptr);
+				}
+			}
+		}
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -429,6 +456,7 @@ namespace Spectrum
 			_glfwGetMonitorPos = NativeLoader.LoadFunction<Delegates.glfwGetMonitorPos>(module, "glfwGetMonitorPos");
 			_glfwGetVideoModes = NativeLoader.LoadFunction<Delegates.glfwGetVideoModes>(module, "glfwGetVideoModes");
 			_glfwGetVideoMode = NativeLoader.LoadFunction<Delegates.glfwGetVideoMode>(module, "glfwGetVideoMode");
+			_glfwSetWindowTitle = NativeLoader.LoadFunction<Delegates.glfwSetWindowTitle>(module, "glfwSetWindowTitle");
 
 			LoadTime = timer.Elapsed;
 		}
