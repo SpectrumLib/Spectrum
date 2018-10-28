@@ -84,6 +84,43 @@ namespace Spectrum
 				if (Handle != IntPtr.Zero) Glfw.SetWindowTitle(Handle, value);
 			}
 		}
+
+		private bool _decorated = true;
+		/// <summary>
+		/// Controls if the window has decorations, like the title bar and frame.
+		/// </summary>
+		public bool Decorated
+		{
+			get
+			{
+				if (Handle == IntPtr.Zero) return _decorated;
+				else return (Glfw.GetWindowAttrib(Handle, Glfw.DECORATED) == Glfw.TRUE);
+			}
+			set
+			{
+				if (Handle == IntPtr.Zero) _decorated = value;
+				else Glfw.SetWindowAttrib(Handle, Glfw.DECORATED, value ? Glfw.TRUE : Glfw.FALSE);
+			}
+		}
+
+		private bool _resizeable = true;
+		/// <summary>
+		/// Controls if the window is resizeable through the native windowing system. Note that even if this is false,
+		/// the window size can still be controlled through <see cref="Size"/>.
+		/// </summary>
+		public bool Resizeable
+		{
+			get
+			{
+				if (Handle == IntPtr.Zero) return _resizeable;
+				else return (Glfw.GetWindowAttrib(Handle, Glfw.RESIZABLE) == Glfw.TRUE);
+			}
+			set
+			{
+				if (Handle == IntPtr.Zero) _resizeable = value;
+				else Glfw.SetWindowAttrib(Handle, Glfw.RESIZABLE, value ? Glfw.TRUE : Glfw.FALSE);
+			}
+		}
 		#endregion // Window Parameters
 
 		private bool _isDisposed = false;
@@ -102,15 +139,16 @@ namespace Spectrum
 		internal void CreateWindow()
 		{
 			// Prepare the window hints
-			Glfw.WindowHint(Glfw.RESIZABLE, Glfw.FALSE);
-			Glfw.WindowHint(Glfw.VISIBLE, Glfw.FALSE);
-			Glfw.WindowHint(Glfw.DECORATED, Glfw.TRUE);
+			Glfw.WindowHint(Glfw.RESIZABLE, _resizeable ? Glfw.TRUE : Glfw.FALSE);
+			Glfw.WindowHint(Glfw.DECORATED, _decorated ? Glfw.TRUE : Glfw.FALSE);
 			Glfw.WindowHint(Glfw.CLIENT_API, Glfw.NO_API);
+			Glfw.WindowHint(Glfw.VISIBLE, Glfw.FALSE);
 
 			// Open the hidden window
 			Handle = Glfw.CreateWindow(_cachedSize.X, _cachedSize.Y, _title);
 		}
 
+		// Occurs right before the main loop starts
 		internal void ShowWindow()
 		{
 			if (_cachedPos.X == -1 && _cachedPos.Y == -1)
