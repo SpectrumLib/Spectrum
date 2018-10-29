@@ -28,6 +28,9 @@ namespace Spectrum
 
 		// The last load time
 		public static TimeSpan LastLoadTime { get; private set; } = TimeSpan.Zero;
+
+		// The logging callback to use for messages when unloading libraries
+		public static Action<string> Logger = null;
 		#endregion // Fields
 
 		static NativeLoader()
@@ -95,7 +98,7 @@ namespace Spectrum
 		}
 
 		// Unloads all of the loaded libraries
-		// Note that each library needs to be freed twice, since their use counter is increased by 2 byt the use of
+		// Note that each library needs to be freed twice, since their use counter is increased by 2 by the use of
 		//   both the manual loader, as well as DllImport
 		public static void UnloadLibraries()
 		{
@@ -121,7 +124,15 @@ namespace Spectrum
 
 			foreach (var pair in s_libPaths)
 			{
-				File.Delete(pair.Value);
+				try
+				{
+					// This will sometimes throw an exception for reasons unknown, take a look at this later
+					File.Delete(pair.Value);
+				}
+				catch (Exception)
+				{
+					Logger?.Invoke($"Unable to clean native library '{pair.Key}' at '{pair.Value}'.");
+				}
 			}
 
 			s_loadedLibs.Clear();

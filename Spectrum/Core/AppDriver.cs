@@ -75,6 +75,8 @@ namespace Spectrum
 			foreach (var lib in NativeLoader.AvailableResources)
 				LDEBUG($"Available native library: {lib}.");
 
+			NativeLoader.Logger = LWARN;
+
 			try
 			{
 				NativeLoader.LoadUnmanagedLibrary("glfw3", "glfw3.dll");
