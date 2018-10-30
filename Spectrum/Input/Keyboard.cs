@@ -3,7 +3,7 @@
 namespace Spectrum.Input
 {
 	/// <summary>
-	/// Represents and manages user input from the keyboard.
+	/// Represents and manages user input from the keyboard. Keyboard input can be both event and polling based.
 	/// </summary>
 	public static class Keyboard
 	{
