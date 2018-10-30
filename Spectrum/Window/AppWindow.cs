@@ -161,6 +161,11 @@ namespace Spectrum
 
 			// Open the hidden window
 			Handle = Glfw.CreateWindow(_cachedSize.X, _cachedSize.Y, _title);
+
+			// Set the input callbacks
+			Glfw.SetMouseButtonCallback(Handle, (window, button, action, mods) => Input.Mouse.ButtonCallback(window, button, action, mods));
+			Glfw.SetScrollCallback(Handle, (window, xoffset, yoffset) => Input.Mouse.ScrollCallback(window, xoffset, yoffset));
+			Glfw.SetKeyCallback(Handle, (window, key, scancode, action, mods) => Input.Keyboard.KeyCallback(window, key, scancode, action, mods));
 		}
 
 		// Occurs right before the main loop starts
@@ -191,9 +196,6 @@ namespace Spectrum
 				else
 					Glfw.SetWindowPos(Handle, _cachedPos.X, _cachedPos.Y);
 			}
-
-			Glfw.PollEvents();
-			Glfw.PollEvents();
 		}
 
 		#region Window Control
@@ -217,8 +219,12 @@ namespace Spectrum
 		/// Sets the window to either be fullscreen or windowed mode. 
 		/// </summary>
 		/// <param name="fullscreen">`true` to set the window to fullscreen, `false` to set to windowed mode.</param>
+		/// <param name="keepRes">
+		/// `true` if the current window size should be the new fullscreen resolution, `false` to set the resolution
+		/// to the native monitor resolution, defaults to true.
+		/// </param>
 		/// <returns>If the window style was changed, false means the requested style was already active.</returns>
-		public bool SetFullscreen(bool fullscreen)
+		public bool SetFullscreen(bool fullscreen, bool keepRes = true)
 		{
 			if (fullscreen == IsFullscreen)
 				return false;
@@ -241,6 +247,7 @@ namespace Spectrum
 					getMonitorRect(monitor, out Rect mbb);
 					Glfw.SetWindowPos(Handle, mbb.X, mbb.Y);
 					Glfw.SetWindowSize(Handle, mbb.Width, mbb.Height);
+					// TODO: Update the backbuffer size using the keepRes argument
 				}
 				else
 				{

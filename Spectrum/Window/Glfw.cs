@@ -242,6 +242,12 @@ namespace Spectrum
 		#region Public Delegates
 		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 		public delegate void GLFWerrorfun(int error, string desc);
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+		public delegate void GLFWmousebuttonfun(IntPtr window, int button, int action, int mods);
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+		public delegate void GLFWscrollfun(IntPtr window, double xoffset, double yoffset);
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+		public delegate void GLFWkeyfun(IntPtr window, int key, int scancode, int action, int mods);
 		#endregion // Public Delegates
 
 		private static class Delegates
@@ -290,6 +296,12 @@ namespace Spectrum
 			public delegate IntPtr glfwGetVideoMode(IntPtr monitor);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwSetWindowTitle(IntPtr window, IntPtr title);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate GLFWmousebuttonfun glfwSetMouseButtonCallback(IntPtr window, GLFWmousebuttonfun mouse_button_callback);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate GLFWscrollfun glfwSetScrollCallback(IntPtr window, GLFWscrollfun scroll_callback);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate GLFWkeyfun glfwSetKeyCallback(IntPtr window, GLFWkeyfun key_callback);
 		}
 
 		#region Umanaged Delegates
@@ -315,6 +327,9 @@ namespace Spectrum
 		private static Delegates.glfwGetVideoModes _glfwGetVideoModes;
 		private static Delegates.glfwGetVideoMode _glfwGetVideoMode;
 		private static Delegates.glfwSetWindowTitle _glfwSetWindowTitle;
+		private static Delegates.glfwSetMouseButtonCallback _glfwSetMouseButtonCallback;
+		private static Delegates.glfwSetScrollCallback _glfwSetScrollCallback;
+		private static Delegates.glfwSetKeyCallback _glfwSetKeyCallback;
 		#endregion // Unmanaged Delegates
 
 		#region Structs
@@ -424,6 +439,14 @@ namespace Spectrum
 				}
 			}
 		}
+
+		public static void SetMouseButtonCallback(IntPtr window, GLFWmousebuttonfun mouse_button_callback)
+			=> _glfwSetMouseButtonCallback(window, mouse_button_callback);
+
+		public static void SetScrollCallback(IntPtr window, GLFWscrollfun scroll_callback) 
+			=> _glfwSetScrollCallback(window, scroll_callback);
+
+		public static void SetKeyCallback(IntPtr window, GLFWkeyfun key_callback) => _glfwSetKeyCallback(window, key_callback);
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -457,6 +480,9 @@ namespace Spectrum
 			_glfwGetVideoModes = NativeLoader.LoadFunction<Delegates.glfwGetVideoModes>(module, "glfwGetVideoModes");
 			_glfwGetVideoMode = NativeLoader.LoadFunction<Delegates.glfwGetVideoMode>(module, "glfwGetVideoMode");
 			_glfwSetWindowTitle = NativeLoader.LoadFunction<Delegates.glfwSetWindowTitle>(module, "glfwSetWindowTitle");
+			_glfwSetMouseButtonCallback = NativeLoader.LoadFunction<Delegates.glfwSetMouseButtonCallback>(module, "glfwSetMouseButtonCallback");
+			_glfwSetScrollCallback = NativeLoader.LoadFunction<Delegates.glfwSetScrollCallback>(module, "glfwSetScrollCallback");
+			_glfwSetKeyCallback = NativeLoader.LoadFunction<Delegates.glfwSetKeyCallback>(module, "glfwSetKeyCallback");
 
 			LoadTime = timer.Elapsed;
 		}

@@ -99,7 +99,8 @@ namespace Spectrum
 
 		// Unloads all of the loaded libraries
 		// Note that each library needs to be freed twice, since their use counter is increased by 2 by the use of
-		//   both the manual loader, as well as DllImport
+		//   both the manual loader, as well as DllImport. If the count was not increased by 2, then the second call
+		//   is not dangerous.
 		public static void UnloadLibraries()
 		{
 			if (s_loadedLibs.Count == 0)
@@ -129,9 +130,10 @@ namespace Spectrum
 					// This will sometimes throw an exception for reasons unknown, take a look at this later
 					File.Delete(pair.Value);
 				}
-				catch (Exception)
+				catch (Exception e)
 				{
 					Logger?.Invoke($"Unable to clean native library '{pair.Key}' at '{pair.Value}'.");
+					Logger?.Invoke($"    Reason: {e.Message}.");
 				}
 			}
 
