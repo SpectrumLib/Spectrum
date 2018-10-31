@@ -239,4 +239,95 @@ namespace Spectrum.Input
 		/// <summary>The right-hand alt key.</summary>
 		RightAlt = 103
 	}
+
+	/// <summary>
+	/// Represents a mask of modifier keys (shift, control, and alt).
+	/// </summary>
+	public struct ModKeyMask
+	{
+		#region Fields
+		/// <summary>
+		/// The backing field that holds the bitmask.
+		/// </summary>
+		public readonly byte Mask;
+
+		/// <summary>
+		/// Gets if the bit for the left-hand shift key is set.
+		/// </summary>
+		public bool LeftShift => (Mask & 0x01) > 0;
+		/// <summary>
+		/// Gets if the bit for the left-hand control key is set.
+		/// </summary>
+		public bool LeftControl => (Mask & 0x02) > 0;
+		/// <summary>
+		/// Gets if the bit for the left-hand alt key is set.
+		/// </summary>
+		public bool LeftAlt => (Mask & 0x04) > 0;
+		/// <summary>
+		/// Gets if the bit for the right-hand shift key is set.
+		/// </summary>
+		public bool RightShift => (Mask & 0x08) > 0;
+		/// <summary>
+		/// Gets if the bit for the right-hand control key is set.
+		/// </summary>
+		public bool RightControl => (Mask & 0x10) > 0;
+		/// <summary>
+		/// Gets if the bit for the right-hand alt key is set.
+		/// </summary>
+		public bool RightAlt => (Mask & 0x20) > 0;
+
+		/// <summary>
+		/// Gets if either shift key is set in the mask.
+		/// </summary>
+		public bool Shift => (Mask & 0x09) > 0;
+		/// <summary>
+		/// Gets if either control key is set in the mask.
+		/// </summary>
+		public bool Control => (Mask & 0x12) > 0;
+		/// <summary>
+		/// Gets if either alt key is set in the mask.
+		/// </summary>
+		public bool Alt => (Mask & 0x24) > 0;
+		#endregion // Fields
+
+		/// <summary>
+		/// Creates a new mask from an explicit mask.
+		/// </summary>
+		/// <param name="mask">The value to use the 8 least-significant bits for as the mask.</param>
+		public ModKeyMask(int mask)
+		{
+			Mask = (byte)(mask & 0xFF);
+		}
+
+		/// <summary>
+		/// Creates a mask with booleans representing the status of the bit for each modifier key.
+		/// </summary>
+		/// <param name="ls">Left-hand shift bit.</param>
+		/// <param name="lc">Left-hand control bit.</param>
+		/// <param name="la">Left-hand alt bit.</param>
+		/// <param name="rs">Right-hand shift bit.</param>
+		/// <param name="rc">Right-hand control bit.</param>
+		/// <param name="ra">Right-hand alt bit.</param>
+		public ModKeyMask(bool ls, bool lc, bool la, bool rs, bool rc, bool ra)
+		{
+			Mask = (byte)((ls ? 0x01 : 0x00) | (lc ? 0x02 : 0x00) | (la ? 0x04 : 0x00) | 
+						  (rs ? 0x08 : 0x00) | (rc ? 0x10 : 0x00) | (ra ? 0x20 : 0x00));
+		}
+
+		public override bool Equals(object obj) => (obj is ModKeyMask) && ((ModKeyMask)obj).Mask == Mask;
+
+		public override int GetHashCode() => Mask;
+
+		public override string ToString() => $"0x{Mask:X2}";
+
+		public static bool operator == (in ModKeyMask l, in ModKeyMask r)
+		{
+			return l.Mask == r.Mask;
+		}
+
+		public static bool operator != (in ModKeyMask l, in ModKeyMask r)
+		{
+			return l.Mask != r.Mask;
+		}
+	}
 }

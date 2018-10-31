@@ -51,7 +51,7 @@ namespace Spectrum.Input
 		///			<see cref="ButtonEventType.Released"/> - The time since the button was last pressed.
 		///		</item>
 		///		<item>
-		///			<see cref="ButtonEventType.Clicked"/> - The time between the press and release of the events.
+		///			<see cref="ButtonEventType.Clicked"/> - The time between the press and release of the event.
 		///		</item>
 		///		<item>
 		///			<see cref="ButtonEventType.DoubleClicked"/> - The time between the component click events.

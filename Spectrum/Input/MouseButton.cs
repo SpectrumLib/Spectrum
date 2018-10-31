@@ -57,7 +57,7 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The backing field of bits that represent the mask.
 		/// </summary>
-		public byte Mask { get; private set; }
+		public readonly byte Mask;
 
 		/// <summary>
 		/// Gets if the bit for <see cref="MouseButton.Left"/> is set.
@@ -102,22 +102,22 @@ namespace Spectrum.Input
 		}
 
 		/// <summary>
-		/// Sets the mask bit representing the passed button.
+		/// Returns a new mask like this mask with the passed mouse button bit set.
 		/// </summary>
 		/// <param name="mb">The mouse button bit to set.</param>
-		public void SetButton(MouseButton mb) => Mask |= (byte)(0x01 << (byte)mb);
+		public MouseButtonMask SetButton(MouseButton mb) => new MouseButtonMask(Mask | (byte)(0x01 << (byte)mb));
 
 		/// <summary>
-		/// Clears the mask bit representing the passed button.
+		/// Returns a new mask like this mask with the passed mouse button bit cleared.
 		/// </summary>
 		/// <param name="mb">The mouse button bit to clear.</param>
-		public void ClearButton(MouseButton mb) => Mask &= (byte)(~(0x01 << (byte)mb));
+		public MouseButtonMask ClearButton(MouseButton mb) => new MouseButtonMask(Mask & (byte)(~(0x01 << (byte)mb)));
 
-		/// <summary>
-		/// Checks if the mask bit representing the passed button is set.
-		/// </summary>
-		/// <param name="mb">The mouse button bit to check.</param>
-		public bool GetButton(MouseButton mb) => (Mask & (0x01 << (byte)mb)) > 0;
+		public override bool Equals(object obj) => (obj is MouseButtonMask) && ((MouseButtonMask)obj).Mask == Mask;
+
+		public override int GetHashCode() => Mask;
+
+		public override string ToString() => $"0x{Mask:X2}";
 
 		/// <summary>
 		/// Creates the bit-wise AND of the two masks.
@@ -133,6 +133,16 @@ namespace Spectrum.Input
 		public static MouseButtonMask operator | (in MouseButtonMask l, in MouseButtonMask r)
 		{
 			return new MouseButtonMask(l.Mask | r.Mask);
+		}
+
+		public static bool operator == (in MouseButtonMask l, in MouseButtonMask r)
+		{
+			return l.Mask == r.Mask;
+		}
+
+		public static bool operator != (in MouseButtonMask l, in MouseButtonMask r)
+		{
+			return l.Mask != r.Mask;
 		}
 	}
 
