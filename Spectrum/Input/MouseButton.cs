@@ -14,13 +14,13 @@ namespace Spectrum.Input
 		/// </summary>
 		Left = 0,
 		/// <summary>
-		/// The middle mouse button (scroll wheel).
-		/// </summary>
-		Middle = 1,
-		/// <summary>
 		/// The right mouse button.
 		/// </summary>
-		Right = 2,
+		Right = 1,
+		/// <summary>
+		/// The middle mouse button (scroll wheel).
+		/// </summary>
+		Middle = 2,
 		/// <summary>
 		/// First extra mouse button.
 		/// </summary>
@@ -151,12 +151,15 @@ namespace Spectrum.Input
 	/// </summary>
 	public static class MouseButtonUtils
 	{
-		private static readonly string[] mbNames = { "Left", "Middle", "Right", "X1", "X2" };
+		private static readonly string[] s_mbNames = { "Left", "Middle", "Right", "X1", "X2" };
 
 		/// <summary>
 		/// Returns a standard name for the button, in English.
 		/// </summary>
 		/// <param name="mb">The mouse button to get the name for.</param>
-		public static string Name(this MouseButton mb) => mbNames[(int)mb];
+		public static string Name(this MouseButton mb) => s_mbNames[(int)mb];
+
+		// Translate a glfw mouse button to the enum
+		internal static MouseButton Translate(int button) => (MouseButton)(byte)(button & 0xFF);
 	}
 }

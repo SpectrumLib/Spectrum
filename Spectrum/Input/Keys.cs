@@ -206,38 +206,40 @@ namespace Spectrum.Input
 		PageDown = 88,
 		/// <summary>The numpad enter key.</summary>
 		KPEnter = 89,
+		/// <summary>The space key.</summary>
+		Space = 90,
 
 		// === System Keys ===
 		/// <summary>The escape key.</summary>
-		Escape = 90,
+		Escape = 91,
 		/// <summary>The left super (OS) key. This is the Windows key (or keyboard specific version).</summary>
-		LeftSuper = 91,
+		LeftSuper = 92,
 		/// <summary>The right super (OS) key. This is the Windows key (or keyboard specific version).</summary>
-		RightSuper = 92,
+		RightSuper = 93,
 		/// <summary>The menu key (appears on some keyboards near the space bar, looks like a drop down menu.</summary>
-		Menu = 93,
+		Menu = 94,
 		/// <summary>The print screen key.</summary>
-		PrintScreen = 94,
+		PrintScreen = 95,
 		/// <summary>The scroll lock key.</summary>
-		ScrollLock = 95,
+		ScrollLock = 96,
 		/// <summary>The pause key.</summary>
-		Pause = 96,
+		Pause = 97,
 		/// <summary>The numlock key.</summary>
-		NumLock = 97,
+		NumLock = 98,
 
 		// === Modifier Keys ===
 		/// <summary>The left-hand shift key.</summary>
-		LeftShift = 98,
+		LeftShift = 99,
 		/// <summary>The left-hand ctrl key.</summary>
-		LeftControl = 99,
+		LeftControl = 100,
 		/// <summary>The left-hand alt key.</summary>
-		LeftAlt = 100,
+		LeftAlt = 101,
 		/// <summary>The right-hand shift key.</summary>
-		RightShift = 101,
+		RightShift = 102,
 		/// <summary>The right-hand ctrl key.</summary>
-		RightControl = 102,
+		RightControl = 103,
 		/// <summary>The right-hand alt key.</summary>
-		RightAlt = 103
+		RightAlt = 104
 	}
 
 	/// <summary>
@@ -328,6 +330,51 @@ namespace Spectrum.Input
 		public static bool operator != (in ModKeyMask l, in ModKeyMask r)
 		{
 			return l.Mask != r.Mask;
+		}
+	}
+
+	// Utility functionality for Keys
+	internal static class KeyUtils
+	{
+		// Maximum index that a key array can take on
+		public const int MAX_KEY_INDEX = (int)Keys.RightAlt;
+
+		// Might be a better way to do this, look later
+		private static readonly Keys[][] s_keys = {
+			// Keys 32 - 96
+			new Keys[] { Keys.Space, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown,
+				Keys.Apostrophe, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Comma, Keys.Minus,
+				Keys.Period, Keys.Slash, Keys.D0, Keys.D1, Keys.D2, Keys.D3, Keys.D4, Keys.D5, Keys.D6, Keys.D7, Keys.D8,
+				Keys.D9, Keys.Unknown, Keys.Semicolon, Keys.Unknown, Keys.Equals, Keys.Unknown, Keys.Unknown,
+				Keys.Unknown, Keys.A, Keys.B, Keys.C, Keys.D, Keys.E, Keys.F, Keys.G, Keys.H, Keys.I, Keys.J, Keys.K,
+				Keys.L, Keys.M, Keys.N, Keys.O, Keys.P, Keys.Q, Keys.R, Keys.S, Keys.T, Keys.U, Keys.V, Keys.W, Keys.X,
+				Keys.Y, Keys.Z, Keys.LeftBracket, Keys.Backslash, Keys.RightBracket, Keys.Unknown, Keys.Unknown,
+				Keys.Grave },
+			// Keys 161 - 162 (NOT USED)
+			new Keys[] { Keys.Unknown, Keys.Unknown },
+			// Keys 256 - 269
+			new Keys[] { Keys.Escape, Keys.Enter, Keys.Tab, Keys.Backspace, Keys.Insert, Keys.Delete, Keys.Right,
+				Keys.Left, Keys.Down, Keys.Up, Keys.PageUp, Keys.PageDown, Keys.Home, Keys.End },
+			// Keys 280 - 348
+			new Keys[] { Keys.CapsLock, Keys.ScrollLock, Keys.NumLock, Keys.PrintScreen, Keys.Pause, Keys.Unknown,
+				Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.F1, Keys.F2, Keys.F3, Keys.F4, Keys.F5,
+				Keys.F6, Keys.F7, Keys.F8, Keys.F9, Keys.F10, Keys.F11, Keys.F12, Keys.Unknown, Keys.Unknown, Keys.Unknown,
+				Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown,
+				Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown,
+				Keys.Unknown, Keys.KP0, Keys.KP1, Keys.KP2, Keys.KP3, Keys.KP4, Keys.KP5, Keys.KP6, Keys.KP7, Keys.KP8,
+				Keys.KP9, Keys.KPDecimal, Keys.KPDivide, Keys.KPMultiply, Keys.KPSubtract, Keys.KPAdd, Keys.KPEnter,
+				Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.Unknown, Keys.LeftShift, Keys.LeftControl, Keys.LeftAlt,
+				Keys.LeftSuper, Keys.RightShift, Keys.RightControl, Keys.RightAlt, Keys.RightSuper, Keys.Menu }
+		};
+
+		// Translates glfw keycodes to Keys values
+		public static Keys Translate(int glfwKey)
+		{
+			return (glfwKey == -1) ? Keys.Unknown :
+				   (glfwKey <= Glfw.KEY_GRAVE_ACCENT) ? s_keys[0][glfwKey - Glfw.KEY_SPACE] :
+				   (glfwKey <= Glfw.KEY_WORLD_2) ? Keys.Unknown :
+				   (glfwKey <= Glfw.KEY_END) ? s_keys[2][glfwKey - Glfw.KEY_ESCAPE] :
+				   (glfwKey <= Glfw.KEY_MENU) ? s_keys[3][glfwKey - Glfw.KEY_CAPS_LOCK] : Keys.Unknown;
 		}
 	}
 }

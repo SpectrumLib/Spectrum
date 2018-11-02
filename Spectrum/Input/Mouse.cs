@@ -17,7 +17,11 @@ namespace Spectrum.Input
 		#region GLFW Interop
 		internal static void ButtonCallback(IntPtr window, int button, int action, int mods)
 		{
-			Log.LDEBUG($"Mouse Button: {button}");
+			if (button > Glfw.MOUSE_BUTTON_5) return; // Do not yet support more than 2 extra buttons
+
+			MouseButton mb = MouseButtonUtils.Translate(button);
+			Console.WriteLine($"Button: {mb}");
+			Log.LDEBUG($"Mouse Button: {mb}");
 		}
 
 		internal static void ScrollCallback(IntPtr window, double xoffset, double yoffset)
