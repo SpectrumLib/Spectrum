@@ -14,6 +14,16 @@ namespace Spectrum.Input
 		public static MouseButtonMask DragMask = MouseButtonMask.Primary;
 		#endregion // Fields
 
+		internal static void NewFrame()
+		{
+
+		}
+
+		internal static void FireEvents()
+		{
+
+		}
+
 		#region GLFW Interop
 		internal static void ButtonCallback(IntPtr window, int button, int action, int mods)
 		{

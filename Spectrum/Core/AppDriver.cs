@@ -1,5 +1,6 @@
 ﻿using System;
 using static Spectrum.InternalLog;
+using Spectrum.Input;
 
 namespace Spectrum
 {
@@ -60,7 +61,14 @@ namespace Spectrum
 			while (true)
 			{
 				Time.Frame();
+
+				// Input events
+				Keyboard.NewFrame();
+				Mouse.NewFrame();
 				Glfw.PollEvents(); // Raises input and window events
+				Keyboard.FireEvents();
+				Mouse.FireEvents();
+
 				Application.DoFrame();
 
 				if (Glfw.WindowShouldClose(Window.Handle))

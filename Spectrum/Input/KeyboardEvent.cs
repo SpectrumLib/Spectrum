@@ -18,7 +18,11 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The key has been held down long enough to start generating hold events.
 		/// </summary>
-		Held
+		Held,
+		/// <summary>
+		/// The key has been pressed and released quickly enough to register as a tap.
+		/// </summary>
+		Tapped
 	}
 
 	/// <summary>
@@ -27,6 +31,10 @@ namespace Spectrum.Input
 	public struct KeyEventData
 	{
 		#region Fields
+		/// <summary>
+		/// The event type.
+		/// </summary>
+		public readonly KeyEventType Type;
 		/// <summary>
 		/// The key that generated the event.
 		/// </summary>
@@ -45,7 +53,10 @@ namespace Spectrum.Input
 		///			<see cref="KeyEventType.Released"/> - The time since the key was last pressed.
 		///		</item>
 		///		<item>
-		///			<see cref="KeyEventType.Held"/> - The time between the press and release of the event.
+		///			<see cref="KeyEventType.Held"/> - The amount of time the key has been held for.
+		///		</item>
+		///		<item>
+		///			<see cref="KeyEventType.Tapped"/> - The time since the last tap event.
 		///		</item>
 		/// </list>
 		/// </summary>
@@ -55,6 +66,15 @@ namespace Spectrum.Input
 		/// </summary>
 		public readonly float Timestamp;
 		#endregion Fields
+
+		internal KeyEventData(KeyEventType type, Keys key, ModKeyMask mods, float et)
+		{
+			Type = type;
+			Key = key;
+			Mods = mods;
+			EventTime = et;
+			Timestamp = Time.Elapsed;
+		}
 	}
 
 	/// <summary>
