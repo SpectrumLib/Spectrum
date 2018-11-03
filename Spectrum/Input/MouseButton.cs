@@ -151,6 +151,7 @@ namespace Spectrum.Input
 	/// </summary>
 	public static class MouseButtonUtils
 	{
+		internal const int MAX_BUTTON_INDEX = (int)MouseButton.X2;
 		private static readonly string[] s_mbNames = { "Left", "Middle", "Right", "X1", "X2" };
 
 		/// <summary>

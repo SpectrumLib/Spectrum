@@ -315,6 +315,8 @@ namespace Spectrum
 			public delegate GLFWscrollfun glfwSetScrollCallback(IntPtr window, GLFWscrollfun scroll_callback);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate GLFWkeyfun glfwSetKeyCallback(IntPtr window, GLFWkeyfun key_callback);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwGetCursorPos(IntPtr window, out double xpos, out double ypos);
 		}
 
 		#region Umanaged Delegates
@@ -343,6 +345,7 @@ namespace Spectrum
 		private static Delegates.glfwSetMouseButtonCallback _glfwSetMouseButtonCallback;
 		private static Delegates.glfwSetScrollCallback _glfwSetScrollCallback;
 		private static Delegates.glfwSetKeyCallback _glfwSetKeyCallback;
+		private static Delegates.glfwGetCursorPos _glfwGetCursorPos;
 		#endregion // Unmanaged Delegates
 
 		#region Structs
@@ -460,6 +463,8 @@ namespace Spectrum
 			=> _glfwSetScrollCallback(window, scroll_callback);
 
 		public static void SetKeyCallback(IntPtr window, GLFWkeyfun key_callback) => _glfwSetKeyCallback(window, key_callback);
+
+		public static void GetCursorPos(IntPtr window, out double x, out double y) => _glfwGetCursorPos(window, out x, out y);
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -496,6 +501,7 @@ namespace Spectrum
 			_glfwSetMouseButtonCallback = NativeLoader.LoadFunction<Delegates.glfwSetMouseButtonCallback>(module, "glfwSetMouseButtonCallback");
 			_glfwSetScrollCallback = NativeLoader.LoadFunction<Delegates.glfwSetScrollCallback>(module, "glfwSetScrollCallback");
 			_glfwSetKeyCallback = NativeLoader.LoadFunction<Delegates.glfwSetKeyCallback>(module, "glfwSetKeyCallback");
+			_glfwGetCursorPos = NativeLoader.LoadFunction<Delegates.glfwGetCursorPos>(module, "glfwGetCursorPos");
 
 			LoadTime = timer.Elapsed;
 		}

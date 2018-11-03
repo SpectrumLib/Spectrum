@@ -69,7 +69,7 @@ namespace Spectrum.Input
 		/// </summary>
 		public static event KeyEvent KeyHeld;
 		/// <summary>
-		/// Event used to subscribe or unsubscribe from all input events with a single handler.
+		/// Event used to subscribe or unsubscribe from all input events.
 		/// </summary>
 		public static event KeyEvent AllKeyEvents
 		{
