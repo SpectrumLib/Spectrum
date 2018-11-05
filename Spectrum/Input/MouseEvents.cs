@@ -137,10 +137,6 @@ namespace Spectrum.Input
 		/// </summary>
 		public readonly MouseButtonMask Buttons;
 		/// <summary>
-		/// The mask of buttons that are generating drag events.
-		/// </summary>
-		public readonly MouseButtonMask DragButtons;
-		/// <summary>
 		/// The application time (in seconds) at which this event was generated.
 		/// </summary>
 		public readonly float TimeStamp;
@@ -151,7 +147,6 @@ namespace Spectrum.Input
 			Current = curr;
 			Last = last;
 			Buttons = buttons;
-			DragButtons = buttons & Mouse.DragMask;
 			TimeStamp = Time.Elapsed;
 		}
 	}

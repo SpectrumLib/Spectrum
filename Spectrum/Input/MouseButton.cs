@@ -113,6 +113,12 @@ namespace Spectrum.Input
 		/// <param name="mb">The mouse button bit to clear.</param>
 		public MouseButtonMask ClearButton(MouseButton mb) => new MouseButtonMask(Mask & (byte)(~(0x01 << (byte)mb)));
 
+		/// <summary>
+		/// Gets the bit for the passed button.
+		/// </summary>
+		/// <param name="mb">The button bit to check.</param>
+		public bool GetButton(MouseButton mb) => (Mask & (0x01 << (byte)mb)) > 0;
+
 		public override bool Equals(object obj) => (obj is MouseButtonMask) && ((MouseButtonMask)obj).Mask == Mask;
 
 		public override int GetHashCode() => Mask;

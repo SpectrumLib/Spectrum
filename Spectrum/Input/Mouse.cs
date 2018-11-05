@@ -32,11 +32,6 @@ namespace Spectrum.Input
 
 		#region Input Settings
 		/// <summary>
-		/// A mask of the buttons that can generate drag events. Defaults to the primary buttons (left, middle, right).
-		/// </summary>
-		public static MouseButtonMask DragMask = MouseButtonMask.Primary;
-
-		/// <summary>
 		/// A mask of the buttons that can generate double click events. Defaults to the primary buttons.
 		/// Max amount of time between a press and release event to generate a click event. Defaults to half a second.
 		/// </summary>
@@ -103,12 +98,10 @@ namespace Spectrum.Input
 			if (s_currPos != s_lastPos)
 			{
 				Moved?.Invoke(new MouseMoveEventData(s_currPos, s_lastPos, s_currMouse));
-				Console.WriteLine($"Mouse Move: {s_currPos - s_lastPos}"); // TEMP
 			}
 			if (s_deltaWheel != Point.Zero)
 			{
 				WheelChanged?.Invoke(new MouseWheelEventData(s_deltaWheel));
-				Console.WriteLine($"Wheel Change: {s_deltaWheel}"); // TEMP
 			}
 
 			// Fire all of the button events
@@ -121,13 +114,109 @@ namespace Spectrum.Input
 					case ButtonEventType.Clicked:
 					case ButtonEventType.DoubleClicked: ButtonClicked?.Invoke(in evt); break;
 				}
-
-				// TEMP
-				Console.WriteLine($"Mouse Event: {evt.Type} {evt.Button}");
 			}
 
 			s_events.Clear();
 		}
+
+		#region Polling
+		/// <summary>
+		/// Gets if the mouse button is currently pressed.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonDown(MouseButton mb) => s_currMouse.GetButton(mb);
+		/// <summary>
+		/// Gets if the mouse button is currently released.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonUp(MouseButton mb) => !s_currMouse.GetButton(mb);
+		/// <summary>
+		/// Gets if the mouse button was pressed in the previous frame.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonPreviouslyDown(MouseButton mb) => s_lastMouse.GetButton(mb);
+		/// <summary>
+		/// Gets if the mouse button was released in the previous frame.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonPreviouslyUp(MouseButton mb) => !s_lastMouse.GetButton(mb);
+		/// <summary>
+		/// Gets if the button was just pressed in this frame.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonPressed(MouseButton mb) => s_currMouse.GetButton(mb) && !s_lastMouse.GetButton(mb);
+		/// <summary>
+		/// Gets if the button was just released in this frame.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonReleased(MouseButton mb) => !s_currMouse.GetButton(mb) && s_lastMouse.GetButton(mb);
+		/// <summary>
+		/// Gets if the button was clicked or double clicked in this frame.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonClicked(MouseButton mb) => s_lastClickFrame[(int)mb];
+		/// <summary>
+		/// Gets if the button was double clicked in this frame. Returns false for clicks that are not double.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static bool IsButtonDoubleClicked(MouseButton mb) => s_lastClickFrame[(int)mb] && !s_nextDouble[(int)mb];
+		
+		/// <summary>
+		/// Gets a mask of all of the mouse buttons that are currently pressed down.
+		/// </summary>
+		public static MouseButtonMask GetCurrentButtons() => s_currMouse;
+		/// <summary>
+		/// Enumerator for all of the keys that are currently pressed down.
+		/// </summary>
+		public static IEnumerator<MouseButton> EnumerateCurrentButtons()
+		{
+			if (s_currMouse.Left) yield return MouseButton.Left;
+			if (s_currMouse.Right) yield return MouseButton.Right;
+			if (s_currMouse.Middle) yield return MouseButton.Middle;
+			if (s_currMouse.X1) yield return MouseButton.X1;
+			if (s_currMouse.X2) yield return MouseButton.X2;
+		}
+
+		/// <summary>
+		/// Gets the value of <see cref="Time.Elapsed"/> when the mouse button was last pressed.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static float GetLastPressTime(MouseButton mb) => s_lastPress[(int)mb];
+		/// <summary>
+		/// Gets the value of <see cref="Time.Elapsed"/> when the mouse button was last released.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static float GetLastReleaseTime(MouseButton mb) => s_lastRelease[(int)mb];
+		/// <summary>
+		/// Gets the value of <see cref="Time.Elapsed"/> when the mouse button was last clicked.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static float GetLastClickTime(MouseButton mb) => s_lastClick[(int)mb];
+
+		/// <summary>
+		/// Gets the current position of the mouse, in pixels, relative to the top-left corner of the window client area.
+		/// </summary>
+		public static Point GetPosition() => s_currPos;
+		/// <summary>
+		/// Gets if the position of the mouse in the last frame.
+		/// </summary>
+		public static Point GetLastPosition() => s_lastPos;
+		/// <summary>
+		/// Gets the change in mouse position between this frame and the last.
+		/// </summary>
+		public static Point GetDelta() => s_currPos - s_lastPos;
+		/// <summary>
+		/// Gets if the mouse moved between this frame and the last.
+		/// </summary>
+		public static bool GetMoved() => (s_currPos - s_lastPos) != Point.Zero;
+
+		/// <summary>
+		/// Gets the change in the mouse wheel between this frame and the last. The X-component of the return value is
+		/// the change along the primary wheel axis. The Y-component will only be non-zero on mice that support a
+		/// second wheel axis.
+		/// </summary>
+		public static Point GetWheelDelta() => s_deltaWheel;
+		#endregion // Polling
 
 		#region GLFW Interop
 		internal static void ButtonCallback(IntPtr window, int button, int action, int mods)

@@ -90,7 +90,7 @@ namespace Spectrum.Input
 			foreach (var keys in s_pressed)
 			{
 				float diff = Time.Elapsed - s_lastPress[(int)keys];
-				if (diff > HoldTime)
+				if (diff >= HoldTime)
 					s_events.Add(new KeyEventData(KeyEventType.Held, keys, ModifierMask, diff));
 			}
 
@@ -104,13 +104,77 @@ namespace Spectrum.Input
 					case KeyEventType.Tapped: KeyTapped?.Invoke(in evt); break;
 					case KeyEventType.Held: KeyHeld?.Invoke(in evt); break;
 				}
-
-				// TEMP
-				Console.WriteLine($"Key Event: {evt.Type} {evt.Key}");
 			}
 
 			s_events.Clear();
 		}
+
+		#region Polling
+		/// <summary>
+		/// Gets if the key is currently pressed.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static bool IsKeyDown(Keys key) => s_currKeys[(int)key];
+		/// <summary>
+		/// Gets if the key is currently released.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static bool IsKeyUp(Keys key) => !s_currKeys[(int)key];
+		/// <summary>
+		/// Gets if the key was pressed in the previous frame.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static bool IsKeyPreviouslyDown(Keys key) => s_lastKeys[(int)key];
+		/// <summary>
+		/// Gets if the key was released in the previous frame.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static bool IsKeyPreviouslyUp(Keys key) => !s_lastKeys[(int)key];
+		/// <summary>
+		/// Gets if the key was just pressed in this frame.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static bool IsKeyPressed(Keys key) => s_currKeys[(int)key] && !s_lastKeys[(int)key];
+		/// <summary>
+		/// Gets if the key was just released in this frame.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static bool IsKeyReleased(Keys key) => !s_currKeys[(int)key] && s_lastKeys[(int)key];
+		/// <summary>
+		/// Gets if the key is currently generating hold events.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static bool IsKeyHeld(Keys key) => s_currKeys[(int)key] && ((Time.Elapsed - s_lastPress[(int)key]) >= HoldTime);
+
+		/// <summary>
+		/// Gets an array of the keys that are currently pressed down.
+		/// </summary>
+		public static Keys[] GetCurrentKeys() => s_pressed.ToArray();
+		/// <summary>
+		/// Enumerator for all of the keys that are currently pressed down.
+		/// </summary>
+		public static IEnumerator<Keys> EnumerateCurrentKeys()
+		{
+			foreach (var key in s_pressed)
+				yield return key;
+		}
+
+		/// <summary>
+		/// Gets the value of <see cref="Time.Elapsed"/> when the key was last pressed.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static float GetLastPressTime(Keys key) => s_lastPress[(int)key];
+		/// <summary>
+		/// Gets the value of <see cref="Time.Elapsed"/> when the key was last released.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static float GetLastReleaseTime(Keys key) => s_lastRelease[(int)key];
+		/// <summary>
+		/// Gets the value of <see cref="Time.Elapsed"/> when the key was last tapped.
+		/// </summary>
+		/// <param name="key">The key to check.</param>
+		public static float GetLastTapTime(Keys key) => s_lastTap[(int)key];
+		#endregion // Polling
 
 		#region GLFW Interop
 		internal static void KeyCallback(IntPtr window, int key, int scancode, int action, int mods)
