@@ -39,11 +39,7 @@ namespace Spectrum
 		/// </summary>
 		public Point Size
 		{
-			get
-			{
-				if (Handle == IntPtr.Zero) return _cachedSize;
-				else { Point p; Glfw.GetWindowSize(Handle, out p.X, out p.Y); return p; }
-			}
+			get => _cachedSize;
 			set
 			{
 				if (IsFullscreen) return;
@@ -62,15 +58,11 @@ namespace Spectrum
 		/// </summary>
 		public Point Position
 		{
-			get
-			{
-				if (!IsShown) return _cachedPos;
-				else { Point p; Glfw.GetWindowPos(Handle, out p.X, out p.Y); return p; }
-			}
+			get => _cachedPos;
 			set
 			{
 				if (IsFullscreen) return;
-				if (!IsShown) _cachedPos = value;
+				if (Handle == IntPtr.Zero) _cachedPos = value;
 				else Glfw.SetWindowPos(Handle, value.X, value.Y);
 			}
 		}
@@ -140,6 +132,21 @@ namespace Spectrum
 		public bool IsFullscreen { get; private set; } = false;
 		#endregion // Window Parameters
 
+		#region Events
+		/// <summary>
+		/// Event raised when the window changes position.
+		/// </summary>
+		public event WindowPositionChangedEvent PositionChanged;
+		/// <summary>
+		/// Event raised when the window changes size.
+		/// </summary>
+		public event WindowSizeChangedEvent SizeChanged;
+		/// <summary>
+		/// Event raised when the window enters or leaves fullscreen mode.
+		/// </summary>
+		public event WindowStyleChangeEvent StyleChanged;
+		#endregion // Events
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
@@ -167,6 +174,10 @@ namespace Spectrum
 			Glfw.SetScrollCallback(Handle, (window, xoffset, yoffset) => Input.Mouse.ScrollCallback(window, xoffset, yoffset));
 			Glfw.SetCursorEnterCallback(Handle, (window, entered) => Input.Mouse.CursorEnterCallback(window, entered));
 			Glfw.SetKeyCallback(Handle, (window, key, scancode, action, mods) => Input.Keyboard.KeyCallback(window, key, scancode, action, mods));
+
+			// Set the window callbacks
+			Glfw.SetWindowPosCallback(Handle, (window, x, y) => PositionCallback(x, y));
+			Glfw.SetWindowSizeCallback(Handle, (window, w, h) => SizeCallback(w, h));
 		}
 
 		// Occurs right before the main loop starts
@@ -199,6 +210,26 @@ namespace Spectrum
 			}
 		}
 
+		#region GLFW Interop
+		private static void PositionCallback(int x, int y)
+		{
+			var window = SpectrumApp.Instance.Window;
+			var old = window._cachedPos;
+			window._cachedPos = new Point(x, y);
+			if (old != window._cachedPos)
+				window.PositionChanged?.Invoke(new WindowPositionEventData(old, window._cachedPos));
+		}
+
+		private static void SizeCallback(int w, int h)
+		{
+			var window = SpectrumApp.Instance.Window;
+			var old = window._cachedSize;
+			window._cachedSize = new Point(w, h);
+			if (old != window._cachedSize)
+				window.SizeChanged?.Invoke(new WindowSizeEventData(old, window._cachedSize));
+		}
+		#endregion // GLFW Interop
+
 		#region Window Control
 		private void centerWindow(IntPtr monitor)
 		{
@@ -222,7 +253,7 @@ namespace Spectrum
 		/// <param name="fullscreen">`true` to set the window to fullscreen, `false` to set to windowed mode.</param>
 		/// <param name="keepRes">
 		/// `true` if the current window size should be the new fullscreen resolution, `false` to set the resolution
-		/// to the native monitor resolution, defaults to true.
+		/// to the native monitor resolution, defaults to true. NOT CURRENTLY IMPLEMENTED.
 		/// </param>
 		/// <returns>If the window style was changed, false means the requested style was already active.</returns>
 		public bool SetFullscreen(bool fullscreen, bool keepRes = true)
@@ -259,6 +290,8 @@ namespace Spectrum
 					Glfw.SetWindowAttrib(Handle, Glfw.RESIZABLE, _resizeable ? Glfw.TRUE : Glfw.FALSE);
 					Glfw.SetWindowAttrib(Handle, Glfw.FLOATING, Glfw.FALSE);
 				}
+
+				StyleChanged?.Invoke(new WindowStyleEventData(fullscreen));
 			}
 
 			IsFullscreen = fullscreen;
