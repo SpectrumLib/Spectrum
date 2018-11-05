@@ -261,6 +261,8 @@ namespace Spectrum
 		public delegate void GLFWscrollfun(IntPtr window, double xoffset, double yoffset);
 		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 		public delegate void GLFWkeyfun(IntPtr window, int key, int scancode, int action, int mods);
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+		public delegate void Glfwcursorenterfun(IntPtr window, int entered);
 		#endregion // Public Delegates
 
 		private static class Delegates
@@ -317,6 +319,10 @@ namespace Spectrum
 			public delegate GLFWkeyfun glfwSetKeyCallback(IntPtr window, GLFWkeyfun key_callback);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwGetCursorPos(IntPtr window, out double xpos, out double ypos);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetInputMode(IntPtr window, int mode, int value);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetCursorEnterCallback(IntPtr window, Glfwcursorenterfun cursor_enter_callback);
 		}
 
 		#region Umanaged Delegates
@@ -346,6 +352,8 @@ namespace Spectrum
 		private static Delegates.glfwSetScrollCallback _glfwSetScrollCallback;
 		private static Delegates.glfwSetKeyCallback _glfwSetKeyCallback;
 		private static Delegates.glfwGetCursorPos _glfwGetCursorPos;
+		private static Delegates.glfwSetInputMode _glfwSetInputMode;
+		private static Delegates.glfwSetCursorEnterCallback _glfwSetCursorEnterCallback;
 		#endregion // Unmanaged Delegates
 
 		#region Structs
@@ -465,6 +473,10 @@ namespace Spectrum
 		public static void SetKeyCallback(IntPtr window, GLFWkeyfun key_callback) => _glfwSetKeyCallback(window, key_callback);
 
 		public static void GetCursorPos(IntPtr window, out double x, out double y) => _glfwGetCursorPos(window, out x, out y);
+
+		public static void SetInputMode(IntPtr window, int mode, int value) => _glfwSetInputMode(window, mode, value);
+
+		public static void SetCursorEnterCallback(IntPtr window, Glfwcursorenterfun func) => _glfwSetCursorEnterCallback(window, func);
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -502,6 +514,8 @@ namespace Spectrum
 			_glfwSetScrollCallback = NativeLoader.LoadFunction<Delegates.glfwSetScrollCallback>(module, "glfwSetScrollCallback");
 			_glfwSetKeyCallback = NativeLoader.LoadFunction<Delegates.glfwSetKeyCallback>(module, "glfwSetKeyCallback");
 			_glfwGetCursorPos = NativeLoader.LoadFunction<Delegates.glfwGetCursorPos>(module, "glfwGetCursorPos");
+			_glfwSetInputMode = NativeLoader.LoadFunction<Delegates.glfwSetInputMode>(module, "glfwSetInputMode");
+			_glfwSetCursorEnterCallback = NativeLoader.LoadFunction<Delegates.glfwSetCursorEnterCallback>(module, "glfwSetCursorEnterCallback");
 
 			LoadTime = timer.Elapsed;
 		}

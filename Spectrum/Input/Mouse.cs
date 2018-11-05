@@ -19,6 +19,7 @@ namespace Spectrum.Input
 
 		// Click event tracking
 		private static readonly float[] s_lastClick = new float[MouseButtonUtils.MAX_BUTTON_INDEX + 1]; // Time of last click
+		private static readonly Point[] s_lastClickPos = new Point[MouseButtonUtils.MAX_BUTTON_INDEX + 1]; // Pos of last click
 		private static readonly bool[] s_lastClickFrame = new bool[MouseButtonUtils.MAX_BUTTON_INDEX + 1]; // Click event in last frame
 		private static readonly bool[] s_nextDouble = new bool[MouseButtonUtils.MAX_BUTTON_INDEX + 1]; // Next click is double click
 
@@ -26,6 +27,10 @@ namespace Spectrum.Input
 		private static Point s_lastPos = Point.Zero;
 		private static Point s_currPos = Point.Zero;
 		private static Point s_deltaWheel = Point.Zero;
+
+		// Enter/Leave tracking
+		private static bool s_enterEvent = false;
+		private static bool s_enterData = false;
 
 		// Event cache
 		private static readonly List<MouseButtonEventData> s_events = new List<MouseButtonEventData>(16);
@@ -47,6 +52,28 @@ namespace Spectrum.Input
 		/// disable this check. Defaults to 25 pixels.
 		/// </summary>
 		public static uint ClickDistance = 25;
+
+		private static CursorMode s_cursorMode = CursorMode.Normal;
+		/// <summary>
+		/// The input mode used by the mouse cursor, see the CursorMode values for more information. Fires the
+		/// <see cref="CursorModeChanged"/> event when changed.
+		/// </summary>
+		public static CursorMode CursorMode
+		{
+			get => s_cursorMode;
+			set
+			{
+				if (s_cursorMode != value)
+				{
+					var old = s_cursorMode;
+					s_cursorMode = value;
+					Glfw.SetInputMode(SpectrumApp.Instance.Window.Handle, Glfw.CURSOR,
+						(value == CursorMode.Normal) ? Glfw.CURSOR_NORMAL : 
+						(value == CursorMode.Hidden) ? Glfw.CURSOR_HIDDEN : Glfw.CURSOR_DISABLED);
+					CursorModeChanged?.Invoke(old, value);
+				}
+			}
+		}
 		#endregion // Input Settings
 
 		#region Events
@@ -78,6 +105,16 @@ namespace Spectrum.Input
 		/// Event that is raised when the mouse wheel is moved.
 		/// </summary>
 		public static event MouseWheelEvent WheelChanged;
+
+		/// <summary>
+		/// Event that is raised when the <see cref="CursorMode"/> of the mouse is changed.
+		/// </summary>
+		public static event CursorModeChangedEvent CursorModeChanged;
+
+		/// <summary>
+		/// Event that is raised when the mouse cursor either enters or leaves the window.
+		/// </summary>
+		public static event CursorEnteredEvent CursorEntered;
 		#endregion // Events
 		#endregion // Fields
 
@@ -90,6 +127,7 @@ namespace Spectrum.Input
 			s_currPos = new Point((int)xpos, (int)ypos);
 			for (int i = 0; i < MouseButtonUtils.MAX_BUTTON_INDEX; ++i)
 				s_lastClickFrame[i] = false;
+			s_enterEvent = false;
 		}
 
 		internal static void FireEvents()
@@ -102,6 +140,12 @@ namespace Spectrum.Input
 			if (s_deltaWheel != Point.Zero)
 			{
 				WheelChanged?.Invoke(new MouseWheelEventData(s_deltaWheel));
+			}
+
+			// Fire the enter/leave event
+			if (s_enterEvent)
+			{
+				CursorEntered?.Invoke(s_enterData);
 			}
 
 			// Fire all of the button events
@@ -192,6 +236,21 @@ namespace Spectrum.Input
 		/// </summary>
 		/// <param name="mb">The mouse button to check.</param>
 		public static float GetLastClickTime(MouseButton mb) => s_lastClick[(int)mb];
+		/// <summary>
+		/// Gets the screen position where the mouse cursor was when the button was last pressed.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static Point GetLastPressPos(MouseButton mb) => s_lastPressPos[(int)mb];
+		/// <summary>
+		/// Gets the screen position where the mouse cursor was when the button was last released.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static Point GetLastReleasePos(MouseButton mb) => s_lastReleasePos[(int)mb];
+		/// <summary>
+		/// Gets the screen position where the mouse cursor was when the button was last clicked.
+		/// </summary>
+		/// <param name="mb">The mouse button to check.</param>
+		public static Point GetLastClickPos(MouseButton mb) => s_lastClickPos[(int)mb];
 
 		/// <summary>
 		/// Gets the current position of the mouse, in pixels, relative to the top-left corner of the window client area.
@@ -216,6 +275,20 @@ namespace Spectrum.Input
 		/// second wheel axis.
 		/// </summary>
 		public static Point GetWheelDelta() => s_deltaWheel;
+
+		/// <summary>
+		/// Gets if the cursor entered the window area in this frame.
+		/// </summary>
+		public static bool GetCursorEntered() => s_enterEvent && s_enterData;
+		/// <summary>
+		/// Gets if the cursor exited the window area in this frame.
+		/// </summary>
+		public static bool GetCursorExited() => s_enterEvent && !s_enterData;
+		/// <summary>
+		/// Gets if the mouse cursor is currently in the window area. Note that this value may be inaccurate if the
+		/// window does not have focus, or if the application has just started up.
+		/// </summary>
+		public static bool IsInWindow() => s_enterData;
 		#endregion // Polling
 
 		#region GLFW Interop
@@ -259,6 +332,7 @@ namespace Spectrum.Input
 
 					s_lastClickFrame[index] = true;
 					s_lastClick[index] = Time.Elapsed;
+					s_lastClickPos[index] = s_currPos;
 				}
 				else
 					s_nextDouble[index] = false; // Failed click resets the double-click tracking
@@ -269,6 +343,12 @@ namespace Spectrum.Input
 		{
 			s_deltaWheel = new Point((int)xoffset, (int)yoffset);
 		}
+
+		internal static void CursorEnterCallback(IntPtr window, int entered)
+		{
+			s_enterEvent = true;
+			s_enterData = (entered == Glfw.TRUE);
+		}
 		#endregion // GLFW Interop
 
 		static Mouse()
@@ -276,10 +356,31 @@ namespace Spectrum.Input
 			for (int i = 0; i < MouseButtonUtils.MAX_BUTTON_INDEX; ++i)
 			{
 				s_lastPress[i] = s_lastRelease[i] = 0;
-				s_lastPressPos[i] = s_lastReleasePos[i] = Point.Zero;
+				s_lastPressPos[i] = s_lastReleasePos[i] = s_lastClickPos[i] = Point.Zero;
 				s_lastClick[i] = 0;
 				s_lastClickFrame[i] = s_nextDouble[i] = false;
 			}
 		}
+	}
+
+	/// <summary>
+	/// Values representing the different modes that the mouse cursor can use.
+	/// </summary>
+	public enum CursorMode : byte
+	{
+		/// <summary>
+		/// The standard visible cursor that is not locked to the screen.
+		/// </summary>
+		Normal,
+		/// <summary>
+		/// Like the standard mode, but the cursor is hidden while it is in the client area of the window.
+		/// </summary>
+		Hidden,
+		/// <summary>
+		/// The cursor is both hidden and locked to the center of the window. The window will automatically calculate
+		/// and provide virtual offsets while keeping the cursor locked in position. Use this mode to implment first
+		/// person cameras controlled by mouse movement.
+		/// </summary>
+		Locked
 	}
 }

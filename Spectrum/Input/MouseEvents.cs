@@ -199,4 +199,17 @@ namespace Spectrum.Input
 	/// </summary>
 	/// <param name="data">The data describing the event.</param>
 	public delegate void MouseWheelEvent(in MouseWheelEventData data);
+
+	/// <summary>
+	/// Callback for when the cursor mode for the mouse is changed.
+	/// </summary>
+	/// <param name="oldMode">The old mouse cursor mode.</param>
+	/// <param name="newMode">The new mouse curosr mode.</param>
+	public delegate void CursorModeChangedEvent(CursorMode oldMode, CursorMode newMode);
+
+	/// <summary>
+	/// Callback for when the mouse cursor enters or leaves the window.
+	/// </summary>
+	/// <param name="entered"><c>true</c> if the cursor entered the window, <c>false</c> if it left the window.</param>
+	public delegate void CursorEnteredEvent(bool entered);
 }
