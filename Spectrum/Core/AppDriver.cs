@@ -40,6 +40,9 @@ namespace Spectrum
 				throw new Exception("Vulkan runtime not located on this system, please ensure your graphics drivers are up to date");
 			}
 
+			// Initialize the audio engine
+			Audio.AudioEngine.Initialize();
+
 			// Create the window (but keep it hidden)
 			Window = new AppWindow(app);
 		}
@@ -118,6 +121,8 @@ namespace Spectrum
 			if (!_isDisposed)
 			{
 				Window.Dispose();
+
+				Audio.AudioEngine.Shutdown();
 
 				Glfw.Terminate();
 
