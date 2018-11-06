@@ -178,6 +178,10 @@ namespace Spectrum
 			// Set the window callbacks
 			Glfw.SetWindowPosCallback(Handle, (window, x, y) => PositionCallback(x, y));
 			Glfw.SetWindowSizeCallback(Handle, (window, w, h) => SizeCallback(w, h));
+
+			// Set the app callbacks
+			Glfw.SetWindowFocusCallback(Handle, (window, focus) => SpectrumApp.FocusChangeCallback(focus == Glfw.TRUE));
+			Glfw.SetWindowIconifyCallback(Handle, (window, icon) => SpectrumApp.MinimizeCallback(icon == Glfw.TRUE));
 		}
 
 		// Occurs right before the main loop starts

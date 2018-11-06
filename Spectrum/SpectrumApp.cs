@@ -36,6 +36,17 @@ namespace Spectrum
 		/// Gets if the application instance is disposed.
 		/// </summary>
 		public bool IsDisposed { get; private set; } = false;
+
+		#region Events
+		/// <summary>
+		/// Event raised when the application window gains and loses focus.
+		/// </summary>
+		public event ApplicationFocusEvent FocusChanged;
+		/// <summary>
+		/// Event raised when the application window is minimized or restored from minimization.
+		/// </summary>
+		public event ApplicationMinimizeEvent Minimized;
+		#endregion // Events
 		#endregion // Fields
 
 		/// <summary>
@@ -148,6 +159,10 @@ namespace Spectrum
 		protected virtual void Render() { }
 		#endregion // Main Loop
 
+		internal static void FocusChangeCallback(bool focused) => Instance.FocusChanged?.Invoke(focused);
+
+		internal static void MinimizeCallback(bool minimized) => Instance.Minimized?.Invoke(minimized);
+
 		#region IDisposable
 		/// <summary>
 		/// Disposes the application at the end of its execution. Performs a cleanup of all library components.
@@ -188,4 +203,16 @@ namespace Spectrum
 		protected virtual void OnDisposing(bool disposing) { }
 		#endregion // IDisposable
 	}
+
+	/// <summary>
+	/// Callback for application focus change event.
+	/// </summary>
+	/// <param name="focused"><c>true</c> if the window has gained focus, <c>false</c> if it has lost focus.</param>
+	public delegate void ApplicationFocusEvent(bool focused);
+
+	/// <summary>
+	/// Callback for application minimization event.
+	/// </summary>
+	/// <param name="resotred"><c>true</c> if the window has been minimized, <c>false</c> if the window has been restored.</param>
+	public delegate void ApplicationMinimizeEvent(bool minimized);
 }

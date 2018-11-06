@@ -267,6 +267,10 @@ namespace Spectrum
 		public delegate void GLFWwindowposfun(IntPtr window, int xpos, int ypos);
 		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 		public delegate void GLFWwindowsizefun(IntPtr window, int width, int height);
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+		public delegate void GLFWwindowfocusfun(IntPtr window, int focused);
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+		public delegate void GLFWwindowiconifyfun(IntPtr window, int iconified);
 		#endregion // Public Delegates
 
 		private static class Delegates
@@ -331,6 +335,10 @@ namespace Spectrum
 			public delegate void glfwSetWindowPosCallback(IntPtr window, GLFWwindowposfun window_pos_callback);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwSetWindowSizeCallback(IntPtr window, GLFWwindowsizefun window_size_callback);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetWindowFocusCallback(IntPtr window, GLFWwindowfocusfun focus_callback);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate void glfwSetWindowIconifyCallback(IntPtr window, GLFWwindowiconifyfun iconify_callback);
 		}
 
 		#region Umanaged Delegates
@@ -364,6 +372,8 @@ namespace Spectrum
 		private static Delegates.glfwSetCursorEnterCallback _glfwSetCursorEnterCallback;
 		private static Delegates.glfwSetWindowPosCallback _glfwSetWindowPosCallback;
 		private static Delegates.glfwSetWindowSizeCallback _glfwSetWindowSizeCallback;
+		private static Delegates.glfwSetWindowFocusCallback _glfwSetWindowFocusCallback;
+		private static Delegates.glfwSetWindowIconifyCallback _glfwSetWindowIconifyCallback;
 		#endregion // Unmanaged Delegates
 
 		#region Structs
@@ -491,6 +501,10 @@ namespace Spectrum
 		public static void SetWindowPosCallback(IntPtr window, GLFWwindowposfun func) => _glfwSetWindowPosCallback(window, func);
 
 		public static void SetWindowSizeCallback(IntPtr window, GLFWwindowsizefun func) => _glfwSetWindowSizeCallback(window, func);
+
+		public static void SetWindowFocusCallback(IntPtr window, GLFWwindowfocusfun func) => _glfwSetWindowFocusCallback(window, func);
+
+		public static void SetWindowIconifyCallback(IntPtr window, GLFWwindowiconifyfun func) => _glfwSetWindowIconifyCallback(window, func);
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -532,6 +546,8 @@ namespace Spectrum
 			_glfwSetCursorEnterCallback = NativeLoader.LoadFunction<Delegates.glfwSetCursorEnterCallback>(module, "glfwSetCursorEnterCallback");
 			_glfwSetWindowPosCallback = NativeLoader.LoadFunction<Delegates.glfwSetWindowPosCallback>(module, "glfwSetWindowPosCallback");
 			_glfwSetWindowSizeCallback = NativeLoader.LoadFunction<Delegates.glfwSetWindowSizeCallback>(module, "glfwSetWindowSizeCallback");
+			_glfwSetWindowFocusCallback = NativeLoader.LoadFunction<Delegates.glfwSetWindowFocusCallback>(module, "glfwSetWindowFocusCallback");
+			_glfwSetWindowIconifyCallback = NativeLoader.LoadFunction<Delegates.glfwSetWindowIconifyCallback>(module, "glfwSetWindowIconifyCallback");
 
 			LoadTime = timer.Elapsed;
 		}
