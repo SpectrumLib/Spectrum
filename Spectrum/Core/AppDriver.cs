@@ -94,6 +94,16 @@ namespace Spectrum
 			{
 				throw new Exception($"Unable to load native library glfw3, reason: {e.Message}");
 			}
+
+			try
+			{
+				NativeLoader.LoadUnmanagedLibrary("oal", "soft_oal.dll");
+				LINFO($"Loaded native library for openal (took {NativeLoader.LastLoadTime.TotalMilliseconds:.00} ms).");
+			}
+			catch (Exception e)
+			{
+				throw new Exception($"Unable to load native library oal, reason: {e.Message}");
+			}
 		}
 
 		#region IDisposable
