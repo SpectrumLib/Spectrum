@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\Lib\glfw3.w" Link="glfw3.w" />
+	<EmbeddedResource Include="..\Lib\oal.w" Link="oal.w" />
   </ItemGroup>
 
 </Project>
