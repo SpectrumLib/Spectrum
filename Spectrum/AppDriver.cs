@@ -72,6 +72,9 @@ namespace Spectrum
 				Keyboard.FireEvents();
 				Mouse.FireEvents();
 
+				// Update the subsystems
+				Audio.AudioEngine.Update();
+
 				Application.DoFrame();
 
 				if (Glfw.WindowShouldClose(Window.Handle))
