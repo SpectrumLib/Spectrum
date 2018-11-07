@@ -119,7 +119,7 @@ namespace Spectrum
 				return;
 
 			_writer = new StreamWriter(
-				File.Open(FilePath, FileMode.Create, FileAccess.Write, FileShare.Write), System.Text.Encoding.UTF8
+				File.Open(FilePath, FileMode.Create, FileAccess.Write, FileShare.Read), System.Text.Encoding.UTF8
 			);
 			_thread?.Start();
 		}
@@ -143,8 +143,13 @@ namespace Spectrum
 			{
 				Thread.Sleep(THREAD_SLEEP);
 
-				foreach (var msg in _pool.GetMessages())
-					_writer.WriteLine(msg);
+				if (_pool.Count > 0)
+				{
+					foreach (var msg in _pool.GetMessages())
+						_writer.WriteLine(msg);
+
+					_writer.Flush(); 
+				}
 
 				if (_thread_should_exit)
 					break;
@@ -156,7 +161,10 @@ namespace Spectrum
 			if (_thread != null)
 				_pool.AddMessage(message);
 			else
+			{
 				_writer.WriteLine(message);
+				_writer.Flush();
+			}
 		}
 	}
 }

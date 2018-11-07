@@ -17,7 +17,7 @@ namespace Spectrum
 		// The lock object for the queue
 		private readonly object _writeLock = new object();
 		// The pointers in the queue
-		private uint _writeIndex = 0;
+		public uint Count { get; private set; } = 0;
 		#endregion // Fields
 
 		public MessagePool()
@@ -30,21 +30,21 @@ namespace Spectrum
 		{
 			lock (_writeLock)
 			{
-				if (_writeIndex >= _queueSize)
+				if (Count >= _queueSize)
 				{
 					Array.Resize(ref _queue, (int)(_queueSize + INITIAL_POOL_SIZE));
 					_queueSize += INITIAL_POOL_SIZE;
 				}
 
-				_queue[_writeIndex] = msg;
-				++_writeIndex;
+				_queue[Count] = msg;
+				++Count;
 			}
 		}
 
 		public IEnumerable<string> GetMessages()
 		{
 			uint msgCount = 0;
-			lock (_writeLock) { msgCount = _writeIndex; }
+			lock (_writeLock) { msgCount = Count; }
 
 			if (msgCount > 0)
 			{
@@ -55,10 +55,10 @@ namespace Spectrum
 
 				lock (_writeLock)
 				{
-					uint rem = _writeIndex - msgCount;
+					uint rem = Count - msgCount;
 					if (rem > 0)
 						Array.Copy(_queue, msgCount, _queue, 0, rem);
-					_writeIndex = rem;
+					Count = rem;
 				} 
 			}
 		}
