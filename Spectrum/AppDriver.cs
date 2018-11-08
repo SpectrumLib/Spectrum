@@ -1,6 +1,7 @@
 ﻿using System;
 using static Spectrum.InternalLog;
 using Spectrum.Input;
+using System.Linq;
 
 namespace Spectrum
 {
@@ -86,8 +87,7 @@ namespace Spectrum
 
 		private void loadNativeLibraries()
 		{
-			foreach (var lib in NativeLoader.AvailableResources)
-				LDEBUG($"Available native library: {lib}.");
+			LDEBUG($"Available native libraries: {String.Join(", ", NativeLoader.AvailableResources.Select(n => n.Substring(16)))}");
 
 			NativeLoader.Logger = LWARN;
 

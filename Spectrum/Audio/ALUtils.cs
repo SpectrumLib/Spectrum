@@ -36,7 +36,7 @@ namespace Spectrum.Audio
 
 			// We need to handle the string lists in a different way, as they dont play well with Marshal.PtrToStringAnsi()
 			// Scan through until a double null terminator is found, and return as a newline separated list
-			if (device == 0 && (param == ALC10.ALC_DEVICE_SPECIFIER || param == ALC11.ALC_CAPTURE_DEVICE_SPECIFIER))
+			if (device == 0 && (param == ALC10.ALC_DEVICE_SPECIFIER || param == ALC11.ALC_CAPTURE_DEVICE_SPECIFIER || param == ALC11.ALC_ALL_DEVICES_SPECIFIER))
 			{
 				// Copy the string data to managed memory
 				byte[] charData = new byte[GetStringListPtrLength(sPtr)];
@@ -50,7 +50,7 @@ namespace Spectrum.Audio
 				// Create list of strings
 				List<string> strList = new List<string>();
 				for (int i = 0; i < (splits.Count - 1); ++i)
-					strList.Add(Encoding.Unicode.GetString(charData, splits[i] + 1, splits[i + 1] - splits[i] - 1));
+					strList.Add(Encoding.ASCII.GetString(charData, splits[i] + 1, splits[i + 1] - splits[i] - 1));
 
 				// Return newline separated list
 				return String.Join("\n", strList);

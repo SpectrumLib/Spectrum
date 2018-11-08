@@ -36,7 +36,9 @@ namespace Spectrum.Audio
 			PlaybackDevice.PopulateDeviceList();
 			if (PlaybackDevice.Devices.Count == 0)
 				throw new AudioException("There are no audio playback devices available");
-			LDEBUG($"Available audio playback devices: {String.Join(", ", PlaybackDevice.Devices.Select(d => d.Identifier))}.");
+			LDEBUG("Available audio playback devices:");
+			foreach (var dev in PlaybackDevice.Devices)
+				LDEBUG($"   {dev.Identifier}");
 
 			// Open the default playback device
 			Device = ALC10.alcOpenDevice(PlaybackDevice.Devices[0].Identifier);
@@ -89,7 +91,7 @@ namespace Spectrum.Audio
 
 		public static void Update()
 		{
-
+			SoundEffectInstance.UpdateInstances();
 		}
 
 		public static uint ReserveSource()

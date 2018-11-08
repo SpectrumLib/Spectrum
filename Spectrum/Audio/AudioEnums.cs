@@ -33,4 +33,24 @@ namespace Spectrum.Audio
 		/// </summary>
 		StereoFloat = ALEXT.AL_FORMAT_STEREO_FLOAT32
 	}
+
+	/// <summary>
+	/// Represents the playback states that audio objects can have.
+	/// </summary>
+	public enum SoundState
+	{
+		/// <summary>
+		/// The audio is not playing, and playback will start at the beginning. Will also represent audio that has
+		/// never been played
+		/// </summary>
+		Stopped,
+		/// <summary>
+		/// The audio is not playing, and playback will start where it was last halted.
+		/// </summary>
+		Paused,
+		/// <summary>
+		/// The audio is currently playing.
+		/// </summary>
+		Playing
+	}
 }
