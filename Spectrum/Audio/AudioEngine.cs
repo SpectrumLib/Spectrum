@@ -25,6 +25,9 @@ namespace Spectrum.Audio
 		private static readonly Stack<uint> s_availableSources = new Stack<uint>(MAX_SOURCE_COUNT); // Sources available for binding
 		private static readonly List<uint> s_usedSources = new List<uint>(MAX_SOURCE_COUNT); // Sources currently bound
 		private static readonly object s_sourceLock = new object(); // Object for thread-safe access to sources
+
+		// Gets if the engine is shutdown (affects how other audio objects finalize)
+		public static bool IsShutdown { get; private set; } = false;
 		#endregion // Fields
 
 		public static void Initialize()
@@ -57,7 +60,7 @@ namespace Spectrum.Audio
 
 			// Report
 			LINFO("Started OpenAL audio engine.");
-			LINFO($"\tDevice: {PlaybackDevice.Devices[0].Identifier}.");
+			LINFO($"    Device: {PlaybackDevice.Devices[0].Identifier}.");
 		}
 
 		public static void Shutdown()
@@ -77,6 +80,8 @@ namespace Spectrum.Audio
 			ALC10.alcCloseDevice(Device);
 			ALUtils.CheckALCError();
 			Device = IntPtr.Zero;
+
+			IsShutdown = true;
 
 			// Report
 			LINFO("Shutdown OpenAL audio engine.");
