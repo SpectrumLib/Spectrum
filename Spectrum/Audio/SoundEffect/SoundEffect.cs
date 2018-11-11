@@ -32,6 +32,35 @@ namespace Spectrum.Audio
 			dispose(false);
 		}
 
+		/// <summary>
+		/// Plays an instance of the sound effect. This instance plays in a fire-and-forget fashion, and cannot be
+		/// controlled past the original volume and pitch settings.
+		/// </summary>
+		/// <param name="volume">The volume of the sound effect being played (<see cref="SoundEffectInstance.Volume"/>).</param>
+		/// <param name="pitch">The pitch of the sound effect being played (<see cref="SoundEffectInstance.Pitch"/>).</param>
+		/// <returns>If the effect was able to play.</returns>
+		public bool Play(float volume = 1, float pitch = 0)
+		{
+			try
+			{
+				var sf = new SoundEffectInstance(this);
+				sf.Volume = volume;
+				sf.Pitch = pitch;
+				sf.Play();
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Creates a controllable instance of this sound effect.
+		/// </summary>
+		/// <returns>The new sound effect instance.</returns>
+		public SoundEffectInstance CreateInstance() => new SoundEffectInstance(this);
+
 		#region IDisposable
 		public void Dispose()
 		{
