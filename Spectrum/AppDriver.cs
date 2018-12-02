@@ -101,6 +101,16 @@ namespace Spectrum
 				throw new Exception($"Unable to load native library glfw3, reason: {e.Message}");
 			}
 
+            try
+            {
+                NativeLoader.LoadUnmanagedLibrary("audio", "audio.dll");
+                LINFO($"Loaded native library for audio file loading (took {NativeLoader.LastLoadTime.TotalMilliseconds:.00} ms).");
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Unable to load native library audio, reason: {e.Message}");
+            }
+
 			try
 			{
 				NativeLoader.LoadUnmanagedLibrary("oal", "soft_oal.dll");
