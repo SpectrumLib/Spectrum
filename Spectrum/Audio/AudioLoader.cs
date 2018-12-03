@@ -32,7 +32,7 @@ namespace Spectrum.Audio
 			}
 
 			var sb = new SoundBuffer();
-			sb.SetData(samples, (channels == 1) ? AudioFormat.Mono16 : AudioFormat.Stereo16, sampleRate, (uint)(sampleCount / channels));
+			sb.SetData(samples, (channels == 1) ? AudioFormat.Mono16 : AudioFormat.Stereo16, sampleRate, (uint)(sampleCount * 2));
 
 			DrWav.free(samples);
 			return sb;
@@ -44,8 +44,8 @@ namespace Spectrum.Audio
 			if (!File.Exists(path))
 				throw new FileNotFoundException($"Audio file does not exist: '{path}'");
 
-			int read = StbVorbis.decode_filename(path, out int channels, out int sample_rate, out IntPtr output);
-			if (read == -1)
+			int read = StbVorbis.decode_filename(path, out int channels, out int sample_rate, out IntPtr output) * 2;
+			if (read < 0)
 			{
 				throw new Exception($"Unable to load audio file '{path}'");
 			}
@@ -90,7 +90,7 @@ namespace Spectrum.Audio
 			}
 
 			var sb = new SoundBuffer();
-			sb.SetData(samples, (channels == 1) ? AudioFormat.Mono16 : AudioFormat.Stereo16, sampleRate, (uint)(sampleCount / channels));
+			sb.SetData(samples, (channels == 1) ? AudioFormat.Mono16 : AudioFormat.Stereo16, sampleRate, (uint)(sampleCount * 2));
 
 			DrFlac.free(samples);
 			return sb;
