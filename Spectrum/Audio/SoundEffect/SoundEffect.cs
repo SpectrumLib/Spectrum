@@ -79,5 +79,16 @@ namespace Spectrum.Audio
 			}
 		}
 		#endregion // IDisposable
+
+        /// <summary>
+        /// This function will attempt to load a sound effect from an unprocessed file. This function only supports
+        /// WAV, OGG (Vorbis), and FLAC formats. It will select the format based on the file extension.
+        /// </summary>
+        /// <param name="path">The path to the audio file to load.</param>
+        /// <returns>A sound effect containing the audio file data.</returns>
+        public static SoundEffect LoadFromFile(string path)
+        {
+			return null;
+        }
 	}
 }

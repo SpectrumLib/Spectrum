@@ -44,7 +44,7 @@ namespace Spectrum.Audio
 			var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
 			try
 			{
-				setData(handle.AddrOfPinnedObject() + (int)(start * typeSize), fmt, hz, dataSize);
+				SetData(handle.AddrOfPinnedObject() + (int)(start * typeSize), fmt, hz, dataSize);
 			}
 			finally
 			{
@@ -52,7 +52,7 @@ namespace Spectrum.Audio
 			}
 		}
 
-		private void setData(IntPtr data, AudioFormat fmt, uint hz, uint size)
+		internal void SetData(IntPtr data, AudioFormat fmt, uint hz, uint size)
 		{
 			AL10.alBufferData(_handle, (int)fmt, data, (int)size, (int)hz);
 			ALUtils.CheckALError("unable to set audio buffer data");
