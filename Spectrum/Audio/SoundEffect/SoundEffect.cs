@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Spectrum.Audio
 {
@@ -88,7 +89,26 @@ namespace Spectrum.Audio
         /// <returns>A sound effect containing the audio file data.</returns>
         public static SoundEffect LoadFromFile(string path)
         {
-			return null;
+			string ext = Path.GetExtension(path);
+
+			SoundBuffer sb = null;
+			switch (ext)
+			{
+				case ".wav":
+				case ".wave":
+					sb = AudioLoader.LoadWaveFile(path);
+					break;
+				case ".ogg":
+					sb = AudioLoader.LoadVorbisFile(path);
+					break;
+				case ".flac":
+					sb = AudioLoader.LoadFlacFile(path);
+					break;
+				default:
+					throw new ArgumentException($"The file extension '{ext}' is not an understood audio file extension");
+			}
+
+			return new SoundEffect(sb);
         }
 	}
 }

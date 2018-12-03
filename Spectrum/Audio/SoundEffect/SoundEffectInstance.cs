@@ -88,7 +88,8 @@ namespace Spectrum.Audio
 		private bool _pitchDirty = true;
 		/// <summary>
 		/// Gets or sets the pitch of the sound, in the range [-1, 1]. -1 is a full octave down, 0 is unchanged, and 
-		/// +1 is a full octave up.
+		/// +1 is a full octave up. Note that pitch shifting is performed simply by speeding up or slowing down the
+        /// audio playback.
 		/// </summary>
 		public float Pitch
 		{
@@ -237,7 +238,7 @@ namespace Spectrum.Audio
 
 			lock (s_instLock)
 			{
-				s_activeInstances.RemoveAll(inst => (inst.State == SoundState.Stopped) ? inst.freeSource() : false);
+				s_activeInstances.RemoveAll(inst => (inst.State == SoundState.Stopped) && inst.freeSource());
 			}
 		}
 

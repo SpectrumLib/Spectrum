@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using OpenAL;
 using static Spectrum.InternalLog;
 
@@ -9,7 +8,7 @@ namespace Spectrum.Audio
 	// Controller for the OpenAL context and other objects, and the lifetime of the audio system
 	internal static class AudioEngine
 	{
-		// Reasonable limit, since OpenAL Soft *technically* supports infinite sources as a software implementation
+		// Reasonable limit, under many of the common backend limits (including mobile ones)
 		// Nobody should need anything higher than this, and too many sources would slow it down
 		// We can do testing in the future to get a better estimate for what this value should be
 		public const int MAX_SOURCE_COUNT = 24;
