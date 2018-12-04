@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using static Spectrum.InternalLog;
 
 namespace Spectrum.Audio
 {
@@ -91,6 +93,8 @@ namespace Spectrum.Audio
         {
 			string ext = Path.GetExtension(path);
 
+			Stopwatch timer = Stopwatch.StartNew();
+
 			SoundBuffer sb = null;
 			switch (ext)
 			{
@@ -107,6 +111,8 @@ namespace Spectrum.Audio
 				default:
 					throw new ArgumentException($"The file extension '{ext}' is not an understood audio file extension");
 			}
+
+			LDEBUG($"Loaded audio file '{path}' as SoundEffect in {timer.ElapsedMilliseconds:.00} ms.");
 
 			return new SoundEffect(sb);
         }
