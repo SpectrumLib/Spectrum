@@ -44,7 +44,7 @@ namespace Spectrum
 			// Initialize the audio engine
 			Audio.AudioEngine.Initialize();
 
-			// Create the window (but keep it hidden)
+			// Create the window (zero initialization for glfw done here)
 			Window = new AppWindow(app);
 		}
 		~AppDriver()
@@ -64,7 +64,14 @@ namespace Spectrum
 
 			while (true)
 			{
+				// Update the time
 				Time.Frame();
+
+				// If needed, limit the framerate
+				if (Application.TargetFPS.HasValue)
+				{
+					//TimestepUtils.WaitFor(1000f / Application.TargetFPS.Value, (float)Time.RealDeltaTime.TotalMilliseconds);
+				}
 
 				// Input events
 				Keyboard.NewFrame();
@@ -76,8 +83,10 @@ namespace Spectrum
 				// Update the subsystems
 				Audio.AudioEngine.Update();
 
+				// Perform the update and render portions of the game loop
 				Application.DoFrame();
 
+				// Check for exit conditions
 				if (Glfw.WindowShouldClose(Window.Handle))
 					break;
 				if (Application.IsExiting)

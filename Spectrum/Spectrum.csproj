@@ -25,10 +25,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="VulkanCore" Version="1.0.0-alpha40" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Spectrum.Native\Spectrum.Native.csproj" />
   </ItemGroup>
 

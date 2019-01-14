@@ -37,6 +37,13 @@ namespace Spectrum
 		/// </summary>
 		public bool IsDisposed { get; private set; } = false;
 
+		/// <summary>
+		/// The target framerate of the application, in frames per second. If able, the system will limit the
+		/// application to run as close to this speed as possible. A value of null will unlock the framerate and
+		/// will allow it to run as fast as possible. Defaults to null.
+		/// </summary>
+		public float? TargetFPS = null;
+
 		#region Events
 		/// <summary>
 		/// Event raised when the application window gains and loses focus.
