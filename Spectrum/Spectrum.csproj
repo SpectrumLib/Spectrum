@@ -25,6 +25,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Vk" Version="1.0.21" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Spectrum.Native\Spectrum.Native.csproj" />
   </ItemGroup>
 

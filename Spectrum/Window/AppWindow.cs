@@ -153,6 +153,7 @@ namespace Spectrum
 		internal AppWindow(SpectrumApp app)
 		{
 			Application = app;
+			_title = app.AppParameters.Name;
 		}
 		~AppWindow()
 		{
@@ -255,10 +256,6 @@ namespace Spectrum
 		/// Sets the window to either be fullscreen or windowed mode. 
 		/// </summary>
 		/// <param name="fullscreen">`true` to set the window to fullscreen, `false` to set to windowed mode.</param>
-		/// <param name="keepRes">
-		/// `true` if the current window size should be the new fullscreen resolution, `false` to set the resolution
-		/// to the native monitor resolution, defaults to true. NOT CURRENTLY IMPLEMENTED.
-		/// </param>
 		/// <returns>If the window style was changed, false means the requested style was already active.</returns>
 		public bool SetFullscreen(bool fullscreen, bool keepRes = true)
 		{
@@ -283,7 +280,6 @@ namespace Spectrum
 					getMonitorRect(monitor, out Rect mbb);
 					Glfw.SetWindowPos(Handle, mbb.X, mbb.Y);
 					Glfw.SetWindowSize(Handle, mbb.Width, mbb.Height);
-					// TODO: Update the backbuffer size using the keepRes argument
 				}
 				else
 				{
