@@ -18,6 +18,9 @@ namespace Spectrum.Graphics
 		private static readonly FixedUtfString VK_KHR_WIN32_SURFACE_EXTENSION_NAME = "VK_KHR_win32_surface";
 		private static readonly FixedUtfString VK_KHR_XLIB_SURFACE_EXTENSION_NAME = "VK_KHR_xlib_surface";
 		private static readonly FixedUtfString VK_MVK_MACOS_SURFACE_EXTENSION_NAME = "VK_MVK_macos_surface";
+		private static readonly FixedUtfString VK_KHR_SWAPCHAIN_EXTENSION_NAME = "VK_KHR_swapchain";
+		private static readonly FixedUtfString VK_EXT_DEBUG_REPORT_EXTENSION_NAME = "VK_EXT_debug_report";
+		private static readonly FixedUtfString VK_STANDARD_VALIDATION_LAYER_NAME = "VK_LAYER_LUNARG_standard_validation";
 
 		// Creates a VkInstance
 		private unsafe void createVulkanInstance(out VkInstance inst)
@@ -58,18 +61,52 @@ namespace Spectrum.Graphics
 					throw new PlatformNotSupportedException(msg);
 				}
 			}
-			IntPtr[] extPtrs = instExt.Select(ext => ext.AsIntPtr()).ToArray();
+
+			// Request extra features if validation is requested
+			List<FixedUtfString> instLay = new List<FixedUtfString>();
+			if (Application.AppParameters.EnableValidationLayers)
+			{
+				if (aExts.Contains(VK_EXT_DEBUG_REPORT_EXTENSION_NAME.ToString()))
+				{
+					uint layerCount = 0;
+					vkEnumerateInstanceLayerProperties(ref layerCount, IntPtr.Zero);
+
+					if (layerCount > 0)
+					{
+						VkLayerProperties[] alayp = new VkLayerProperties[layerCount];
+						fixed (VkLayerProperties* layPtr = &alayp[0]) { vkEnumerateInstanceLayerProperties(ref layerCount, layPtr); }
+						string[] aLays = alayp.Select(lay => PointerUtils.RawToString(lay.layerName, Encoding.UTF8)).ToArray();
+						LDEBUG($"Available Layers:  {String.Join(", ", aLays)}");
+
+						if (aLays.Contains(VK_STANDARD_VALIDATION_LAYER_NAME.ToString()))
+						{
+							instExt.Add(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+							instLay.Add(VK_STANDARD_VALIDATION_LAYER_NAME); 
+						}
+						else
+							LERROR("Application requested Vulkan validation layers, but the standard layers are not available.");
+					}
+					else
+						LERROR("Application requested Vulkan validation layers, but there are no validation layers available.");
+				}
+				else
+					LERROR("Application requested Vulkan validation layers, but the debug extension is not available.");
+			}
+			instLay.Add(null); // This is to prevent the second fixed statement below from potentially exploding if no layers are present
 
 			// Build the instance create info
+			IntPtr[] extPtrs = instExt.Select(ext => ext.AsIntPtr()).ToArray();
+			IntPtr[] layPtrs = instLay.Select(lay => lay?.AsIntPtr() ?? IntPtr.Zero).ToArray();
 			VkInstanceCreateInfo cInfo = VkInstanceCreateInfo.New();
 			cInfo.pApplicationInfo = &aInfo;
-			cInfo.enabledLayerCount = 0;
-			cInfo.ppEnabledLayerNames = (byte**)0;
+			cInfo.enabledLayerCount = (uint)layPtrs.Length - 1; // Adjust for the extra null above
 			cInfo.enabledExtensionCount = (uint)extPtrs.Length;
 
 			// Create the instance
 			fixed (IntPtr *extPtr = &extPtrs[0])
+			fixed (IntPtr *layPtr = &layPtrs[0])
 			{
+				cInfo.ppEnabledLayerNames = (byte**)layPtr;
 				cInfo.ppEnabledExtensionNames = (byte**)extPtr;
 				VkUtils.CheckCall(vkCreateInstance(&cInfo, IntPtr.Zero, out inst));
 			}

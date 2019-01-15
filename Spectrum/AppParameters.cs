@@ -9,6 +9,7 @@ namespace Spectrum
 	/// <list type="bullet">
 	///		<item>General - This controls the name and version of the application.</item>
 	///		<item>Logging - Either customize the default logger, or use your own logging classes.</item>
+	///		<item>Graphics - Customization of aspects of the graphics subsystem.</item>
 	/// </list>
 	/// </summary>
 	public struct AppParameters
@@ -74,6 +75,14 @@ namespace Spectrum
 		/// </summary>
 		public LoggingLevel LibraryMessageMask;
 		#endregion // Logger
+
+		#region Graphics
+		/// <summary>
+		/// Sets if the validation layers are loaded into Vulkan. This should be disabled for Release builds. Defaults
+		/// to false.
+		/// </summary>
+		public bool EnableValidationLayers;
+		#endregion // Graphics
 		#endregion // Fields
 
 		/// <summary>
@@ -96,6 +105,9 @@ namespace Spectrum
 			DefaultLoggingFormatter = null;
 			DefaultLoggingPolicy = null;
 			LibraryMessageMask = LoggingLevel.Standard;
+
+			// Graphics defaults
+			EnableValidationLayers = false;
 		}
 
 		/// <summary>
