@@ -1,4 +1,5 @@
 using System;
+using Spectrum.Graphics;
 using static Spectrum.InternalLog;
 
 namespace Spectrum
@@ -26,6 +27,11 @@ namespace Spectrum
 		/// The window for this application. You can set some window parameters before it is opened.
 		/// </summary>
 		public AppWindow Window => Driver.Window;
+
+		/// <summary>
+		/// The wrapper around the physical device being used to render by this application.
+		/// </summary>
+		public GraphicsDevice GraphicsDevice { get; private set; } = null;
 
 		/// <summary>
 		/// Gets if the application is set to exit at the end of the current update loop.
@@ -90,6 +96,9 @@ namespace Spectrum
 		{
 			// Initialize the driver
 			Driver.Initialize();
+
+			// Create and assemble all of the graphics components
+			GraphicsDevice = new GraphicsDevice(this);
 
 			doInitialize();
 
@@ -187,8 +196,9 @@ namespace Spectrum
 			{
 				OnDisposing(disposing);
 
+				GraphicsDevice.Dispose();
 				CoroutineManager.Cleanup();
-
+				
 				Driver.Dispose();
 
 				// Keep the logging available for as long as possible
