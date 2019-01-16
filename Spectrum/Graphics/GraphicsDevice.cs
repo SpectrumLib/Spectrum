@@ -25,7 +25,7 @@ namespace Spectrum.Graphics
 		{
 			Application = app;
 
-			createVulkanInstance(out _vkObjects.Instance);
+			createVulkanInstance(out _vkObjects.Instance, out _vkObjects.DebugReportCallback);
 		}
 		~GraphicsDevice()
 		{
@@ -43,7 +43,7 @@ namespace Spectrum.Graphics
 		{
 			if (!IsDisposed)
 			{
-				destroyGlobalVulkanObjects(_vkObjects.Instance);
+				destroyGlobalVulkanObjects(_vkObjects.Instance, _vkObjects.DebugReportCallback);
 			}
 
 			IsDisposed = true;
@@ -56,5 +56,6 @@ namespace Spectrum.Graphics
 	internal struct VKObjects
 	{
 		public VkInstance Instance;
+		public VkDebugReportCallbackEXT DebugReportCallback;
 	}
 }
