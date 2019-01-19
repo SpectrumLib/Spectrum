@@ -1,5 +1,6 @@
 ﻿using System;
-using Vulkan;
+using Vk = VulkanCore;
+using VkExt = VulkanCore.Ext;
 
 namespace Spectrum.Graphics
 {
@@ -16,7 +17,8 @@ namespace Spectrum.Graphics
 		public readonly SpectrumApp Application;
 
 		// Top level vulkan objects
-		private VKObjects _vkObjects;
+		private Vk.Instance _vkInstance;
+		private VkExt.DebugReportCallbackExt _vkDebugReport;
 
 		internal bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
@@ -25,7 +27,7 @@ namespace Spectrum.Graphics
 		{
 			Application = app;
 
-			createVulkanInstance(out _vkObjects.Instance, out _vkObjects.DebugReportCallback);
+			(_vkInstance, _vkDebugReport) = createVulkanInstance();
 		}
 		~GraphicsDevice()
 		{
@@ -43,19 +45,11 @@ namespace Spectrum.Graphics
 		{
 			if (!IsDisposed)
 			{
-				destroyGlobalVulkanObjects(_vkObjects.Instance, _vkObjects.DebugReportCallback);
+				destroyGlobalVulkanObjects(_vkInstance, _vkDebugReport);
 			}
 
 			IsDisposed = true;
 		}
 		#endregion // IDisposable
-	}
-
-
-	// Holds the top-level vulkan objects used by a device
-	internal struct VKObjects
-	{
-		public VkInstance Instance;
-		public VkDebugReportCallbackEXT DebugReportCallback;
 	}
 }

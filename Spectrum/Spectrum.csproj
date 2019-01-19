@@ -25,11 +25,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Vk" Version="1.0.21" />
+    <ProjectReference Include="..\Spectrum.Native\Spectrum.Native.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Spectrum.Native\Spectrum.Native.csproj" />
+    <Reference Include="VulkanCore">
+      <HintPath>..\Dependencies\Vulkan\VulkanCore.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
