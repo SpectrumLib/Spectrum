@@ -30,6 +30,10 @@ namespace Spectrum.Graphics
 		/// The set of limits for the device.
 		/// </summary>
 		public readonly DeviceLimits Limits;
+		/// <summary>
+		/// High level information about the device.
+		/// </summary>
+		public readonly DeviceInfo Info;
 
 		internal bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
@@ -39,7 +43,7 @@ namespace Spectrum.Graphics
 			Application = app;
 
 			createVulkanInstance(out _vkInstance, out _vkDebugReport);
-			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits);
+			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info);
 		}
 		~GraphicsDevice()
 		{
@@ -79,5 +83,28 @@ namespace Spectrum.Graphics
 	public struct DeviceLimits
 	{
 
+	}
+
+	/// <summary>
+	/// Contains high level information about a physical device.
+	/// </summary>
+	public struct DeviceInfo
+	{
+		/// <summary>
+		/// The human-readable name of the device.
+		/// </summary>
+		public string Name;
+		/// <summary>
+		/// If the device is a discrete GPU, false implies an integrated GPU.
+		/// </summary>
+		public bool IsDiscrete;
+		/// <summary>
+		/// The human-readable name of the manufacturer of the device driver.
+		/// </summary>
+		public string VendorName;
+		/// <summary>
+		/// The version of the active Vulkan driver.
+		/// </summary>
+		public AppVersion DriverVersion;
 	}
 }

@@ -54,6 +54,14 @@ namespace Spectrum
 			Revision = revision;
 			Name = tag;
 		}
+		// From vulkan version
+		internal AppVersion(VulkanCore.Version v)
+		{
+			Major = (uint)v.Major;
+			Minor = (uint)v.Minor;
+			Revision = (uint)v.Patch;
+			Name = "";
+		}
 
 		public override string ToString()
 		{
@@ -155,6 +163,9 @@ namespace Spectrum
 		{
 			return Parse(str);
 		}
+
+		// Conversion to and from vulkan versions
+		internal VulkanCore.Version ToVkVersion() => new VulkanCore.Version((int)Major, (int)Minor, (int)Revision);
 
 		#region IComparable
 		int IComparable<AppVersion>.CompareTo(AppVersion other)

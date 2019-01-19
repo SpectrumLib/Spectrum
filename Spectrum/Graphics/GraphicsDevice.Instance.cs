@@ -11,6 +11,11 @@ namespace Spectrum.Graphics
 	// Implements Vulkan instance & device object management functions
 	public sealed partial class GraphicsDevice
 	{
+		// List of venders
+		private static readonly Dictionary<int, string> VENDOR_ID_LIST = new Dictionary<int, string> {
+			{ 0x1002, "AMD" }, { 0x1010, "ImgTec" }, { 0x10DE, "NVIDIA" }, { 0x13B5, "ARM" }, { 0x5143, "Qualcomm" }, { 0x8086, "INTEL" }
+		};
+
 		// Creates a VkInstance
 		private void createVulkanInstance(out Vk.Instance instance, out VkExt.DebugReportCallbackExt debugReport)
 		{
@@ -20,7 +25,7 @@ namespace Spectrum.Graphics
 			// Build the app info
 			Vk.ApplicationInfo aInfo = new Vk.ApplicationInfo(
 				Application.AppParameters.Name,
-				new Vk.Version((int)appVersion.Major, (int)appVersion.Minor, (int)appVersion.Revision),
+				appVersion.ToVkVersion(),
 				"Spectrum",
 				new Vk.Version(engVersion.Major, engVersion.Minor, engVersion.Revision),
 				new Vk.Version(1, 0, 0)
@@ -79,7 +84,7 @@ namespace Spectrum.Graphics
 			if (hasDebug)
 			{
 				VkExt.DebugReportCallbackCreateInfoExt dbInfo = new VkExt.DebugReportCallbackCreateInfoExt(
-					(VkExt.DebugReportFlagsExt.All & ~VkExt.DebugReportFlagsExt.Debug), // All levels except debug
+					(VkExt.DebugReportFlagsExt.PerformanceWarning | VkExt.DebugReportFlagsExt.Warning | VkExt.DebugReportFlagsExt.Error),
 					_DebugReportCallback,
 					IntPtr.Zero
 				);
@@ -90,7 +95,7 @@ namespace Spectrum.Graphics
 
 		// Selects and opens the device
 		private void openVulkanDevice(Vk.Instance instance, out Vk.PhysicalDevice pDevice, out Vk.Device lDevice,
-			out DeviceFeatures features, out DeviceLimits limits)
+			out DeviceFeatures features, out DeviceLimits limits, out DeviceInfo info)
 		{
 			// Enumerate the physical devices, and score and sort them, then remove invalid ones
 			var devices = instance.EnumeratePhysicalDevices()
@@ -114,13 +119,44 @@ namespace Spectrum.Graphics
 			});
 			if (devices.Count == 0)
 				throw new PlatformNotSupportedException("This system does not have any valid physical devices.");
+			var bestDev = devices[0];
 
-			pDevice = null;
-			lDevice = null;
+			// Prepare the queue families (we need to ensure a single queue for graphics and present)
+			// In the future, we will operate with a separate transfer queue, if possible, as well as a separate compute queue
+			Vk.DeviceQueueCreateInfo[] qInfos;
+			{
+				var qfams = bestDev.queues.Select((queue, idx) => (queue, family: idx)).ToArray();
+				var gFam = qfams.FirstOrDefault(fam => (fam.queue.QueueFlags & Vk.Queues.Graphics) > 0);
+				if (gFam.queue.QueueCount == 0 && gFam.family == 0)
+					throw new PlatformNotSupportedException("The selected device does not support graphics queues.");
+				qInfos = new Vk.DeviceQueueCreateInfo[] {
+					new Vk.DeviceQueueCreateInfo(gFam.family, 1, 1.0f)
+				};
+			}
 
-			// Populate the available features
+			// Populate the limits and features
 			features = default;
 			limits = default;
+			Vk.PhysicalDeviceFeatures enFeats = default;
+
+			// Create the device
+			Vk.DeviceCreateInfo dInfo = new Vk.DeviceCreateInfo(
+				qInfos,
+				null,
+				enFeats,
+				IntPtr.Zero
+			);
+			pDevice = bestDev.device;
+			lDevice = pDevice.CreateDevice(dInfo, null);
+			LINFO($"Created Vulkan logical device.");
+			info = new DeviceInfo
+			{
+				Name = bestDev.props.DeviceName,
+				IsDiscrete = (bestDev.props.DeviceType == Vk.PhysicalDeviceType.DiscreteGpu),
+				VendorName = VENDOR_ID_LIST.ContainsKey(bestDev.props.VendorId) ? VENDOR_ID_LIST[bestDev.props.VendorId] : "unknown",
+				DriverVersion = new AppVersion(bestDev.props.DriverVersion)
+			};
+			LINFO($"Device Info: {info.Name} (S:{bestDev.score} D:{info.IsDiscrete} V:{info.VendorName} DV:{info.DriverVersion.ToString()}).");
 		}
 
 		// Scores a physical device (somewhat arbitrarily, make this better later), score of zero is unsuitable
@@ -133,13 +169,20 @@ namespace Spectrum.Graphics
 			memProps = device.GetMemoryProperties();
 			queues = device.GetQueueFamilyProperties();
 
-			return 0;
+			uint score = 0;
+
+			// Strongly prefer discrete GPUS
+			if (props.DeviceType == Vk.PhysicalDeviceType.DiscreteGpu)
+				score += 10000;
+
+			return score;
 		}
 
 		// Destroys the global vulkan objects
 		private void destroyGlobalVulkanObjects(Vk.Instance inst, VkExt.DebugReportCallbackExt debugReport, Vk.Device device)
 		{
 			device?.Dispose();
+			LINFO("Destroyed Vulkan device.");
 
 			if (debugReport != null)
 			{
