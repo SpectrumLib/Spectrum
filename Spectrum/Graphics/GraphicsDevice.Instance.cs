@@ -95,7 +95,7 @@ namespace Spectrum.Graphics
 		}
 
 		// Selects and opens the device
-		private void openVulkanDevice(Vk.Instance instance, out Vk.PhysicalDevice pDevice, out Vk.Device lDevice, out VkKhr.SurfaceKhr surface,
+		private void openVulkanDevice(Vk.Instance instance, out Vk.PhysicalDevice pDevice, out Vk.Device lDevice,
 			out DeviceFeatures features, out DeviceLimits limits, out DeviceInfo info, out DeviceQueues queues)
 		{
 			// Enumerate the physical devices, and score and sort them, then remove invalid ones
@@ -163,12 +163,6 @@ namespace Spectrum.Graphics
 
 			// Retrieve the queues
 			queues.Graphics = lDevice.GetQueue(qInfos[0].QueueFamilyIndex, 0);
-
-			// Create the surface
-			long surfHandle = Glfw.CreateWindowSurface(instance, Application.Window.Handle);
-			Vk.AllocationCallbacks? acb = null;
-			surface = new VkKhr.SurfaceKhr(instance, ref acb, surfHandle);
-			LINFO("Created Vulkan presentation surface.");
 		}
 
 		// Scores a physical device (somewhat arbitrarily, make this better later), score of zero is unsuitable
@@ -191,11 +185,8 @@ namespace Spectrum.Graphics
 		}
 
 		// Destroys the global vulkan objects
-		private void destroyGlobalVulkanObjects(Vk.Instance inst, VkExt.DebugReportCallbackExt debugReport, Vk.Device device, VkKhr.SurfaceKhr surface)
+		private void destroyGlobalVulkanObjects(Vk.Instance inst, VkExt.DebugReportCallbackExt debugReport, Vk.Device device)
 		{
-			surface?.Dispose();
-			LINFO("Destroyed Vulkan presentation surface.");
-
 			device?.Dispose();
 			LINFO("Destroyed Vulkan device.");
 

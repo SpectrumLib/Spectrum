@@ -22,8 +22,9 @@ namespace Spectrum.Graphics
 		private readonly VkExt.DebugReportCallbackExt _vkDebugReport;
 		private readonly Vk.PhysicalDevice _vkPhysicalDevice;
 		private readonly Vk.Device _vkDevice;
-		private readonly VkKhr.SurfaceKhr _vkSurface;
 
+		// Swapchain
+		internal readonly Swapchain Swapchain;
 		// Queues
 		internal readonly DeviceQueues Queues;
 
@@ -48,7 +49,9 @@ namespace Spectrum.Graphics
 			Application = app;
 
 			createVulkanInstance(out _vkInstance, out _vkDebugReport);
-			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out _vkSurface, out Features, out Limits, out Info, out Queues);
+			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info, out Queues);
+
+			Swapchain = new Swapchain(this, _vkInstance, _vkDevice);
 		}
 		~GraphicsDevice()
 		{
@@ -64,9 +67,10 @@ namespace Spectrum.Graphics
 
 		private void dispose(bool disposing)
 		{
-			if (!IsDisposed)
+			if (!IsDisposed && disposing)
 			{
-				destroyGlobalVulkanObjects(_vkInstance, _vkDebugReport, _vkDevice, _vkSurface);
+				Swapchain.Dispose();
+				destroyGlobalVulkanObjects(_vkInstance, _vkDebugReport, _vkDevice);
 			}
 
 			IsDisposed = true;
