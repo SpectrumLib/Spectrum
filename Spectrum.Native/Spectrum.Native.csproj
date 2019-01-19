@@ -7,7 +7,7 @@
     <Authors>Sean Moss</Authors>
 	<Description>Package containing the native libraries used by Spectrum, extracted at runtime for loading.</Description>
 	<Company>N/A</Company>
-    <Copyright>Copyright © 2018 Sean Moss. All rights reserved.</Copyright>
+    <Copyright>Copyright © 2019 Sean Moss. All rights reserved.</Copyright>
     <PackageProjectUrl>spectrumlib.github.io</PackageProjectUrl>
 	<RepositoryUrl>https://github.com/SpectrumLib/Spectrum</RepositoryUrl>
 	<LangVersion>7.3</LangVersion>

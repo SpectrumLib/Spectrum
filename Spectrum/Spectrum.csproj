@@ -7,7 +7,7 @@
     <Authors>Sean Moss</Authors>
     <Description>Vulkan-powered framework for creating performant cross-platform games and simulations</Description>
     <Company>N/A</Company>
-    <Copyright>Copyright © 2018 Sean Moss. All rights reserved.</Copyright>
+    <Copyright>Copyright © 2019 Sean Moss. All rights reserved.</Copyright>
     <PackageProjectUrl>spectrumlib.github.io</PackageProjectUrl>
     <PackageIconUrl>https://github.com/SpectrumLib/Spectrum/blob/master/Resources/Logo/Thumbnail.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/SpectrumLib/Spectrum</RepositoryUrl>
@@ -33,5 +33,12 @@
       <HintPath>..\Dependencies\Vulkan\VulkanCore.dll</HintPath>
     </Reference>
   </ItemGroup>
+  
+  <!-- See https://www.meziantou.net/2018/08/28/merging-assemblies-using-ilrepack -->
+  <Target Name="Repack" AfterTargets="Build">
+	<Move SourceFiles="$(OUTDIR)\Spectrum.dll" DestinationFiles="$(OUTDIR)\Spectrum.tmp.dll" />
+	<Exec WorkingDirectory="$(OUTDIR)" Command="$(SolutionDir)Resources\Tools\ILRepack.exe /target:library /internalize Spectrum.tmp.dll VulkanCore.dll /out:Spectrum.dll" />
+	<Delete Files="$(OUTDIR)\Spectrum.tmp.dll" />
+  </Target>
 
 </Project>

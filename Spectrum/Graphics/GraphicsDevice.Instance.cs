@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
 using static Spectrum.InternalLog;
