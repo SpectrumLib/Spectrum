@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Reflection;
+using System.Collections.Generic;
+using System.Linq;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
 using static Spectrum.InternalLog;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Spectrum.Graphics
 {
@@ -12,7 +12,7 @@ namespace Spectrum.Graphics
 	public sealed partial class GraphicsDevice
 	{
 		// Creates a VkInstance
-		private (Vk.Instance, VkExt.DebugReportCallbackExt) createVulkanInstance()
+		private void createVulkanInstance(out Vk.Instance instance, out VkExt.DebugReportCallbackExt debugReport)
 		{
 			var appVersion = Application.AppParameters.Version;
 			var engVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -71,11 +71,11 @@ namespace Spectrum.Graphics
 				reqExt.ToArray(),
 				IntPtr.Zero
 			);
-			Vk.Instance instance = new Vk.Instance(iInfo, null);
+			instance = new Vk.Instance(iInfo, null);
 			LINFO("Created Vulkan instance.");
 
 			// Create the debug callback if needed
-			VkExt.DebugReportCallbackExt debugReport = null;
+			debugReport = null;
 			if (hasDebug)
 			{
 				VkExt.DebugReportCallbackCreateInfoExt dbInfo = new VkExt.DebugReportCallbackCreateInfoExt(
@@ -86,13 +86,61 @@ namespace Spectrum.Graphics
 				debugReport = VkExt.InstanceExtensions.CreateDebugReportCallbackExt(instance, dbInfo, null);
 				LINFO("Created Vulkan debug report callback.");
 			}
+		}
 
-			return (instance, debugReport);
+		// Selects and opens the device
+		private void openVulkanDevice(Vk.Instance instance, out Vk.PhysicalDevice pDevice, out Vk.Device lDevice,
+			out DeviceFeatures features, out DeviceLimits limits)
+		{
+			// Enumerate the physical devices, and score and sort them, then remove invalid ones
+			var devices = instance.EnumeratePhysicalDevices()
+				.Select(dev => {
+					var score = scoreDevice(dev,
+						out Vk.PhysicalDeviceProperties props,
+						out Vk.PhysicalDeviceFeatures feats,
+						out Vk.PhysicalDeviceMemoryProperties memProps,
+						out Vk.QueueFamilyProperties[] queues);
+					return (device: dev, props, feats, memProps, queues, score);
+				})
+				.OrderByDescending(dev => dev.score)
+				.ToList();
+			devices.RemoveAll(dev => {
+				if (dev.score == 0)
+				{
+					LDEBUG($"Ignoring invalid physical device: {dev.props.DeviceName}.");
+					return true;
+				}
+				return false;
+			});
+			if (devices.Count == 0)
+				throw new PlatformNotSupportedException("This system does not have any valid physical devices.");
+
+			pDevice = null;
+			lDevice = null;
+
+			// Populate the available features
+			features = default;
+			limits = default;
+		}
+
+		// Scores a physical device (somewhat arbitrarily, make this better later), score of zero is unsuitable
+		private uint scoreDevice(Vk.PhysicalDevice device, out Vk.PhysicalDeviceProperties props,
+			out Vk.PhysicalDeviceFeatures feats, out Vk.PhysicalDeviceMemoryProperties memProps,
+			out Vk.QueueFamilyProperties[] queues)
+		{
+			props = device.GetProperties();
+			feats = device.GetFeatures();
+			memProps = device.GetMemoryProperties();
+			queues = device.GetQueueFamilyProperties();
+
+			return 0;
 		}
 
 		// Destroys the global vulkan objects
-		private unsafe void destroyGlobalVulkanObjects(Vk.Instance inst, VkExt.DebugReportCallbackExt debugReport)
+		private void destroyGlobalVulkanObjects(Vk.Instance inst, VkExt.DebugReportCallbackExt debugReport, Vk.Device device)
 		{
+			device?.Dispose();
+
 			if (debugReport != null)
 			{
 				debugReport.Dispose();
