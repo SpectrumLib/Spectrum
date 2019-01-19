@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
+using VkKhr = VulkanCore.Khr;
 using static Spectrum.InternalLog;
 
 namespace Spectrum.Graphics
@@ -94,8 +95,8 @@ namespace Spectrum.Graphics
 		}
 
 		// Selects and opens the device
-		private void openVulkanDevice(Vk.Instance instance, out Vk.PhysicalDevice pDevice, out Vk.Device lDevice,
-			out DeviceFeatures features, out DeviceLimits limits, out DeviceInfo info)
+		private void openVulkanDevice(Vk.Instance instance, out Vk.PhysicalDevice pDevice, out Vk.Device lDevice, out VkKhr.SurfaceKhr surface,
+			out DeviceFeatures features, out DeviceLimits limits, out DeviceInfo info, out DeviceQueues queues)
 		{
 			// Enumerate the physical devices, and score and sort them, then remove invalid ones
 			var devices = instance.EnumeratePhysicalDevices()
@@ -104,8 +105,8 @@ namespace Spectrum.Graphics
 						out Vk.PhysicalDeviceProperties props,
 						out Vk.PhysicalDeviceFeatures feats,
 						out Vk.PhysicalDeviceMemoryProperties memProps,
-						out Vk.QueueFamilyProperties[] queues);
-					return (device: dev, props, feats, memProps, queues, score);
+						out Vk.QueueFamilyProperties[] qfams);
+					return (device: dev, props, feats, memProps, queues: qfams, score);
 				})
 				.OrderByDescending(dev => dev.score)
 				.ToList();
@@ -125,10 +126,12 @@ namespace Spectrum.Graphics
 			// In the future, we will operate with a separate transfer queue, if possible, as well as a separate compute queue
 			Vk.DeviceQueueCreateInfo[] qInfos;
 			{
-				var qfams = bestDev.queues.Select((queue, idx) => (queue, family: idx)).ToArray();
-				var gFam = qfams.FirstOrDefault(fam => (fam.queue.QueueFlags & Vk.Queues.Graphics) > 0);
+				var qfams = bestDev.queues
+					.Select((queue, idx) => (queue, present: Glfw.GetPhysicalDevicePresentationSupport(instance, bestDev.device, (uint)idx), family: idx))
+					.ToArray();
+				var gFam = qfams.FirstOrDefault(fam => (fam.queue.QueueFlags & Vk.Queues.Graphics) > 0 && fam.present);
 				if (gFam.queue.QueueCount == 0 && gFam.family == 0)
-					throw new PlatformNotSupportedException("The selected device does not support graphics queues.");
+					throw new PlatformNotSupportedException("The selected device does not support a graphics queue with present capabilities.");
 				qInfos = new Vk.DeviceQueueCreateInfo[] {
 					new Vk.DeviceQueueCreateInfo(gFam.family, 1, 1.0f)
 				};
@@ -157,6 +160,15 @@ namespace Spectrum.Graphics
 				DriverVersion = new AppVersion(bestDev.props.DriverVersion)
 			};
 			LINFO($"Device Info: {info.Name} (S:{bestDev.score} D:{info.IsDiscrete} V:{info.VendorName} DV:{info.DriverVersion.ToString()}).");
+
+			// Retrieve the queues
+			queues.Graphics = lDevice.GetQueue(qInfos[0].QueueFamilyIndex, 0);
+
+			// Create the surface
+			long surfHandle = Glfw.CreateWindowSurface(instance, Application.Window.Handle);
+			Vk.AllocationCallbacks? acb = null;
+			surface = new VkKhr.SurfaceKhr(instance, ref acb, surfHandle);
+			LINFO("Created Vulkan presentation surface.");
 		}
 
 		// Scores a physical device (somewhat arbitrarily, make this better later), score of zero is unsuitable
@@ -179,8 +191,11 @@ namespace Spectrum.Graphics
 		}
 
 		// Destroys the global vulkan objects
-		private void destroyGlobalVulkanObjects(Vk.Instance inst, VkExt.DebugReportCallbackExt debugReport, Vk.Device device)
+		private void destroyGlobalVulkanObjects(Vk.Instance inst, VkExt.DebugReportCallbackExt debugReport, Vk.Device device, VkKhr.SurfaceKhr surface)
 		{
+			surface?.Dispose();
+			LINFO("Destroyed Vulkan presentation surface.");
+
 			device?.Dispose();
 			LINFO("Destroyed Vulkan device.");
 

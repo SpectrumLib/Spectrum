@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
+using Vk = VulkanCore;
 using static Spectrum.InternalLog;
 
 namespace Spectrum
@@ -339,6 +340,10 @@ namespace Spectrum
 			public delegate void glfwSetWindowFocusCallback(IntPtr window, GLFWwindowfocusfun focus_callback);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void glfwSetWindowIconifyCallback(IntPtr window, GLFWwindowiconifyfun iconify_callback);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate int glfwGetPhysicalDevicePresentationSupport(IntPtr instance, IntPtr device, uint family);
+			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+			public delegate int glfwCreateWindowSurface(IntPtr instance, IntPtr window, IntPtr alloc, out IntPtr surface);
 		}
 
 		#region Umanaged Delegates
@@ -374,6 +379,8 @@ namespace Spectrum
 		private static Delegates.glfwSetWindowSizeCallback _glfwSetWindowSizeCallback;
 		private static Delegates.glfwSetWindowFocusCallback _glfwSetWindowFocusCallback;
 		private static Delegates.glfwSetWindowIconifyCallback _glfwSetWindowIconifyCallback;
+		private static Delegates.glfwGetPhysicalDevicePresentationSupport _glfwGetPhysicalDevicePresentationSupport;
+		private static Delegates.glfwCreateWindowSurface _glfwCreateWindowSurface;
 		#endregion // Unmanaged Delegates
 
 		#region Structs
@@ -505,6 +512,17 @@ namespace Spectrum
 		public static void SetWindowFocusCallback(IntPtr window, GLFWwindowfocusfun func) => _glfwSetWindowFocusCallback(window, func);
 
 		public static void SetWindowIconifyCallback(IntPtr window, GLFWwindowiconifyfun func) => _glfwSetWindowIconifyCallback(window, func);
+
+		public static bool GetPhysicalDevicePresentationSupport(Vk.Instance inst, Vk.PhysicalDevice dev, uint fam)
+			=> (_glfwGetPhysicalDevicePresentationSupport(inst.Handle, dev.Handle, fam) == 1);
+
+		public static long CreateWindowSurface(Vk.Instance inst, IntPtr window)
+		{
+			Vk.Result res = (Vk.Result)_glfwCreateWindowSurface(inst.Handle, window, IntPtr.Zero, out IntPtr surface);
+			if (res != Vk.Result.Success)
+				throw new Vk.VulkanException(res, "Could not create Vulkan surface from GLFW.");
+			return surface.ToInt64();
+		}
 		#endregion // Interop Functions
 
 		public static TimeSpan LoadTime { get; internal set; } = TimeSpan.Zero;
@@ -548,6 +566,8 @@ namespace Spectrum
 			_glfwSetWindowSizeCallback = NativeLoader.LoadFunction<Delegates.glfwSetWindowSizeCallback>(module, "glfwSetWindowSizeCallback");
 			_glfwSetWindowFocusCallback = NativeLoader.LoadFunction<Delegates.glfwSetWindowFocusCallback>(module, "glfwSetWindowFocusCallback");
 			_glfwSetWindowIconifyCallback = NativeLoader.LoadFunction<Delegates.glfwSetWindowIconifyCallback>(module, "glfwSetWindowIconifyCallback");
+			_glfwGetPhysicalDevicePresentationSupport = NativeLoader.LoadFunction<Delegates.glfwGetPhysicalDevicePresentationSupport>(module, "glfwGetPhysicalDevicePresentationSupport");
+			_glfwCreateWindowSurface = NativeLoader.LoadFunction<Delegates.glfwCreateWindowSurface>(module, "glfwCreateWindowSurface");
 
 			LoadTime = timer.Elapsed;
 		}

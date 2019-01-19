@@ -1,6 +1,7 @@
 ﻿using System;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
+using VkKhr = VulkanCore.Khr;
 
 namespace Spectrum.Graphics
 {
@@ -21,6 +22,10 @@ namespace Spectrum.Graphics
 		private readonly VkExt.DebugReportCallbackExt _vkDebugReport;
 		private readonly Vk.PhysicalDevice _vkPhysicalDevice;
 		private readonly Vk.Device _vkDevice;
+		private readonly VkKhr.SurfaceKhr _vkSurface;
+
+		// Queues
+		internal readonly DeviceQueues Queues;
 
 		/// <summary>
 		/// The set of features and extensions that the device supports.
@@ -43,7 +48,7 @@ namespace Spectrum.Graphics
 			Application = app;
 
 			createVulkanInstance(out _vkInstance, out _vkDebugReport);
-			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info);
+			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out _vkSurface, out Features, out Limits, out Info, out Queues);
 		}
 		~GraphicsDevice()
 		{
@@ -61,7 +66,7 @@ namespace Spectrum.Graphics
 		{
 			if (!IsDisposed)
 			{
-				destroyGlobalVulkanObjects(_vkInstance, _vkDebugReport, _vkDevice);
+				destroyGlobalVulkanObjects(_vkInstance, _vkDebugReport, _vkDevice, _vkSurface);
 			}
 
 			IsDisposed = true;
@@ -106,5 +111,12 @@ namespace Spectrum.Graphics
 		/// The version of the active Vulkan driver.
 		/// </summary>
 		public AppVersion DriverVersion;
+	}
+
+	// Contains the queues that the device uses
+	internal struct DeviceQueues
+	{
+		// The main graphics/present queue
+		public Vk.Queue Graphics;
 	}
 }
