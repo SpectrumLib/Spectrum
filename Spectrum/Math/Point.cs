@@ -200,6 +200,18 @@ namespace Spectrum
 		{
 			return new Vec2(p.X, p.Y);
 		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Point (in VulkanCore.Extent2D e)
+		{
+			return new Point(e.Width, e.Height);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator VulkanCore.Extent2D (in Point p)
+		{
+			return new VulkanCore.Extent2D(p.X, p.Y);
+		}
 		#endregion // Operators
 
 		#region Min/Max

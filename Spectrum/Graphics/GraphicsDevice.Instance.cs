@@ -122,6 +122,19 @@ namespace Spectrum.Graphics
 				throw new PlatformNotSupportedException("This system does not have any valid physical devices.");
 			var bestDev = devices[0];
 
+			// Ensure extension support
+			var aExts = bestDev.device.EnumerateExtensionProperties().Select(ext => ext.ExtensionName).ToArray();
+			var rExts = new List<string> { Vk.Constant.DeviceExtension.KhrSwapchain };
+			{
+				var missing = rExts.FindAll(ext => !aExts.Contains(ext));
+				if (missing.Count > 0)
+				{
+					string msg = $"Required Vulkan device extensions are missing: {String.Join(", ", missing)}";
+					LFATAL(msg);
+					throw new PlatformNotSupportedException(msg);
+				}
+			}
+
 			// Prepare the queue families (we need to ensure a single queue for graphics and present)
 			// In the future, we will operate with a separate transfer queue, if possible, as well as a separate compute queue
 			Vk.DeviceQueueCreateInfo[] qInfos;
@@ -145,7 +158,7 @@ namespace Spectrum.Graphics
 			// Create the device
 			Vk.DeviceCreateInfo dInfo = new Vk.DeviceCreateInfo(
 				qInfos,
-				null,
+				rExts.ToArray(),
 				enFeats,
 				IntPtr.Zero
 			);

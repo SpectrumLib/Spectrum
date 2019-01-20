@@ -10,21 +10,6 @@ namespace Spectrum.Utilities
 	public static class CollectionUtils
 	{
 		/// <summary>
-		/// Implements a foreach loop as a Linq-style function call.
-		/// </summary>
-		/// <typeparam name="T">The type of the array.</typeparam>
-		/// <param name="arr">The array to iterate over.</param>
-		/// <param name="func">The function to run on each member in the array.</param>
-		public static void ForEach<T>(this T[] arr, Action<T> func)
-		{
-			if (arr == null)
-				throw new ArgumentNullException(nameof(arr));
-
-			foreach (var val in arr)
-				func(val);
-		}
-
-		/// <summary>
 		/// Implements a foreach loop as a Linq-stle function call.
 		/// </summary>
 		/// <typeparam name="T">The type held by the enumerator.</typeparam>
@@ -37,6 +22,22 @@ namespace Spectrum.Utilities
 
 			foreach (var val in enumer)
 				func(val);
+		}
+
+		/// <summary>
+		/// Implements a foreach loop as a Linq-stle function call, providing the function with the collection index.
+		/// </summary>
+		/// <typeparam name="T">The type held by the enumerator.</typeparam>
+		/// <param name="enumer">The enumerable collection to iterate over.</param>
+		/// <param name="func">The function to run on each member of the enumerator.</param>
+		public static void ForEach<T>(this IEnumerable<T> enumer, Action<T, int> func)
+		{
+			if (enumer == null)
+				throw new ArgumentNullException(nameof(enumer));
+
+			int index = 0;
+			foreach (var val in enumer)
+				func(val, index++);
 		}
 
 		/// <summary>

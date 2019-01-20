@@ -51,7 +51,7 @@ namespace Spectrum.Graphics
 			createVulkanInstance(out _vkInstance, out _vkDebugReport);
 			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info, out Queues);
 
-			Swapchain = new Swapchain(this, _vkInstance, _vkDevice);
+			Swapchain = new Swapchain(this, _vkInstance, _vkPhysicalDevice, _vkDevice);
 		}
 		~GraphicsDevice()
 		{

@@ -102,6 +102,8 @@ namespace Spectrum
 
 			doInitialize();
 
+			GC.Collect(); // Probably not a bad idea after potentially heavy initialization
+
 			Driver.MainLoop();
 		}
 
