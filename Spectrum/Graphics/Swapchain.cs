@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Linq;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
 using VkKhr = VulkanCore.Khr;
 using static Spectrum.InternalLog;
-using System.Linq;
 using Spectrum.Utilities;
 
 namespace Spectrum.Graphics
@@ -21,6 +21,11 @@ namespace Spectrum.Graphics
 		private static readonly Vk.ImageSubresourceRange DEFAULT_SUBRESOURCE_RANGE = new Vk.ImageSubresourceRange(
 			Vk.ImageAspects.Color, 0, 1, 0, 1
 		);
+		// "Infinite" timeout period
+		private const long INFINITE_TIMEOUT = -1;
+		// The maximum number of "in-flight" frames waiting to be rendered, past this we wait for them to be finished
+		// Note that this is the global maximum, and the actual number may be lower depending on the presentation engine capabilities
+		private const uint MAX_INFLIGHT_FRAMES = 3;
 
 		#region Fields
 		public readonly GraphicsDevice Device;
@@ -37,12 +42,17 @@ namespace Spectrum.Graphics
 		private VkKhr.SwapchainKhr _swapChain;
 		// The current swapchain images
 		private SwapchainImage[] _swapChainImages;
+		// Objects used to synchronize rendering
+		private SyncObjects _syncObjects;
 
 		// Current chosen swapchain parameters
 		private VkKhr.SurfaceFormatKhr _surfaceFormat;
 		private VkKhr.PresentModeKhr _presentMode;
 		// The current extent of the swapchain images
 		public Point Extent { get; private set; } = Point.Zero;
+
+		// Used to mark the swapchain for re-creation
+		public bool Dirty { get; private set; } = false;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -87,6 +97,17 @@ namespace Spectrum.Graphics
 				pModes.Contains(VkKhr.PresentModeKhr.Fifo) ? VkKhr.PresentModeKhr.Fifo :
 				VkKhr.PresentModeKhr.Immediate;
 
+			// Prepare the synchronization objects
+			_syncObjects.ImageAvailable = new Vk.Semaphore[MAX_INFLIGHT_FRAMES];
+			_syncObjects.RenderComplete = new Vk.Semaphore[MAX_INFLIGHT_FRAMES];
+			_syncObjects.Processed = new Vk.Fence[MAX_INFLIGHT_FRAMES];
+			for (int i = 0; i < MAX_INFLIGHT_FRAMES; ++i)
+			{
+				_syncObjects.ImageAvailable[i] = device.CreateSemaphore();
+				_syncObjects.RenderComplete[i] = device.CreateSemaphore();
+				_syncObjects.Processed[i] = device.CreateFence(new Vk.FenceCreateInfo(Vk.FenceCreateFlags.Signaled));
+			}
+
 			// Build the swapchain
 			rebuildSwapchain();
 		}
@@ -94,6 +115,9 @@ namespace Spectrum.Graphics
 		{
 			dispose(false);
 		}
+
+		// Called externally to force the swapchain to rebuild before starting the next render frame
+		public void MarkForRebuild() => Dirty = true;
 
 		private void rebuildSwapchain()
 		{
@@ -109,8 +133,10 @@ namespace Spectrum.Graphics
 			int imCount = sCaps.MinImageCount + 1;
 			if (sCaps.MaxImageCount != 0)
 				imCount = Math.Min(imCount, sCaps.MaxImageCount);
+			_syncObjects.MaxInflightFrames = (uint)Math.Min(imCount, MAX_INFLIGHT_FRAMES);
 
 			// Create the swapchain
+			var oldSwapChain = _swapChain;
 			VkKhr.SwapchainCreateInfoKhr cInfo = new VkKhr.SwapchainCreateInfoKhr(
 				Surface, 
 				_surfaceFormat.Format, 
@@ -118,9 +144,12 @@ namespace Spectrum.Graphics
 				minImageCount: imCount,
 				imageColorSpace: _surfaceFormat.ColorSpace,
 				presentMode: _presentMode,
-				oldSwapchain: null
+				oldSwapchain: oldSwapChain
 			);
 			_swapChain = VkKhr.DeviceExtensions.CreateSwapchainKhr(_vkDevice, cInfo);
+
+			// Destroy the old swapchain
+			oldSwapChain?.Dispose();
 
 			// Get the new swapchain images
 			var imgs = _swapChain.GetImages();
@@ -135,16 +164,69 @@ namespace Spectrum.Graphics
 				_swapChainImages[idx] = new SwapchainImage { Image = img, View = img.CreateView(vInfo) };
 			});
 
-			LDEBUG($"Presentation swapchain rebuilt @ {Extent} (F:{_surfaceFormat.Format}:{_surfaceFormat.ColorSpace==VkKhr.ColorSpaceKhr.SRgbNonlinear} I:{_swapChainImages.Length}).");
+			LDEBUG($"Presentation swapchain rebuilt @ {Extent} " +
+				$"(F:{_surfaceFormat.Format}:{_surfaceFormat.ColorSpace==VkKhr.ColorSpaceKhr.SRgbNonlinear} I:{_swapChainImages.Length}:{_syncObjects.MaxInflightFrames}).");
+			Dirty = false;
 		}
 
 		private void cleanSwapchain()
 		{
 			// Cleanup the existing image views
 			_swapChainImages?.ForEach(img => img.View.Dispose());
+		}
 
-			// Destroy existing images
-			_swapChain?.Dispose();
+		// Acquires the next image to render to, and recreates the swapchain if needed
+		public void BeginFrame()
+		{
+			// Wait for the oldest inflight frame to be done
+			_syncObjects.CurrentProcessed.Wait(INFINITE_TIMEOUT);
+			//_syncObjects.CurrentProcessed.Reset(); // TODO: BRING THIS BACK ONCE THE FENCE IS SIGNALLED BY RENDER CODE, RIGHT NOW THIS HANGS THE PROGRAM
+
+			// Rebuild if needed
+		try_rebuild:
+			if (Dirty)
+			{
+				cleanSwapchain();
+				rebuildSwapchain();
+			}
+			
+			// Try to get the next image, with a rebuild and second attempt to acquire on failure
+			try
+			{
+				_syncObjects.CurrentImage = _swapChain.AcquireNextImage(INFINITE_TIMEOUT, _syncObjects.CurrentImageAvailable, null);
+			}
+			catch (Vk.VulkanException e) 
+				when (e.Result == Vk.Result.ErrorOutOfDateKhr || e.Result == Vk.Result.SuboptimalKhr)
+			{
+				Dirty = true;
+				goto try_rebuild;
+			}
+			catch { throw; }
+		}
+
+		// Submits the currently aquired image to be presented
+		public void EndFrame()
+		{
+			// Prepare the present info
+			VkKhr.PresentInfoKhr pInfo = new VkKhr.PresentInfoKhr(
+				new[] { _syncObjects.CurrentRenderComplete },
+				new[] { _swapChain },
+				new[] { _syncObjects.CurrentImage }
+			);
+
+			// Present and check for dirty swapchain
+			try
+			{
+				VkKhr.QueueExtensions.PresentKhr(_presentQueue, pInfo);
+			}
+			catch (Vk.VulkanException e)
+				when (e.Result == Vk.Result.ErrorOutOfDateKhr || e.Result == Vk.Result.SuboptimalKhr)
+			{
+				Dirty = true;
+			}
+			catch { throw; }
+
+			_syncObjects.MoveNext();
 		}
 
 		#region IDisposable
@@ -158,7 +240,16 @@ namespace Spectrum.Graphics
 		{
 			if (!_isDisposed && disposing)
 			{
+				// We need to wait for the final in flight frames to finish
+				_vkDevice.WaitIdle();
+
+				// Clean the sync objects
+				_syncObjects.ImageAvailable.ForEach(s => s.Dispose());
+				_syncObjects.RenderComplete.ForEach(s => s.Dispose());
+				_syncObjects.Processed.ForEach(f => f.Dispose());
+
 				cleanSwapchain();
+				_swapChain?.Dispose();
 				LINFO("Destroyed Vulkan swapchain.");
 
 				Surface.Dispose();
@@ -174,6 +265,29 @@ namespace Spectrum.Graphics
 		{
 			public Vk.Image Image;
 			public Vk.ImageView View;
+		}
+
+		// Objects used to synchronize rendering
+		private struct SyncObjects
+		{
+			// The maximum number of frames available for queueing before waiting
+			public uint MaxInflightFrames;
+			// The index if the current in-flight synchronization primitives to use
+			public uint SyncIndex;
+			// The index of the image currently acquired for this frame
+			public int CurrentImage;
+			// Semaphores for coordinating when an image is available
+			public Vk.Semaphore[] ImageAvailable;
+			// Semaphores for coordinating when frames are finished rendering
+			public Vk.Semaphore[] RenderComplete;
+			// Fence for synching application to presentation image
+			public Vk.Fence[] Processed;
+
+			public Vk.Semaphore CurrentImageAvailable => ImageAvailable[SyncIndex];
+			public Vk.Semaphore CurrentRenderComplete => RenderComplete[SyncIndex];
+			public Vk.Fence CurrentProcessed => Processed[SyncIndex];
+
+			public void MoveNext() => SyncIndex = (SyncIndex + 1) % MaxInflightFrames;
 		}
 	}
 }

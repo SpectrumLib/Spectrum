@@ -150,8 +150,12 @@ namespace Spectrum
 		// Performs the render logic for a single frame
 		private void doRender()
 		{
+			GraphicsDevice.BeginFrame();
+
 			PreRender();
 			Render();
+
+			GraphicsDevice.EndFrame();
 		}
 
 		/// <summary>

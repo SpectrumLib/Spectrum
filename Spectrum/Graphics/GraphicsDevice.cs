@@ -58,6 +58,20 @@ namespace Spectrum.Graphics
 			dispose(false);
 		}
 
+		#region Frame Functions
+		// Called at the beginning of a render frame to prepare the render subsystem
+		internal void BeginFrame()
+		{
+			Swapchain.BeginFrame();
+		}
+
+		// Called at the end of a render frame to present the frame
+		internal void EndFrame()
+		{
+			Swapchain.EndFrame();
+		}
+		#endregion // Frame Functions
+
 		#region IDisposable
 		public void Dispose()
 		{
