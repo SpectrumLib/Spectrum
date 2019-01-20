@@ -135,7 +135,7 @@ namespace Spectrum.Graphics
 				_swapChainImages[idx] = new SwapchainImage { Image = img, View = img.CreateView(vInfo) };
 			});
 
-			LINFO($"Presentation swapchain rebuilt @ {Extent} (F:{_surfaceFormat.Format}:{_surfaceFormat.ColorSpace==VkKhr.ColorSpaceKhr.SRgbNonlinear} I:{_swapChainImages.Length}).");
+			LDEBUG($"Presentation swapchain rebuilt @ {Extent} (F:{_surfaceFormat.Format}:{_surfaceFormat.ColorSpace==VkKhr.ColorSpaceKhr.SRgbNonlinear} I:{_swapChainImages.Length}).");
 		}
 
 		private void cleanSwapchain()
