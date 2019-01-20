@@ -1,4 +1,5 @@
 using System;
+using Spectrum.Graphics;
 
 namespace Spectrum
 {
@@ -82,6 +83,15 @@ namespace Spectrum
 		/// to false.
 		/// </summary>
 		public bool EnableValidationLayers;
+		/// <summary>
+		/// Controls which special features are enabled on the graphics device. By default, no special features are enabled.
+		/// </summary>
+		public DeviceFeatures EnabledGraphicsFeatures;
+		/// <summary>
+		/// If true, then requesting a graphics device feature that is not available will throw an exception, instead of
+		/// logging an error and proceeding.
+		/// </summary>
+		public bool StrictGraphicsFeatures;
 		#endregion // Graphics
 		#endregion // Fields
 
@@ -108,6 +118,8 @@ namespace Spectrum
 
 			// Graphics defaults
 			EnableValidationLayers = false;
+			EnabledGraphicsFeatures = default;
+			StrictGraphicsFeatures = false;
 		}
 
 		/// <summary>

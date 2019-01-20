@@ -154,6 +154,24 @@ namespace Spectrum.Graphics
 			features = default;
 			limits = default;
 			Vk.PhysicalDeviceFeatures enFeats = default;
+			var rFeats = Application.AppParameters.EnabledGraphicsFeatures;
+			var strict = Application.AppParameters.StrictGraphicsFeatures;
+			bool _enableFeature(bool avail, string name)
+			{
+				if (!avail)
+				{
+					if (strict) throw new PlatformNotSupportedException($"The required device feature '{name}' is not available.");
+					else LERROR($"The requested device feature '{name}' is not available.");
+					return false;
+				}
+				return true;
+			}
+			if (rFeats.FillModeNonSolid)
+				enFeats.FillModeNonSolid = features.FillModeNonSolid = _enableFeature(bestDev.feats.FillModeNonSolid, "FillModeNonSolid");
+			if (rFeats.WideLines)
+				enFeats.WideLines = features.WideLines = _enableFeature(bestDev.feats.WideLines, "WideLines");
+			if (rFeats.DepthClamp)
+				enFeats.DepthClamp = features.DepthClamp = _enableFeature(bestDev.feats.DepthClamp, "DepthClamp");
 
 			// Create the device
 			Vk.DeviceCreateInfo dInfo = new Vk.DeviceCreateInfo(

@@ -29,7 +29,7 @@ namespace Spectrum.Graphics
 		internal readonly DeviceQueues Queues;
 
 		/// <summary>
-		/// The set of features and extensions that the device supports.
+		/// The set of features and extensions that the device supports, and are additionally enabled by the application.
 		/// </summary>
 		public readonly DeviceFeatures Features;
 		/// <summary>
@@ -97,7 +97,18 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public struct DeviceFeatures
 	{
-
+		/// <summary>
+		/// If the device supports rendering in line or point fill mode.
+		/// </summary>
+		public bool FillModeNonSolid;
+		/// <summary>
+		/// If the device supports line widths other than 1.0.
+		/// </summary>
+		public bool WideLines;
+		/// <summary>
+		/// If the device supports clamping depth fragments instead of discarding them.
+		/// </summary>
+		public bool DepthClamp;
 	}
 
 	/// <summary>
