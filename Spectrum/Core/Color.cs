@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using Vk = VulkanCore;
 
 namespace Spectrum
 {
@@ -247,7 +246,30 @@ namespace Spectrum
 		public static bool operator != (Color l, Color r) => l._value != r._value;
 
 		#region Predefined Colors
-
+		// Standard colors
+		public static readonly Color Black = new Color(0x000000FF);
+		public static readonly Color TransparentBlack = new Color(0x00000000);
+		public static readonly Color White = new Color(0xFFFFFFFF);
+		public static readonly Color TransparentWhite = new Color(0xFFFFFF00);
+		public static readonly Color Red = new Color(0xFF0000FF);
+		public static readonly Color Green = new Color(0x00FF00FF);
+		public static readonly Color Blue = new Color(0x0000FFFF);
+		public static readonly Color Yellow = new Color(0xFFFF00FF);
+		public static readonly Color Magenta = new Color(0xFF00FFFF);
+		public static readonly Color Cyan = new Color(0x00FFFFFF);
+		// Shades of gray
+		public static readonly Color DarkGray = new Color(0x222222FF);
+		public static readonly Color Gray = new Color(0x555555FF);
+		public static readonly Color LightGray = new Color(0x999999FF);
+		// Spectrum logo colors
+		public static readonly Color SpectrumRed = new Color(0xDA271CFF);
+		public static readonly Color SpectrumOrange = new Color(0xFF8800FF);
+		public static readonly Color SpectrumGreen = new Color(0x2AA42FFF);
+		public static readonly Color SpectrumBlue = new Color(0x162FD9FF);
+		public static readonly Color SpectrumPurple = new Color(0x5B1C81FF);
+		public static readonly Color SpectrumGray = new Color(0x666666FF);
+		// Other lib colors
+		public static readonly Color MonoGameOrange = new Color(0xE73C00FF); // Thanks to MonoGame for being an inspiration for this library
 		#endregion // Predefined Colors
 	}
 }
