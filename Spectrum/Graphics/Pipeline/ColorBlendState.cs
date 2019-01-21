@@ -10,6 +10,37 @@ namespace Spectrum.Graphics
 	/// <remarks>It is a planned feature to enable logic blending operations, but it is not supported now.</remarks>
 	public struct ColorBlendState
 	{
+		#region Predefined States
+		/// <summary>
+		/// No blending is performed: alpha is ignored and the new color fully replaces the existing color.
+		/// </summary>
+		public static readonly ColorBlendState None = new ColorBlendState {
+			BlendEnabled = false,
+			SrcColorFactor = BlendFactor.One, DstColorFactor = BlendFactor.Zero, ColorOp = BlendOp.Add,
+			SrcAlphaFactor = BlendFactor.One, DstAlphaFactor = BlendFactor.Zero, AlphaOp = BlendOp.Add,
+			WriteMask = null, BlendConstants = Color.TransparentBlack
+		};
+		/// <summary>
+		/// The new color is added directly on top of the old color, taking into account the source alpha.
+		/// </summary>
+		public static readonly ColorBlendState Additive = new ColorBlendState {
+			BlendEnabled = true,
+			SrcColorFactor = BlendFactor.SrcAlpha, DstColorFactor = BlendFactor.One, ColorOp = BlendOp.Add,
+			SrcAlphaFactor = BlendFactor.SrcAlpha, DstAlphaFactor = BlendFactor.One, AlphaOp = BlendOp.Add,
+			WriteMask = null, BlendConstants = Color.TransparentBlack
+		};
+		/// <summary>
+		/// Fully blends the source and destination colors using the alpha values for both. This is the traditional
+		/// "nothing special" transparency blending found in most engines and games.
+		/// </summary>
+		public static readonly ColorBlendState Alpha = new ColorBlendState {
+			BlendEnabled = true,
+			SrcColorFactor = BlendFactor.SrcAlpha, DstColorFactor = BlendFactor.OneMinusSrcAlpha, ColorOp = BlendOp.Add,
+			SrcAlphaFactor = BlendFactor.One, DstAlphaFactor = BlendFactor.Zero, AlphaOp = BlendOp.Add,
+			WriteMask = null, BlendConstants = Color.TransparentBlack
+		};
+		#endregion // Predefined States
+
 		#region Fields
 		/// <summary>
 		/// If color blending is enabled.

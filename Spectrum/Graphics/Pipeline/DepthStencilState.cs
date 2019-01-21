@@ -8,6 +8,58 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public struct DepthStencilState
 	{
+		#region Predefined States
+		/// <summary>
+		/// No depth or stencil information is written or tested against.
+		/// </summary>
+		public static readonly DepthStencilState None = new DepthStencilState {
+			DepthTestEnable = false, DepthWriteEnable = false, DepthOp = CompareOp.Always,
+			DepthBoundsEnable = false, MinDepthBounds = 0, MaxDepthBounds = 1,
+			StencilTestEnable = false, StencilOp = CompareOp.Never, FailOp = Graphics.StencilOp.Keep, PassOp = Graphics.StencilOp.Keep,
+			DepthFailOp = Graphics.StencilOp.Keep, CompareMask = null, WriteMask = null, StencilReference = 0
+		};
+		/// <summary>
+		/// Standard depth testing with closer fragments overriding further ones, with no stencil testing.
+		/// </summary>
+		public static readonly DepthStencilState Default = new DepthStencilState {
+			DepthTestEnable = true, DepthWriteEnable = true, DepthOp = CompareOp.Less,
+			DepthBoundsEnable = false, MinDepthBounds = 0, MaxDepthBounds = 1,
+			StencilTestEnable = false, StencilOp = CompareOp.Never, FailOp = Graphics.StencilOp.Keep, PassOp = Graphics.StencilOp.Keep,
+			DepthFailOp = Graphics.StencilOp.Keep, CompareMask = null, WriteMask = null, StencilReference = 0
+		};
+		/// <summary>
+		/// The standard depth test is performed, but new depth information is never written to the depth buffer. Does
+		/// not have any stencil testing.
+		/// </summary>
+		public static readonly DepthStencilState DepthRead = new DepthStencilState {
+			DepthTestEnable = true, DepthWriteEnable = false, DepthOp = CompareOp.Less,
+			DepthBoundsEnable = false, MinDepthBounds = 0, MaxDepthBounds = 1,
+			StencilTestEnable = false, StencilOp = CompareOp.Never, FailOp = Graphics.StencilOp.Keep, PassOp = Graphics.StencilOp.Keep,
+			DepthFailOp = Graphics.StencilOp.Keep, CompareMask = null, WriteMask = null, StencilReference = 0
+		};
+		/// <summary>
+		/// Standard depth testing, with passing depth samples also writing a value of 1 to the stencil buffer.
+		/// </summary>
+		/// <remarks>Designed to be used in conjunction with <see cref="StencilRead"/> to implement masked rendering.</remarks>
+		public static readonly DepthStencilState StencilWrite = new DepthStencilState {
+			DepthTestEnable = true, DepthWriteEnable = true, DepthOp = CompareOp.Less,
+			DepthBoundsEnable = false, MinDepthBounds = 0, MaxDepthBounds = 1,
+			StencilTestEnable = true, StencilOp = CompareOp.Always, FailOp = Graphics.StencilOp.Replace, PassOp = Graphics.StencilOp.Replace,
+			DepthFailOp = Graphics.StencilOp.Zero, CompareMask = null, WriteMask = null, StencilReference = 1
+		};
+		/// <summary>
+		/// Standard read-only depth testing, also checking against the stencil buffer having a value of 1.
+		/// </summary>
+		/// <remarks>Designed to be used in conjunction with <see cref="StencilWrite"/> to implement masked rendering.</remarks>
+		public static readonly DepthStencilState StencilRead = new DepthStencilState {
+			DepthTestEnable = true, DepthWriteEnable = false, DepthOp = CompareOp.Less,
+			DepthBoundsEnable = false, MinDepthBounds = 0, MaxDepthBounds = 1,
+			StencilTestEnable = true, StencilOp = CompareOp.Equal, FailOp = Graphics.StencilOp.Keep, PassOp = Graphics.StencilOp.Keep,
+			DepthFailOp = Graphics.StencilOp.Keep, CompareMask = null, WriteMask = null, StencilReference = 1
+		};
+		#endregion // Predefined States
+
+		#region Fields
 		/// <summary>
 		/// If testing against the depth buffer is enabled.
 		/// </summary>
@@ -64,6 +116,7 @@ namespace Spectrum.Graphics
 		/// The value used in stencil operations that require a reference value.
 		/// </summary>
 		public int StencilReference;
+		#endregion // Fields
 
 		internal Vk.PipelineDepthStencilStateCreateInfo ToCreateInfo()
 		{
@@ -130,17 +183,41 @@ namespace Spectrum.Graphics
 	}
 
 	/// <summary>
-	/// Operations to perform on the stencil buffer when stencil tests pass.
+	/// Operations to perform on a stencil buffer fragment when it passes the stencil test.
 	/// </summary>
 	public enum StencilOp
 	{
+		/// <summary>
+		/// Keeps the existing fragment value.
+		/// </summary>
 		Keep = Vk.StencilOp.Keep,
+		/// <summary>
+		/// Zeros out the fragment.
+		/// </summary>
 		Zero = Vk.StencilOp.Zero,
+		/// <summary>
+		/// Replaces the fragment with the reference value.
+		/// </summary>
 		Replace = Vk.StencilOp.Replace,
+		/// <summary>
+		/// Increments the fragment value by one, and clamps it to a max value.
+		/// </summary>
 		IncrementAndClamp = Vk.StencilOp.IncrementAndClamp,
+		/// <summary>
+		/// Decrements the fragment value by one, and clamps it to zero.
+		/// </summary>
 		DecrementAndClamp = Vk.StencilOp.DecrementAndClamp,
+		/// <summary>
+		/// Bit-wise inverts the fragment value.
+		/// </summary>
 		Invert = Vk.StencilOp.Invert,
+		/// <summary>
+		/// Increments the fragment value by one, and wraps around to zero on overflow.
+		/// </summary>
 		IncrementAndWrap = Vk.StencilOp.IncrementAndWrap,
+		/// <summary>
+		/// Decrements the fragment value by one, and wraps around to max value on underflow.
+		/// </summary>
 		DecrementAndWrap = Vk.StencilOp.DecrementAndWrap
 	}
 }
