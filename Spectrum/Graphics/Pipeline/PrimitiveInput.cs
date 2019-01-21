@@ -56,10 +56,9 @@ namespace Spectrum.Graphics
 			Restart = restart;
 		}
 
-		// Easy casting to the pipeline creation type
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static implicit operator Vk.PipelineInputAssemblyStateCreateInfo (in PrimitiveInput pi)
-			=> new Vk.PipelineInputAssemblyStateCreateInfo((Vk.PrimitiveTopology)pi.Type, pi.Restart);
+		internal Vk.PipelineInputAssemblyStateCreateInfo ToCreateInfo() => 
+			new Vk.PipelineInputAssemblyStateCreateInfo((Vk.PrimitiveTopology)Type, Restart);
 
 		// Casting from topology enums
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

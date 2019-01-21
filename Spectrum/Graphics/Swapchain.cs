@@ -207,17 +207,10 @@ namespace Spectrum.Graphics
 		// Submits the currently aquired image to be presented
 		public void EndFrame()
 		{
-			// Prepare the present info
-			VkKhr.PresentInfoKhr pInfo = new VkKhr.PresentInfoKhr(
-				new[] { _syncObjects.CurrentRenderComplete },
-				new[] { _swapChain },
-				new[] { _syncObjects.CurrentImage }
-			);
-
 			// Present and check for dirty swapchain
 			try
 			{
-				VkKhr.QueueExtensions.PresentKhr(_presentQueue, pInfo);
+				VkKhr.QueueExtensions.PresentKhr(_presentQueue, _syncObjects.CurrentRenderComplete, _swapChain, _syncObjects.CurrentImage);
 			}
 			catch (Vk.VulkanException e)
 				when (e.Result == Vk.Result.ErrorOutOfDateKhr || e.Result == Vk.Result.SuboptimalKhr)
