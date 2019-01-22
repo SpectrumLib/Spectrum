@@ -18,10 +18,6 @@ namespace Spectrum.Graphics
 		/// </summary>
 		public readonly uint Stride;
 		/// <summary>
-		/// The index for the backing buffer for this vertex data.
-		/// </summary>
-		public readonly uint Binding;
-		/// <summary>
 		/// The elements that make up this vertex.
 		/// </summary>
 		public readonly VertexElement[] Elements;
@@ -33,81 +29,47 @@ namespace Spectrum.Graphics
 
 		#region Constructors
 		/// <summary>
-		/// Describes a new vertex, with a binding index of zero, calculating the correct stride (assuming tight packing).
+		/// Describes a new vertex, calculating the correct stride.
 		/// </summary>
 		/// <param name="elems">The elements of the vertex to describe.</param>
 		public VertexBinding(params VertexElement[] elems)
 		{
-			Stride = (uint)elems.Sum(e => e.Format.GetSize());
-			Binding = 0;
+			Stride = elems.Max(e => e.Offset + e.Format.GetSize());
 			Elements = new VertexElement[elems.Length];
 			Array.Copy(elems, Elements, elems.Length);
 			PerInstance = false;
 		}
 
 		/// <summary>
-		/// Describes a new vertex, with a specified binding index, calculating the correct stride (assuming tight packing).
+		/// Describes a new vertex, calculating the correct stride.
 		/// </summary>
-		/// <param name="binding">The binding index of the backing buffer.</param>
-		/// <param name="elems">The elements of the vertex to describe.</param>
-		public VertexBinding(uint binding, params VertexElement[] elems)
-		{
-			Stride = (uint)elems.Sum(e => e.Format.GetSize());
-			Binding = binding;
-			Elements = new VertexElement[elems.Length];
-			Array.Copy(elems, Elements, elems.Length);
-			PerInstance = false;
-		}
-
-		/// <summary>
-		/// Describes a new vertex, with a specified binding index, calculating the correct stride (assuming tight packing).
-		/// </summary>
-		/// <param name="binding">The binding index of the backing buffer.</param>
 		/// <param name="perInstance">If this data is per-instance instead of per-vertex.</param>
 		/// <param name="elems">The elements of the vertex to describe.</param>
-		public VertexBinding(uint binding, bool perInstance, params VertexElement[] elems)
+		public VertexBinding(bool perInstance, params VertexElement[] elems)
 		{
-			Stride = (uint)elems.Sum(e => e.Format.GetSize());
-			Binding = binding;
+			Stride = elems.Max(e => e.Offset + e.Format.GetSize());
 			Elements = new VertexElement[elems.Length];
 			Array.Copy(elems, Elements, elems.Length);
 			PerInstance = perInstance;
 		}
 
 		/// <summary>
-		/// Describes a new vertex, with a specified binding index, and an explicit stride (which is not checked).
+		/// Describes a new vertex with an explicit stride (which is not checked).
 		/// </summary>
-		/// <param name="binding">The binding index of the backing buffer.</param>
 		/// <param name="stride">The explicit stride of the vertex data.</param>
-		/// <param name="elems">The elements of the vertex to describe.</param>
-		public VertexBinding(uint binding, uint stride, params VertexElement[] elems)
-		{
-			Stride = stride;
-			Binding = binding;
-			Elements = new VertexElement[elems.Length];
-			Array.Copy(elems, Elements, elems.Length);
-			PerInstance = false;
-		}
-
-		/// <summary>
-		/// Describes a new vertex, with a specified binding index, and an explicit stride (which is not checked).
-		/// </summary>
-		/// <param name="binding">The binding index of the backing buffer.</param>
 		/// <param name="perInstance">If this data is per-instance instead of per-vertex.</param>
-		/// <param name="stride">The explicit stride of the vertex data.</param>
 		/// <param name="elems">The elements of the vertex to describe.</param>
-		public VertexBinding(uint binding, bool perInstance, uint stride, params VertexElement[] elems)
+		public VertexBinding(uint stride, bool perInstance, params VertexElement[] elems)
 		{
 			Stride = stride;
-			Binding = binding;
 			Elements = new VertexElement[elems.Length];
 			Array.Copy(elems, Elements, elems.Length);
 			PerInstance = perInstance;
 		}
 
 		/// <summary>
-		/// Describes a new vertex, with a binding index of zero, calculating the stride, element locations, and element
-		/// offsets assuming tight packing in both buffer data and shader binding slots.
+		/// Describes a new vertex, calculating the stride, element locations, and element offsets assuming tight 
+		/// packing in both buffer data and shader binding slots.
 		/// </summary>
 		/// <param name="fmts">The elements of the vertex, in order.</param>
 		public VertexBinding(params VertexElementFormat[] fmts)
@@ -121,41 +83,17 @@ namespace Spectrum.Graphics
 			});
 
 			Stride = off;
-			Binding = 0;
 			Elements = elements;
 			PerInstance = false;
 		}
 
 		/// <summary>
-		/// Describes a new vertex, with a specified binding index, calculating the stride, element locations, and element
-		/// offsets assuming tight packing in both buffer data and shader binding slots.
+		/// Describes a new vertex, calculating the stride, element locations, and element offsets assuming tight 
+		/// packing in both buffer data and shader binding slots.
 		/// </summary>
-		/// <param name="binding">The binding index of the backing buffer.</param>
-		/// <param name="fmts">The elements of the vertex, in order.</param>
-		public VertexBinding(uint binding, params VertexElementFormat[] fmts)
-		{
-			uint loc = 0, off = 0;
-			var elements = new VertexElement[fmts.Length];
-			fmts.ForEach((fmt, idx) => {
-				elements[idx] = new VertexElement(loc, fmt, off);
-				loc += fmt.GetBindingSize();
-				off += fmt.GetSize();
-			});
-
-			Stride = off;
-			Binding = 0;
-			Elements = elements;
-			PerInstance = false;
-		}
-
-		/// <summary>
-		/// Describes a new vertex, with a specified binding index, calculating the stride, element locations, and element
-		/// offsets assuming tight packing in both buffer data and shader binding slots.
-		/// </summary>
-		/// <param name="binding">The binding index of the backing buffer.</param>
 		/// <param name="perInstance">If this data is per-instance instead of per-vertex.</param>
 		/// <param name="fmts">The elements of the vertex, in order.</param>
-		public VertexBinding(uint binding, bool perInstance, params VertexElementFormat[] fmts)
+		public VertexBinding(bool perInstance, params VertexElementFormat[] fmts)
 		{
 			uint loc = 0, off = 0;
 			var elements = new VertexElement[fmts.Length];
@@ -166,44 +104,36 @@ namespace Spectrum.Graphics
 			});
 
 			Stride = off;
-			Binding = 0;
 			Elements = elements;
 			PerInstance = perInstance;
 		}
 		#endregion // Constructors
 
-		private VertexBinding(uint s, uint b, VertexElement[] e, bool pi)
+		private VertexBinding(uint s, VertexElement[] e, bool pi)
 		{
 			Stride = s;
-			Binding = b;
 			Elements = e;
 			PerInstance = pi;
 		}
 
 		/// <summary>
-		/// Creates a copy of this vertex binding, with an optionally different binding index.
+		/// Creates a copy of this vertex binding.
 		/// </summary>
-		/// <param name="binding">The new binding index to use, or <see cref="UInt32.MaxValue"/> to keep the same index.</param>
-		/// <returns>An identical vertex layout with a potentially new binding index.</returns>
-		public VertexBinding Copy(uint binding = UInt32.MaxValue)
-		{
-			var elems = new VertexElement[Elements.Length];
-			Array.Copy(Elements, elems, Elements.Length);
-			return new VertexBinding(Stride, (binding == UInt32.MaxValue) ? Binding : binding, elems, PerInstance);
-		}
+		/// <returns>An identical vertex layout.</returns>
+		public VertexBinding Copy() => new VertexBinding(Stride, PerInstance, Elements);
 
-		public override int GetHashCode() => (int)(Stride ^ (Binding << 9) ^ (Elements.Length << 18)); // Not ideal
+		public override int GetHashCode() => (int)(Stride ^ (Elements.Length << 9)); // Really not ideal
 
 		public override bool Equals(object obj) => (obj is VertexBinding) && (((VertexBinding)obj) == this);
 
 		bool IEquatable<VertexBinding>.Equals(VertexBinding other) =>
-			other.Stride == Stride && other.Binding == Binding && other.PerInstance == PerInstance && other.Elements.SequenceEqual(Elements);
+			other.Stride == Stride && other.PerInstance == PerInstance && other.Elements.SequenceEqual(Elements);
 
 		public static bool operator == (in VertexBinding l, in VertexBinding r) =>
-			l.Stride == r.Stride && l.Binding == r.Binding && l.PerInstance == r.PerInstance && l.Elements.SequenceEqual(r.Elements);
+			l.Stride == r.Stride && l.PerInstance == r.PerInstance && l.Elements.SequenceEqual(r.Elements);
 
 		public static bool operator != (in VertexBinding l, in VertexBinding r) =>
-			l.Stride != r.Stride || l.Binding != r.Binding || l.PerInstance != r.PerInstance || !l.Elements.SequenceEqual(r.Elements);
+			l.Stride != r.Stride || l.PerInstance != r.PerInstance || !l.Elements.SequenceEqual(r.Elements);
 	}
 
 	/// <summary>
