@@ -22,6 +22,7 @@ namespace Spectrum.Graphics
 		private readonly VkExt.DebugReportCallbackExt _vkDebugReport;
 		private readonly Vk.PhysicalDevice _vkPhysicalDevice;
 		private readonly Vk.Device _vkDevice;
+		internal Vk.Device VkDevice => _vkDevice;
 
 		// Swapchain
 		internal readonly Swapchain Swapchain;

@@ -67,6 +67,9 @@ namespace Spectrum.Graphics
 		public bool HasVertexDescription => VertexDescription.HasValue;
 		#endregion // Settings
 
+		// Quick reference to the graphics device
+		internal GraphicsDevice Device => SpectrumApp.Instance.GraphicsDevice;
+
 		/// <summary>
 		/// Gets if all of the required pipeline state objects have been specified.
 		/// </summary>
@@ -82,6 +85,40 @@ namespace Spectrum.Graphics
 		public static PipelineBuilder New()
 		{
 			return new PipelineBuilder();
+		}
+
+		/// <summary>
+		/// Using the specified settings, create a new named pipeline object. <see cref="IsComplete"/> must be true
+		/// when this function is called, or an exception will be thrown.
+		/// </summary>
+		/// <param name="name">The name of the new pipeline.</param>
+		/// <returns>The new pipeline object.</returns>
+		public Pipeline Build(string name)
+		{
+			Build(name, out Pipeline p);
+			return p;
+		}
+
+		/// <summary>
+		/// Using the specified settings, create a new named pipeline object. <see cref="IsComplete"/> must be true
+		/// when this function is called, or an exception will be thrown. This version of the function is used to
+		/// facilitate chaining.
+		/// </summary>
+		/// <param name="name">The name of the new pipeline.</param>
+		/// <param name="pipeline">The new pipeline object.</param>
+		/// <returns>The pipeline builder, to facilitate method chaining.</returns>
+		public PipelineBuilder Build(string name, out Pipeline pipeline)
+		{
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("The pipeline name cannot be null or whitespace", nameof(name));
+			if (!IsComplete)
+				throw new InvalidOperationException("Cannot build a pipeline that is not fully specified."); // TODO: report the missing states
+
+			var lci = new Vk.PipelineLayoutCreateInfo(null, null);
+			var layout = Device.VkDevice.CreatePipelineLayout(lci);
+
+			pipeline = new Pipeline(name, null, layout);
+			return this;
 		}
 
 		#region Settings
