@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Spectrum.Utilities;
+using System;
+using System.Linq;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
 using VkKhr = VulkanCore.Khr;
@@ -28,6 +30,8 @@ namespace Spectrum.Graphics
 		internal readonly Swapchain Swapchain;
 		// Queues
 		internal readonly DeviceQueues Queues;
+		// Memory types
+		internal readonly Vk.PhysicalDeviceMemoryProperties Memory;
 
 		/// <summary>
 		/// The set of features and extensions that the device supports, and are additionally enabled by the application.
@@ -50,7 +54,7 @@ namespace Spectrum.Graphics
 			Application = app;
 
 			createVulkanInstance(out _vkInstance, out _vkDebugReport);
-			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info, out Queues);
+			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info, out Queues, out Memory);
 
 			Swapchain = new Swapchain(this, _vkInstance, _vkPhysicalDevice, _vkDevice);
 		}
@@ -75,6 +79,30 @@ namespace Spectrum.Graphics
 			Swapchain.EndFrame();
 		}
 		#endregion // Frame Functions
+
+		// Finds the best type of memory for the given constraints
+		// TODO: In the future, we will probably cache the best indices for all common property flag combinations,
+		//       and check against that and make sure the memory types are valid, before performing the expensive
+		//       calculation to find the best
+		internal int FindMemoryTypeIndex(int bits, Vk.MemoryProperties props)
+		{
+			int? index = null;
+			long bestSize = 0;
+			Memory.MemoryTypes.ForEach((type, idx) => {
+				var heap = Memory.MemoryHeaps[idx];
+				// If: (valid memory type) AND (all required properties are present)
+				if ((bits & (0x1 << idx)) > 0 && (type.PropertyFlags & props) == props)
+				{
+					// Prefer to use the biggest heap available
+					if (!index.HasValue || (heap.Size > bestSize))
+					{
+						index = idx;
+						bestSize = heap.Size;
+					}
+				}
+			});
+			return index.HasValue ? index.Value : -1;
+		}
 
 		#region IDisposable
 		public void Dispose()
@@ -120,7 +148,22 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public struct DeviceLimits
 	{
-
+		/// <summary>
+		/// The maximum dimensions for a 1D texture.
+		/// </summary>
+		public uint MaxTextureSize1D;
+		/// <summary>
+		/// The maximum dimensions for a 2D texture.
+		/// </summary>
+		public uint MaxTextureSize2D;
+		/// <summary>
+		/// The maximum dimensions for a 3D texture.
+		/// </summary>
+		public uint MaxTextureSize3D;
+		/// <summary>
+		/// The maximum number of layers that a texture can have.
+		/// </summary>
+		public uint MaxTextureLayers;
 	}
 
 	/// <summary>

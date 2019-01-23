@@ -96,7 +96,8 @@ namespace Spectrum.Graphics
 
 		// Selects and opens the device
 		private void openVulkanDevice(Vk.Instance instance, out Vk.PhysicalDevice pDevice, out Vk.Device lDevice,
-			out DeviceFeatures features, out DeviceLimits limits, out DeviceInfo info, out DeviceQueues queues)
+			out DeviceFeatures features, out DeviceLimits limits, out DeviceInfo info, out DeviceQueues queues,
+			out Vk.PhysicalDeviceMemoryProperties memory)
 		{
 			// Enumerate the physical devices, and score and sort them, then remove invalid ones
 			var devices = instance.EnumeratePhysicalDevices()
@@ -150,9 +151,15 @@ namespace Spectrum.Graphics
 				};
 			}
 
-			// Populate the limits and features
-			features = default;
+			// Populate the limits
 			limits = default;
+			limits.MaxTextureSize1D = (uint)bestDev.props.Limits.MaxImageDimension1D;
+			limits.MaxTextureSize2D = (uint)bestDev.props.Limits.MaxImageDimension2D;
+			limits.MaxTextureSize3D = (uint)bestDev.props.Limits.MaxImageDimension3D;
+			limits.MaxTextureLayers = (uint)bestDev.props.Limits.MaxImageArrayLayers;
+
+			// Populate the features
+			features = default;
 			Vk.PhysicalDeviceFeatures enFeats = default;
 			var rFeats = Application.AppParameters.EnabledGraphicsFeatures;
 			var strict = Application.AppParameters.StrictGraphicsFeatures;
@@ -194,6 +201,9 @@ namespace Spectrum.Graphics
 
 			// Retrieve the queues
 			queues.Graphics = lDevice.GetQueue(qInfos[0].QueueFamilyIndex, 0);
+
+			// Save the memory info
+			memory = bestDev.memProps;
 		}
 
 		// Scores a physical device (somewhat arbitrarily, make this better later), score of zero is unsuitable

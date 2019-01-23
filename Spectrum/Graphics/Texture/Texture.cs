@@ -34,6 +34,7 @@ namespace Spectrum.Graphics
 
 		// The vulkan objects
 		internal readonly Vk.Image VkImage;
+		internal readonly Vk.DeviceMemory VkMemory;
 
 		/// <summary>
 		/// The size of the pixel buffer storing this texture's data, in bytes.
@@ -42,21 +43,14 @@ namespace Spectrum.Graphics
 
 		// The handle to the graphics device for this image
 		protected readonly GraphicsDevice Device;
+		// The limits for the device
+		protected DeviceLimits Limits => Device.Limits;
 		// If the texture is disposed
 		protected bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
 
 		private protected Texture(TextureType type, uint w, uint h, uint d, uint layers)
 		{
-			if (w == 0)
-				throw new ArgumentOutOfRangeException(nameof(w), "A texture cannot have a width of zero.");
-			if (h == 0)
-				throw new ArgumentOutOfRangeException(nameof(h), "A texture cannot have a height of zero.");
-			if (d == 0)
-				throw new ArgumentOutOfRangeException(nameof(d), "A texture cannot have a depth of zero.");
-			if (layers == 0)
-				throw new ArgumentOutOfRangeException(nameof(layers), "A texture cannot have 0 layers.");
-
 			Device = SpectrumApp.Instance.GraphicsDevice;
 
 			Type = type;
@@ -64,6 +58,36 @@ namespace Spectrum.Graphics
 			Height = h;
 			Depth = d;
 			Layers = layers;
+
+			// Limits checking
+			if (w == 0)
+				throw new ArgumentOutOfRangeException(nameof(w), "A texture cannot have a width of zero");
+			if (h == 0)
+				throw new ArgumentOutOfRangeException(nameof(h), "A texture cannot have a height of zero");
+			if (d == 0)
+				throw new ArgumentOutOfRangeException(nameof(d), "A texture cannot have a depth of zero");
+			if (layers == 0)
+				throw new ArgumentOutOfRangeException(nameof(layers), "A texture cannot have 0 layers");
+			if (layers > Limits.MaxTextureLayers)
+				throw new ArgumentOutOfRangeException(nameof(layers), $"The texture array count ({layers}) is too big for the device ({Limits.MaxTextureLayers})");
+			switch (type)
+			{
+				case TextureType.Texture1D:
+					if (w > Limits.MaxTextureSize1D) throw new ArgumentOutOfRangeException(
+						nameof(w), $"The 1D texture size ({w}) is too big for the device ({Limits.MaxTextureSize1D})"
+					);
+					break;
+				case TextureType.Texture2D:
+					if (w > Limits.MaxTextureSize2D || h > Limits.MaxTextureSize2D) throw new ArgumentOutOfRangeException(
+						nameof(w), $"The 2D texture size ({w}x{h}) is too big for the device ({Limits.MaxTextureSize2D})"
+					);
+					break;
+				case TextureType.Texture3D:
+					if (w > Limits.MaxTextureSize3D || h > Limits.MaxTextureSize3D || d > Limits.MaxTextureSize3D) throw new ArgumentOutOfRangeException(
+						nameof(w), $"The 3D texture size ({w}x{h}x{d}) is too big for the device ({Limits.MaxTextureSize3D})"
+					);
+					break;
+			}
 
 			// Create the image
 			var ici = new Vk.ImageCreateInfo {
@@ -83,7 +107,13 @@ namespace Spectrum.Graphics
 
 			// Create the backing memory for the image
 			var memReq = VkImage.GetMemoryRequirements();
+			var memIdx = Device.FindMemoryTypeIndex(memReq.MemoryTypeBits, Vk.MemoryProperties.DeviceLocal);
+			if (memIdx == -1)
+				throw new InvalidOperationException("Cannot find a memory type that supports textures (this means bad or out-of-date hardware)");
+			var mai = new Vk.MemoryAllocateInfo(memReq.Size, memIdx);
+			VkMemory = Device.VkDevice.AllocateMemory(mai);
 			DataSize = (uint)memReq.Size;
+			VkImage.BindMemory(VkMemory);
 		}
 		~Texture()
 		{
@@ -106,6 +136,7 @@ namespace Spectrum.Graphics
 			if (disposing)
 			{
 				VkImage.Dispose();
+				VkMemory?.Dispose();
 			}
 		}
 		#endregion // IDisposable
