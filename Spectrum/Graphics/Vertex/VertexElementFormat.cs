@@ -69,38 +69,42 @@ namespace Spectrum.Graphics
 		/// Gets the size, in bytes, of the element format in memory.
 		/// </summary>
 		/// <param name="fmt">The format to get the size for.</param>
+		/// <param name="arrSize">The number of elements in the array, if the type is an array.</param>
 		/// <returns>The element memory footprint, in bytes.</returns>
-		public static uint GetSize(this VertexElementFormat fmt)
+		public static uint GetSize(this VertexElementFormat fmt, uint arrSize = 1)
 		{
+			uint sz = 0;
 			switch (fmt)
 			{
 				case VertexElementFormat.Float:
 				case VertexElementFormat.Int:
 				case VertexElementFormat.UInt:
-					return 4;
+					sz = 4; break;
 				case VertexElementFormat.Float2:
 				case VertexElementFormat.Int2:
 				case VertexElementFormat.UInt2:
-					return 8;
+					sz = 8; break;
 				case VertexElementFormat.Float3:
 				case VertexElementFormat.Int3:
 				case VertexElementFormat.UInt3:
-					return 12;
+					sz = 12; break;
 				case VertexElementFormat.Float4:
 				case VertexElementFormat.Int4:
 				case VertexElementFormat.UInt4:
-					return 16;
+					sz = 16; break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(fmt), "Cannot get the size of an invalid vertex element format.");
 			}
+			return sz * arrSize;
 		}
 
 		/// <summary>
 		/// Gets the size of the format in terms of binding slots in a shader.
 		/// </summary>
 		/// <param name="fmt">The format to get the size for.</param>
+		/// <param name="arrSize">The number of elements in the array, if the type is an array.</param>
 		/// <returns>The size of the format, in shader binding slots.</returns>
 		/// <remarks>A shader binding slot is 16 bytes on basically all hardware.</remarks>
-		public static uint GetBindingSize(this VertexElementFormat fmt) => (uint)Mathf.Ceiling(GetSize(fmt) / 16.0f);
+		public static uint GetBindingSize(this VertexElementFormat fmt, uint arrSize = 1) => (uint)Mathf.Ceiling(GetSize(fmt, arrSize) / 16.0f);
 	}
 }
