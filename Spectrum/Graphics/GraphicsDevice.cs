@@ -63,6 +63,9 @@ namespace Spectrum.Graphics
 		internal void BeginFrame()
 		{
 			Swapchain.BeginFrame();
+
+			// Reset the global state
+			setInitialState();
 		}
 
 		// Called at the end of a render frame to present the frame
