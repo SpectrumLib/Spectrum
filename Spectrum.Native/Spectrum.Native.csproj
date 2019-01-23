@@ -14,9 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<!-- Windows -->
     <EmbeddedResource Include="..\Dependencies\GLFW\glfw3.w" Link="glfw3.w" />
 	<EmbeddedResource Include="..\Dependencies\OAL\oal.w" Link="oal.w" />
 	<EmbeddedResource Include="..\Dependencies\Audio\audio.w" Link="audio.w" />
+	<EmbeddedResource Include="..\Dependencies\SPIRV\compiler.w" Link="compiler.w" />
   </ItemGroup>
 
 </Project>
