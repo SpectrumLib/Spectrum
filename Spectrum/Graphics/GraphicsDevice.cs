@@ -141,6 +141,10 @@ namespace Spectrum.Graphics
 		/// If the device supports clamping depth fragments instead of discarding them.
 		/// </summary>
 		public bool DepthClamp;
+		/// <summary>
+		/// If the device supports anisotropic filtering for image samplers.
+		/// </summary>
+		public bool AnisotropicFiltering;
 	}
 
 	/// <summary>

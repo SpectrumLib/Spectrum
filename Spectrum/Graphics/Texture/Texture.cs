@@ -35,6 +35,7 @@ namespace Spectrum.Graphics
 		// The vulkan objects
 		internal readonly Vk.Image VkImage;
 		internal readonly Vk.DeviceMemory VkMemory;
+		internal readonly Vk.ImageView VkView;
 
 		/// <summary>
 		/// The size of the pixel buffer storing this texture's data, in bytes.
@@ -68,6 +69,8 @@ namespace Spectrum.Graphics
 				throw new ArgumentOutOfRangeException(nameof(d), "A texture cannot have a depth of zero");
 			if (layers == 0)
 				throw new ArgumentOutOfRangeException(nameof(layers), "A texture cannot have 0 layers");
+			if (type == TextureType.Texture3D && layers != 1)
+				throw new ArgumentOutOfRangeException(nameof(layers), "3D textures cannot be arrays");
 			if (layers > Limits.MaxTextureLayers)
 				throw new ArgumentOutOfRangeException(nameof(layers), $"The texture array count ({layers}) is too big for the device ({Limits.MaxTextureLayers})");
 			switch (type)
@@ -114,6 +117,14 @@ namespace Spectrum.Graphics
 			VkMemory = Device.VkDevice.AllocateMemory(mai);
 			DataSize = (uint)memReq.Size;
 			VkImage.BindMemory(VkMemory);
+
+			// Create the view
+			var vci = new Vk.ImageViewCreateInfo(
+				Vk.Format.R8G8B8A8UNorm,
+				new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, (int)Layers),
+				viewType: GetViewType(Type, layers)
+			);
+			VkView = VkImage.CreateView(vci);
 		}
 		~Texture()
 		{
@@ -135,11 +146,23 @@ namespace Spectrum.Graphics
 		{
 			if (disposing)
 			{
+				VkView?.Dispose();
 				VkImage.Dispose();
 				VkMemory?.Dispose();
 			}
 		}
 		#endregion // IDisposable
+
+		private static Vk.ImageViewType GetViewType(TextureType type, uint layers)
+		{
+			switch (type)
+			{
+				case TextureType.Texture1D: return (layers > 1) ? Vk.ImageViewType.Image1DArray : Vk.ImageViewType.Image1D;
+				case TextureType.Texture2D: return (layers > 1) ? Vk.ImageViewType.Image2DArray : Vk.ImageViewType.Image2D;
+				case TextureType.Texture3D: return Vk.ImageViewType.Image3D;
+			}
+			return Vk.ImageViewType.Image1D; // Should not be reached
+		}
 	}
 
 	/// <summary>

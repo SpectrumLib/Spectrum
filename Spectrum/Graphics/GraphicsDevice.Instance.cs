@@ -179,6 +179,8 @@ namespace Spectrum.Graphics
 				enFeats.WideLines = features.WideLines = _enableFeature(bestDev.feats.WideLines, "WideLines");
 			if (rFeats.DepthClamp)
 				enFeats.DepthClamp = features.DepthClamp = _enableFeature(bestDev.feats.DepthClamp, "DepthClamp");
+			if (rFeats.AnisotropicFiltering)
+				enFeats.SamplerAnisotropy = features.AnisotropicFiltering = _enableFeature(bestDev.feats.SamplerAnisotropy, "AnisotropicFiltering");
 
 			// Create the device
 			Vk.DeviceCreateInfo dInfo = new Vk.DeviceCreateInfo(
