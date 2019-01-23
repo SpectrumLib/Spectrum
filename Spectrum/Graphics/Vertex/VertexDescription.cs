@@ -7,6 +7,81 @@ using Vk = VulkanCore;
 namespace Spectrum.Graphics
 {
 	/// <summary>
+	/// Fully describes vertex buffer input data, across all elements, binding buffers, and per-vertex and
+	/// per-instance objects.
+	/// </summary>
+	public struct VertexDescription
+	{
+		#region Fields
+		/// <summary>
+		/// The vertex data descriptions for each binding buffer.
+		/// </summary>
+		public readonly VertexBinding[] Bindings;
+		/// <summary>
+		/// The total number of elements in this description across all bindings.
+		/// </summary>
+		public readonly uint ElementCount;
+		#endregion // Fields
+
+		/// <summary>
+		/// Describes a new vertex from a set of bindings.
+		/// </summary>
+		/// <param name="bindings">The bindings describing the vertex.</param>
+		public VertexDescription(params VertexBinding[] bindings)
+		{
+			if (bindings.Length == 0)
+				throw new ArgumentException("Cannot create a vertex description with zero bindings.");
+			var binds = new VertexBinding[bindings.Length];
+			var ec = 0;
+			bindings.ForEach((b, idx) => {
+				binds[idx] = new VertexBinding(b.Stride, b.PerInstance, b.Elements);
+				ec += b.Elements.Length;
+			});
+			Bindings = binds;
+			ElementCount = (uint)ec;
+		}
+
+		/// <summary>
+		/// Provides a quick way to describe a vertex, assuming tightly packed elements all sourced from the same 
+		/// buffer.
+		/// </summary>
+		/// <param name="fmts">Tightly packed formats that make up the vertex.</param>
+		public VertexDescription(params VertexElementFormat[] fmts)
+		{
+			if (fmts.Length == 0)
+				throw new ArgumentException("Cannot create a vertex description with zero bindings.");
+			Bindings = new VertexBinding[] { new VertexBinding(fmts) };
+			ElementCount = (uint)fmts.Length;
+		}
+
+		/// <summary>
+		/// Provides a quick way to describe a vertex, assuming tightly packed elements all sourced from the same 
+		/// buffer.
+		/// </summary>
+		/// <param name="fmts">Tightly packed formats that make up the vertex.</param>
+		public VertexDescription(params (VertexElementFormat, uint)[] fmts)
+		{
+			if (fmts.Length == 0)
+				throw new ArgumentException("Cannot create a vertex description with zero bindings.");
+			Bindings = new VertexBinding[] { new VertexBinding(fmts) };
+			ElementCount = (uint)fmts.Length;
+		}
+
+		internal Vk.PipelineVertexInputStateCreateInfo ToCreateInfo()
+		{
+			var bds = Bindings.Select((b, idx) => 
+				new Vk.VertexInputBindingDescription(idx, (int)b.Stride, b.PerInstance ? Vk.VertexInputRate.Instance : Vk.VertexInputRate.Vertex)
+			).ToArray();
+			var ats = new Vk.VertexInputAttributeDescription[ElementCount];
+			int aidx = 0;
+			Bindings.ForEach((b, bidx) => b.Elements.ForEach(elem => {
+				ats[aidx++] = new Vk.VertexInputAttributeDescription((int)elem.Location, bidx, (Vk.Format)elem.Format, (int)elem.Offset);
+			}));
+			return new Vk.PipelineVertexInputStateCreateInfo(bds, ats);
+		}
+	}
+
+	/// <summary>
 	/// Describes a vertex layout as it pertains to a single backing buffer (all elements with the same binding number).
 	/// </summary>
 	/// <remarks>
@@ -38,6 +113,8 @@ namespace Spectrum.Graphics
 		/// <param name="elems">The elements of the vertex to describe.</param>
 		public VertexBinding(params VertexElement[] elems)
 		{
+			if (elems.Length == 0)
+				throw new ArgumentException("Cannot create a vertex binding with zero elements.");
 			Elements = CompleteElements(elems);
 			Stride = Elements.Max(e => e.Offset + e.Format.GetSize(e.Count));
 			PerInstance = false;
@@ -50,6 +127,8 @@ namespace Spectrum.Graphics
 		/// <param name="elems">The elements of the vertex to describe.</param>
 		public VertexBinding(bool perInstance, params VertexElement[] elems)
 		{
+			if (elems.Length == 0)
+				throw new ArgumentException("Cannot create a vertex binding with zero elements.");
 			Elements = CompleteElements(elems);
 			Stride = Elements.Max(e => e.Offset + e.Format.GetSize(e.Count));
 			PerInstance = perInstance;
@@ -62,6 +141,8 @@ namespace Spectrum.Graphics
 		/// <param name="fmts">The elements of the vertex, in order.</param>
 		public VertexBinding(params VertexElementFormat[] fmts)
 		{
+			if (fmts.Length == 0)
+				throw new ArgumentException("Cannot create a vertex binding with zero elements.");
 			Elements = PackFormats(fmts.Select(fmt => (fmt, 1u)).ToArray());
 			Stride = Elements.Max(e => e.Offset + e.Format.GetSize(e.Count));
 			PerInstance = false;
@@ -75,6 +156,8 @@ namespace Spectrum.Graphics
 		/// <param name="fmts">The elements of the vertex, in order.</param>
 		public VertexBinding(bool perInstance, params VertexElementFormat[] fmts)
 		{
+			if (fmts.Length == 0)
+				throw new ArgumentException("Cannot create a vertex binding with zero elements.");
 			Elements = PackFormats(fmts.Select(fmt => (fmt, 1u)).ToArray());
 			Stride = Elements.Max(e => e.Offset + e.Format.GetSize(e.Count));
 			PerInstance = perInstance;
@@ -87,6 +170,8 @@ namespace Spectrum.Graphics
 		/// <param name="fmts">The elements of the vertex, in order.</param>
 		public VertexBinding(params (VertexElementFormat, uint)[] fmts)
 		{
+			if (fmts.Length == 0)
+				throw new ArgumentException("Cannot create a vertex binding with zero elements.");
 			Elements = PackFormats(fmts);
 			Stride = Elements.Max(e => e.Offset + e.Format.GetSize(e.Count));
 			PerInstance = false;
@@ -100,13 +185,15 @@ namespace Spectrum.Graphics
 		/// <param name="fmts">The elements of the vertex, in order.</param>
 		public VertexBinding(bool perInstance, params (VertexElementFormat, uint)[] fmts)
 		{
+			if (fmts.Length == 0)
+				throw new ArgumentException("Cannot create a vertex binding with zero elements.");
 			Elements = PackFormats(fmts);
 			Stride = Elements.Max(e => e.Offset + e.Format.GetSize(e.Count));
 			PerInstance = perInstance;
 		}
 		#endregion // Constructors
 
-		private VertexBinding(uint stride, bool perInstance, VertexElement[] elems)
+		internal VertexBinding(uint stride, bool perInstance, VertexElement[] elems)
 		{
 			Stride = stride;
 			Elements = new VertexElement[elems.Length];
