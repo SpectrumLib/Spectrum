@@ -115,6 +115,10 @@ namespace Spectrum.Graphics
 		{
 			if (!IsDisposed && disposing)
 			{
+				// Resources scattered thorughout the library
+				Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
+
+				// Base objects
 				Swapchain.Dispose();
 				destroyGlobalVulkanObjects(_vkInstance, _vkDebugReport, _vkDevice);
 			}
