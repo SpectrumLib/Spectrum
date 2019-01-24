@@ -1,5 +1,6 @@
 ﻿using System;
 using Vk = VulkanCore;
+using static Spectrum.InternalLog;
 
 namespace Spectrum.Graphics
 {
@@ -8,13 +9,99 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public sealed class Sampler : IDisposable
 	{
+		/// <summary>
+		/// The default linear sampler, with clamp to edge and no anisotropy.
+		/// </summary>
+		public static readonly Sampler Linear = new Sampler(
+			TextureFilter.Linear, AddressMode.ClampToEdge, AnisotropyLevel.None, ClampBorderColor.OpaqueBlack
+		);
+		/// <summary>
+		/// The default nearest sampler, with clamp to edge and no anisotropy.
+		/// </summary>
+		public static readonly Sampler Nearest = new Sampler(
+			TextureFilter.Nearest, AddressMode.ClampToEdge, AnisotropyLevel.None, ClampBorderColor.OpaqueBlack
+		);
+
 		#region Fields
+		/// <summary>
+		/// The filtering mode to sample the texture with.
+		/// </summary>
+		public readonly TextureFilter Filter;
+		/// <summary>
+		/// The addressing mode to sample the texture with.
+		/// </summary>
+		public readonly AddressMode AddressMode;
+		/// <summary>
+		/// The anisotropy to sample the texture with.
+		/// </summary>
+		public readonly AnisotropyLevel Anisotropy;
+		/// <summary>
+		/// The border color to use if sampling with <see cref="AddressMode.ClampToBorder"/>.
+		/// </summary>
+		public readonly ClampBorderColor BorderColor;
+
+		// This is the cached sampler object, which will not be created until this sampler is used in a pipeline
+		//   for the first time. This is to allow users to define samplers before Vulkan is initialized, without
+		//   causing errors because there is no device available to create the sampler objects.
+		private Vk.Sampler _vkSampler = null;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
+		/// <summary>
+		/// Creates a new texture sampler object.
+		/// </summary>
+		/// <param name="filter">The filtering mode.</param>
+		/// <param name="addressMode">The coordinate addressing mode.</param>
+		/// <param name="aniso">The anisotropic filtring level.</param>
+		/// <param name="color">The border color for ClampToBorder sampling.</param>
+		public Sampler
+		(
+			TextureFilter filter = TextureFilter.Linear,
+			AddressMode addressMode = AddressMode.ClampToEdge,
+			AnisotropyLevel aniso = AnisotropyLevel.None,
+			ClampBorderColor color = ClampBorderColor.OpaqueBlack
+		)
+		{
+			Filter = filter;
+			AddressMode = addressMode;
+			Anisotropy = aniso;
+			BorderColor = color;
+		}
 		~Sampler()
 		{
 			dispose(false);
+		}
+
+		internal Vk.Sampler GetSampler()
+		{
+			if (_vkSampler == null)
+			{
+				var device = SpectrumApp.Instance.GraphicsDevice;
+				bool bad = (Anisotropy != AnisotropyLevel.None && !device.Features.AnisotropicFiltering);
+				if (bad)
+					LWARN($"Attempted to create a sampler with an unsupported anisotropy level.");
+				var aniso = bad ? AnisotropyLevel.None : Anisotropy;
+
+				var sci = new Vk.SamplerCreateInfo {
+					MagFilter = (Vk.Filter)Filter,
+					MinFilter = (Vk.Filter)Filter,
+					AddressModeU = (Vk.SamplerAddressMode)AddressMode,
+					AddressModeV = (Vk.SamplerAddressMode)AddressMode,
+					AddressModeW = (Vk.SamplerAddressMode)AddressMode,
+					AnisotropyEnable = (aniso != AnisotropyLevel.None),
+					MaxAnisotropy = (float)aniso,
+					BorderColor = (Vk.BorderColor)BorderColor,
+					UnnormalizedCoordinates = false,
+					CompareEnable = false,
+					MipmapMode = Vk.SamplerMipmapMode.Linear,
+					MipLodBias = 0,
+					MinLod = 0,
+					MaxLod = 0
+				};
+				_vkSampler = device.VkDevice.CreateSampler(sci);
+			}
+			return _vkSampler;
 		}
 
 		#region IDisposable
@@ -27,7 +114,7 @@ namespace Spectrum.Graphics
 		{
 			if (!_isDisposed && disposing)
 			{
-
+				_vkSampler?.Dispose();
 			}
 			_isDisposed = true;
 		}

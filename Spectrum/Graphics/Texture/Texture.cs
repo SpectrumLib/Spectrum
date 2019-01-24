@@ -133,6 +133,14 @@ namespace Spectrum.Graphics
 			IsDisposed = true;
 		}
 
+		/// <summary>
+		/// Couples this texture to a sampler for use in a pipeline.
+		/// </summary>
+		/// <param name="sampler">The sampler to sample this texture with.</param>
+		/// <returns>An object describing the coupled texture and sampler.</returns>
+		public SampledTexture SampleWith(Sampler sampler) =>
+			(sampler != null) ? new SampledTexture(this, sampler) : throw new ArgumentNullException(nameof(sampler));
+
 		#region IDisposable
 		public void Dispose()
 		{
@@ -162,6 +170,30 @@ namespace Spectrum.Graphics
 				case TextureType.Texture3D: return Vk.ImageViewType.Image3D;
 			}
 			return Vk.ImageViewType.Image1D; // Should not be reached
+		}
+	}
+
+	/// <summary>
+	/// A lightweight object that couples a sampler to a texture for use in a pipeline. Created using the
+	/// <see cref="Texture.SampleWith(Sampler)"/> method.
+	/// </summary>
+	public struct SampledTexture
+	{
+		#region Fields
+		/// <summary>
+		/// The texture the be sampled.
+		/// </summary>
+		public readonly Texture Texture;
+		/// <summary>
+		/// The rules for sampling the coupled texture.
+		/// </summary>
+		public readonly Sampler Sampler;
+		#endregion // Fields
+
+		internal SampledTexture(Texture tex, Sampler samp)
+		{
+			Texture = tex;
+			Sampler = samp;
 		}
 	}
 
