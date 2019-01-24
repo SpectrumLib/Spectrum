@@ -100,7 +100,7 @@ namespace Spectrum.Graphics
 				ArrayLayers = (int)layers,
 				Format = Vk.Format.R8G8B8A8UNorm,
 				Tiling = Vk.ImageTiling.Optimal,
-				InitialLayout = Vk.ImageLayout.Undefined,
+				InitialLayout = Vk.ImageLayout.ShaderReadOnlyOptimal,
 				Usage = Vk.ImageUsages.TransferDst | Vk.ImageUsages.Sampled,
 				SharingMode = Vk.SharingMode.Exclusive,
 				Samples = Vk.SampleCounts.Count1,

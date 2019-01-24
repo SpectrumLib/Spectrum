@@ -87,18 +87,11 @@ namespace Spectrum.Graphics
 		internal int FindMemoryTypeIndex(int bits, Vk.MemoryProperties props)
 		{
 			int? index = null;
-			long bestSize = 0;
 			Memory.MemoryTypes.ForEach((type, idx) => {
-				var heap = Memory.MemoryHeaps[idx];
-				// If: (valid memory type) AND (all required properties are present)
-				if ((bits & (0x1 << idx)) > 0 && (type.PropertyFlags & props) == props)
+				// If: (not already found) AND (valid memory type) AND (all required properties are present)
+				if (!index.HasValue && (bits & (0x1 << idx)) > 0 && (type.PropertyFlags & props) == props)
 				{
-					// Prefer to use the biggest heap available
-					if (!index.HasValue || (heap.Size > bestSize))
-					{
-						index = idx;
-						bestSize = heap.Size;
-					}
+					index = idx;
 				}
 			});
 			return index.HasValue ? index.Value : -1;
