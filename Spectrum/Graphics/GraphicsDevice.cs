@@ -57,6 +57,9 @@ namespace Spectrum.Graphics
 			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info, out Queues, out Memory);
 
 			Swapchain = new Swapchain(this, _vkInstance, _vkPhysicalDevice, _vkDevice);
+
+			// Other resources to initialize
+			TransferBuffer.CreateResources(this);
 		}
 		~GraphicsDevice()
 		{
@@ -110,6 +113,7 @@ namespace Spectrum.Graphics
 			{
 				// Resources scattered thorughout the library
 				Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
+				TransferBuffer.Cleanup();
 
 				// Base objects
 				Swapchain.Dispose();
@@ -195,5 +199,13 @@ namespace Spectrum.Graphics
 	{
 		// The main graphics/present queue
 		public Vk.Queue Graphics;
+		// The queue dedicated to transfering data for images and buffers between the host and device
+		//   Note that this queue may be the same as the graphics queue, and depends on if there is more than one queue
+		//   available for the same family as the graphics queue. We require them to be the same family all the resources
+		//   are exclusive and sharing is a level of complexity to avoid.
+		public Vk.Queue Transfer;
+
+		// If the graphics and transfer queues are separate.
+		public bool SeparateTransfer => !ReferenceEquals(Graphics, Transfer);
 	}
 }

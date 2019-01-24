@@ -139,6 +139,7 @@ namespace Spectrum.Graphics
 			// Prepare the queue families (we need to ensure a single queue for graphics and present)
 			// In the future, we will operate with a separate transfer queue, if possible, as well as a separate compute queue
 			Vk.DeviceQueueCreateInfo[] qInfos;
+			bool sepTrans = false; // If there is a separate transfer queue
 			{
 				var qfams = bestDev.queues
 					.Select((queue, idx) => (queue, present: Glfw.GetPhysicalDevicePresentationSupport(instance, bestDev.device, (uint)idx), family: idx))
@@ -146,8 +147,9 @@ namespace Spectrum.Graphics
 				var gFam = qfams.FirstOrDefault(fam => (fam.queue.QueueFlags & Vk.Queues.Graphics) > 0 && fam.present);
 				if (gFam.queue.QueueCount == 0 && gFam.family == 0)
 					throw new PlatformNotSupportedException("The selected device does not support a graphics queue with present capabilities.");
+				sepTrans = gFam.queue.QueueCount > 1;
 				qInfos = new Vk.DeviceQueueCreateInfo[] {
-					new Vk.DeviceQueueCreateInfo(gFam.family, 1, 1.0f)
+					new Vk.DeviceQueueCreateInfo(gFam.family, sepTrans ? 2 : 1, new[] { 1.0f, 0.5f })
 				};
 			}
 
@@ -199,13 +201,16 @@ namespace Spectrum.Graphics
 				VendorName = VENDOR_ID_LIST.ContainsKey(bestDev.props.VendorId) ? VENDOR_ID_LIST[bestDev.props.VendorId] : "unknown",
 				DriverVersion = new AppVersion(bestDev.props.DriverVersion)
 			};
-			LINFO($"Device Info: {info.Name} (S:{bestDev.score} D:{info.IsDiscrete} V:{info.VendorName} DV:{info.DriverVersion.ToString()}).");
 
 			// Retrieve the queues
 			queues.Graphics = lDevice.GetQueue(qInfos[0].QueueFamilyIndex, 0);
+			queues.Transfer = sepTrans ? lDevice.GetQueue(qInfos[0].QueueFamilyIndex, 1) : queues.Graphics;
 
 			// Save the memory info
 			memory = bestDev.memProps;
+
+			LINFO($"Device Info: {info.Name} (S:{bestDev.score} D:{info.IsDiscrete} V:{info.VendorName} DV:{info.DriverVersion.ToString()}).");
+			LINFO($"Queue Info: G={queues.Graphics.FamilyIndex}:{queues.Graphics.Index} T={queues.Transfer.FamilyIndex}:{queues.Transfer.Index}.");
 		}
 
 		// Scores a physical device (somewhat arbitrarily, make this better later), score of zero is unsuitable
