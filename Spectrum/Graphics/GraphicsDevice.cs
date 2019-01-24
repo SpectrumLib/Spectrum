@@ -57,13 +57,16 @@ namespace Spectrum.Graphics
 			openVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info, out Queues, out Memory);
 
 			Swapchain = new Swapchain(this, _vkInstance, _vkPhysicalDevice, _vkDevice);
-
-			// Other resources to initialize
-			TransferBuffer.CreateResources(this);
 		}
 		~GraphicsDevice()
 		{
 			dispose(false);
+		}
+
+		// Initializes the various graphics resources found throughout the library
+		internal void InitializeResources()
+		{
+			TransferBuffer.CreateResources();
 		}
 
 		#region Frame Functions

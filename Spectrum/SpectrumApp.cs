@@ -99,6 +99,7 @@ namespace Spectrum
 
 			// Create and assemble all of the graphics components
 			GraphicsDevice = new GraphicsDevice(this);
+			GraphicsDevice.InitializeResources();
 
 			doInitialize();
 
