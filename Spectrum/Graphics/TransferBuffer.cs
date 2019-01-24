@@ -6,12 +6,6 @@ namespace Spectrum.Graphics
 {
 	// Holds host-visible buffers to use as staging buffers to transfer data to/from the graphics device for images
 	//   and buffers.
-	// This works using the following general steps:
-	//   1. An image or buffer calls one of the transfer functions
-	//   2. The transfer fence is waited on for the last transfer to finish, then reset
-	//   3. The staging buffer is mapped, written to, then unmapped
-	//   4. The command buffer is recorded to transfer the data
-	//   5. The transfer commands are submitted with the fence, and the transfer function returns immediately
 	internal static class TransferBuffer
 	{
 		// Default transfer buffer size (16MB) - still need to test if this is a good size
@@ -28,12 +22,17 @@ namespace Spectrum.Graphics
 		private static bool s_separateQueue => s_graphicsDevice.Queues.SeparateTransfer;
 
 		// Vulkan objects for processing transfers
-		private static Vk.CommandPool s_transferCommandPool;
-		private static Vk.CommandBuffer s_transferCommands;
-		private static Vk.Buffer s_stagingBuffer;
-		private static Vk.DeviceMemory s_stagingMemory;
-		private static Vk.Fence s_transferFence;
-		private static Vk.SubmitInfo s_submitInfo;
+		private static Vk.CommandPool s_commandPool;
+		private static Vk.CommandBuffer s_pushCommands;
+		private static Vk.Buffer s_pushBuffer;
+		private static Vk.DeviceMemory s_pushMemory;
+		private static Vk.Fence s_pushFence;
+		private static Vk.SubmitInfo s_pushSubmitInfo;
+		private static Vk.CommandBuffer s_pullCommands;
+		private static Vk.Buffer s_pullBuffer;
+		private static Vk.DeviceMemory s_pullMemory;
+		private static Vk.Fence s_pullFence;
+		private static Vk.SubmitInfo s_pullSubmitInfo;
 
 		// Cached values to making the stupid large temp buffers
 		private static int s_bufferFamily;
@@ -56,38 +55,38 @@ namespace Spectrum.Graphics
 				uint currLength = Math.Min(length - blockOff, DEFAULT_BUFFER_SIZE);
 
 				// Wait on the previous transfer
-				s_transferFence.Wait();
-				s_transferFence.Reset();
+				s_pushFence.Wait();
+				s_pushFence.Reset();
 
 				// Map the staging buffer, and copy the memory
-				IntPtr mapped = s_stagingMemory.Map(0, length);
+				IntPtr mapped = s_pushMemory.Map(0, length);
 				Buffer.MemoryCopy(src, mapped.ToPointer(), length, length);
-				s_stagingMemory.Unmap();
+				s_pushMemory.Unmap();
 
 				// Start recording
-				s_transferCommands.Begin(ONE_TIME_SUBMIT_INFO);
+				s_pushCommands.Begin(ONE_TIME_SUBMIT_INFO);
 
 				// Add the transfer command
 				Vk.BufferCopy bc = new Vk.BufferCopy(length, 0, dstOffset);
-				s_transferCommands.CmdCopyBuffer(s_stagingBuffer, dst, bc);
+				s_pushCommands.CmdCopyBuffer(s_pushBuffer, dst, bc);
 
 				// End recording, and submit
-				s_transferCommands.End();
-				s_queue.Submit(s_submitInfo, fence: s_transferFence);
+				s_pushCommands.End();
+				s_queue.Submit(s_pushSubmitInfo, fence: s_pushFence);
 			}
 		}
 
 		// Starts a transfer of raw data from the host to a device image
 		// Unlike the buffers, which are easy to divide into blocks, it is very difficult to divide 3D spaces into blocks
-		//   with alignment and size constraints. For now, we see if we can easily upload the entire image with the
+		//   with alignment and size constraints. For now, we see if we can easily upload the entire image region with the
 		//   existing staging buffer, otherwise we allocate a massive temp buffer to upload the data all at once with.
 		//   Yes, this is inefficient. Yes, this is slow. Yes, I hate this as much as you do.
 		//   We will improve this once the library is in a usable state.
 		//   As it stands, we do have 16MB available, which is a 2048x2048 image before the temp buffers are created.
 		public unsafe static void PushImage(byte *src, uint length, TextureType type, Vk.Image dst, in Vk.Offset3D dstOff, in Vk.Extent3D dstSize, uint layer, uint layerCount)
 		{
-			var buffer = s_stagingBuffer;
-			var memory = s_stagingMemory;
+			var buffer = s_pushBuffer;
+			var memory = s_pushMemory;
 			if (length > DEFAULT_BUFFER_SIZE) // Boo! Make a huge temp buffer
 			{
 				var bci = new Vk.BufferCreateInfo(
@@ -104,8 +103,8 @@ namespace Spectrum.Graphics
 			}
 
 			// Wait on the previous transfer
-			s_transferFence.Wait();
-			s_transferFence.Reset();
+			s_pushFence.Wait();
+			s_pushFence.Reset();
 
 			// Map the staging buffer, and copy the memory
 			IntPtr mapped = memory.Map(0, length);
@@ -113,7 +112,7 @@ namespace Spectrum.Graphics
 			memory.Unmap();
 
 			// Start recording
-			s_transferCommands.Begin(ONE_TIME_SUBMIT_INFO);
+			s_pushCommands.Begin(ONE_TIME_SUBMIT_INFO);
 
 			// Transition to the transfer dst layout
 			var imb = new Vk.ImageMemoryBarrier(
@@ -124,7 +123,7 @@ namespace Spectrum.Graphics
 				Vk.ImageLayout.ShaderReadOnlyOptimal,
 				Vk.ImageLayout.TransferDstOptimal
 			);
-			s_transferCommands.CmdPipelineBarrier(
+			s_pushCommands.CmdPipelineBarrier(
 				Vk.PipelineStages.TopOfPipe,
 				Vk.PipelineStages.Transfer,
 				imageMemoryBarriers: new[] { imb }
@@ -139,22 +138,22 @@ namespace Spectrum.Graphics
 				ImageOffset = dstOff,
 				ImageExtent = dstSize
 			};
-			s_transferCommands.CmdCopyBufferToImage(buffer, dst, Vk.ImageLayout.TransferDstOptimal, bic);
+			s_pushCommands.CmdCopyBufferToImage(buffer, dst, Vk.ImageLayout.TransferDstOptimal, bic);
 
 			// Transition back to the shader layout
 			imb.SrcAccessMask = Vk.Accesses.TransferWrite;
 			imb.DstAccessMask = Vk.Accesses.ShaderRead;
 			imb.OldLayout = Vk.ImageLayout.TransferDstOptimal;
 			imb.NewLayout = Vk.ImageLayout.ShaderReadOnlyOptimal;
-			s_transferCommands.CmdPipelineBarrier(
+			s_pushCommands.CmdPipelineBarrier(
 				Vk.PipelineStages.Transfer,
 				Vk.PipelineStages.VertexShader,
 				imageMemoryBarriers: new[] { imb }
 			);
 
 			// End recording, and submit
-			s_transferCommands.End();
-			s_queue.Submit(s_submitInfo, fence: s_transferFence);
+			s_pushCommands.End();
+			s_queue.Submit(s_pushSubmitInfo, fence: s_pushFence);
 
 			// Release the temp buffers if needed
 			if (length > DEFAULT_BUFFER_SIZE)
@@ -165,45 +164,73 @@ namespace Spectrum.Graphics
 		}
 		#endregion // Host -> Device
 
+		#region Device -> Host
+		// Starts a transfer of raw data from a device buffer to the host
+		public unsafe static void PullBuffer(byte *dst, uint length, Vk.Buffer src, uint srcOffset)
+		{
+			throw new NotImplementedException();
+		}
+
+		// Starts a transfer of raw data from a device image to the host
+		// Unlike the buffers, which are easy to divide into blocks, it is very difficult to divide 3D spaces into blocks
+		//   with alignment and size constraints. For now, we see if we can easily download the entire image region with the
+		//   existing staging buffer, otherwise we allocate a massive temp buffer to download the data all at once with.
+		//   Yes, this is inefficient. Yes, this is slow. Yes, I hate this as much as you do.
+		//   We will improve this once the library is in a usable state.
+		//   As it stands, we do have 16MB available, which is a 2048x2048 image before the temp buffers are created.
+		public unsafe static void PullImage(byte* dst, uint length, TextureType type, Vk.Image src, in Vk.Offset3D srcOff, in Vk.Extent3D srcSize, uint layer, uint layerCount)
+		{
+			throw new NotImplementedException();
+		}
+		#endregion // Device -> Host
+
 		#region Resource Management
 		// Called from the graphics device when it is initialized
 		public static void CreateResources()
 		{
 			s_graphicsDevice = SpectrumApp.Instance.GraphicsDevice;
 
-			// Create the transfer command buffer
+			// Create the transfer command buffers
 			var cpci = new Vk.CommandPoolCreateInfo(
 				s_queue.FamilyIndex,
 				Vk.CommandPoolCreateFlags.Transient | Vk.CommandPoolCreateFlags.ResetCommandBuffer
 			);
-			s_transferCommandPool = s_device.CreateCommandPool(cpci);
-			var cbai = new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 1);
-			s_transferCommands = s_transferCommandPool.AllocateBuffers(cbai)[0];
+			s_commandPool = s_device.CreateCommandPool(cpci);
+			var cbai = new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 2);
+			var bufs = s_commandPool.AllocateBuffers(cbai);
+			s_pushCommands = bufs[0];
+			s_pullCommands = bufs[1];
 
-			// Create the staging buffer
+			// Create the staging buffers
 			var bci = new Vk.BufferCreateInfo(
 				DEFAULT_BUFFER_SIZE,
 				Vk.BufferUsages.TransferSrc,
 				flags: Vk.BufferCreateFlags.None,
 				sharingMode: Vk.SharingMode.Exclusive
 			);
-			s_stagingBuffer = s_device.CreateBuffer(bci);
+			s_pushBuffer = s_device.CreateBuffer(bci);
+			bci.Usage = Vk.BufferUsages.TransferDst;
+			s_pullBuffer = s_device.CreateBuffer(bci);
 
-			// Allocate the staging memory
-			var memReq = s_stagingBuffer.GetMemoryRequirements();
+			// Allocate the staging memories
+			var memReq = s_pushBuffer.GetMemoryRequirements();
 			s_bufferFamily = s_graphicsDevice.FindMemoryTypeIndex(memReq.MemoryTypeBits, Vk.MemoryProperties.HostVisible | Vk.MemoryProperties.HostCoherent);
 			if (s_bufferFamily == -1)
 				throw new InvalidOperationException("Cannot find a memory type that supports host buffers (this means bad or out-of-date hardware)");
 			var mai = new Vk.MemoryAllocateInfo(memReq.Size, s_bufferFamily);
-			s_stagingMemory = s_device.AllocateMemory(mai);
-			s_stagingBuffer.BindMemory(s_stagingMemory);
+			s_pushMemory = s_device.AllocateMemory(mai);
+			s_pushBuffer.BindMemory(s_pushMemory);
+			s_pullMemory = s_device.AllocateMemory(mai);
+			s_pullBuffer.BindMemory(s_pullMemory);
 
-			// Create the transfer fence
+			// Create the transfer fences
 			var fci = new Vk.FenceCreateInfo(Vk.FenceCreateFlags.Signaled);
-			s_transferFence = s_device.CreateFence(fci);
+			s_pushFence = s_device.CreateFence(fci);
+			s_pullFence = s_device.CreateFence(fci);
 
-			// Pre-build the queue submit info for a little speed boost
-			s_submitInfo = new Vk.SubmitInfo(commandBuffers: new[] { s_transferCommands });
+			// Pre-build the queue submit infos for a little speed boost
+			s_pushSubmitInfo = new Vk.SubmitInfo(commandBuffers: new[] { s_pushCommands });
+			s_pullSubmitInfo = new Vk.SubmitInfo(commandBuffers: new[] { s_pullCommands });
 		}
 
 		// Called when the graphics device is disposing to perform object cleanup
@@ -211,12 +238,15 @@ namespace Spectrum.Graphics
 		{
 			s_queue.WaitIdle();
 
-			s_transferFence.Dispose();
+			s_pushFence.Dispose();
+			s_pullFence.Dispose();
 
-			s_stagingBuffer.Dispose();
-			s_stagingMemory.Dispose();
+			s_pushBuffer.Dispose();
+			s_pullBuffer.Dispose();
+			s_pushMemory.Dispose();
+			s_pullMemory.Dispose();
 
-			s_transferCommandPool.Dispose(); // Also disposes the command buffer
+			s_commandPool.Dispose(); // Also disposes the command buffers
 		}
 		#endregion // Resource Management
 	}
