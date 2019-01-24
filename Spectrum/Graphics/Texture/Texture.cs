@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using Vk = VulkanCore;
 
 namespace Spectrum.Graphics
@@ -131,6 +132,37 @@ namespace Spectrum.Graphics
 			if (!IsDisposed)
 				Dispose(false);
 			IsDisposed = true;
+		}
+
+		// Base function for copying data from the host into the image on the device
+		// Contains all of the functionality that is needed by the different texture types for their own SetData functions
+		private protected unsafe void SetData<T>(T[] data, uint start, uint length, in TextureRegion dst, uint layer, uint layerCount)
+			where T : struct
+		{
+			if (data == null)
+				throw new ArgumentNullException(nameof(data));
+			if (!dst.ValidFor(Type) || dst.XMax > Width || dst.YMax > Height || dst.ZMax > Depth)
+				throw new ArgumentException($"The texture region {dst.ToString()} is not valid for the texture {{{Width}x{Height}x{Depth}x{Layers}}}");
+			if ((data.Length - start) < length)
+				throw new InvalidOperationException($"The texel source data is not large enough to supply the requested number of texels");
+
+			uint typeSize = (uint)Marshal.SizeOf<T>();
+			uint srcLen = (uint)data.Length * typeSize;
+			uint srcOff = start * typeSize;
+			uint dstSize = dst.Width * dst.Height * dst.Depth * layerCount * 4; // * 4 for R8G8B8A8UNorm format
+			if (srcLen != dstSize)
+				throw new InvalidOperationException($"Mismatch between the source data length ({srcLen}) and image destination size ({dstSize})");
+
+			var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+			try
+			{
+				byte* src = (byte*)handle.AddrOfPinnedObject().ToPointer();
+				TransferBuffer.PushImage(src + srcOff, srcLen, Type, VkImage, dst.Offset, dst.Extent, layer, layerCount);
+			}
+			finally
+			{
+				handle.Free();
+			}
 		}
 
 		/// <summary>

@@ -84,13 +84,8 @@ namespace Spectrum.Graphics
 		//   Yes, this is inefficient. Yes, this is slow. Yes, I hate this as much as you do.
 		//   We will improve this once the library is in a usable state.
 		//   As it stands, we do have 16MB available, which is a 2048x2048 image before the temp buffers are created.
-		public unsafe static void PushImage(byte *src, uint length, TextureType type, Vk.Image dst, Vk.Offset3D dstOff, Vk.Extent3D dstSize, uint layer, uint layerCount)
+		public unsafe static void PushImage(byte *src, uint length, TextureType type, Vk.Image dst, in Vk.Offset3D dstOff, in Vk.Extent3D dstSize, uint layer, uint layerCount)
 		{
-			// Validate transfer information
-			uint totalSize = (uint)(dstSize.Width * dstSize.Height * dstSize.Depth);
-			if (length != (totalSize * 4))
-				throw new InvalidOperationException($"The source data length ({length}) does not make the destination image size ({totalSize})");
-
 			var buffer = s_stagingBuffer;
 			var memory = s_stagingMemory;
 			if (length > DEFAULT_BUFFER_SIZE) // Boo! Make a huge temp buffer

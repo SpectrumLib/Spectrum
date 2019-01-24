@@ -23,15 +23,15 @@ namespace Spectrum.Graphics
 		/// </summary>
 		public uint Z;
 		/// <summary>
-		/// The size of the region in the x-axis.
+		/// The size of the region in the x-axis. Must be at least 1 for all texture types.
 		/// </summary>
 		public uint Width;
 		/// <summary>
-		/// The size of the region in the y-axis.
+		/// The size of the region in the y-axis. Must be at least 1 for all texture types.
 		/// </summary>
 		public uint Height;
 		/// <summary>
-		/// The size of the region in the z-axis.
+		/// The size of the region in the z-axis. Must be at least 1 for all texture types.
 		/// </summary>
 		public uint Depth;
 
@@ -47,6 +47,11 @@ namespace Spectrum.Graphics
 		/// The maximum z-coordinate of the region.
 		/// </summary>
 		public uint ZMax => Z + Depth;
+
+		/// <summary>
+		/// The number of texels that are contained inside of this region.
+		/// </summary>
+		public uint TexelCount => Width * Height * Depth;
 
 		// Quick casting to the Vulkan objects that this region describes
 		internal Vk.Offset3D Offset => new Vk.Offset3D((int)X, (int)Y, (int)Z);
