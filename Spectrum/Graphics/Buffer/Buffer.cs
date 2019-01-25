@@ -58,7 +58,7 @@ namespace Spectrum.Graphics
 		}
 
 		// Length is in array indices, start is in array indices, dstOff is in bytes
-		private protected unsafe void SetData<T>(T[] data, uint length, uint start, uint dstOff)
+		private protected unsafe void SetDataInternal<T>(T[] data, uint length, uint start, uint dstOff)
 			where T : struct
 		{
 			if (data == null)
@@ -86,7 +86,7 @@ namespace Spectrum.Graphics
 		}
 
 		// Length is in array indices, start is in array indices, srcOff is in bytes
-		private protected unsafe void GetData<T>(ref T[] data, uint length, uint start, uint srcOff)
+		private protected unsafe void GetDataInternal<T>(ref T[] data, uint length, uint start, uint srcOff)
 			where T : struct
 		{
 			uint typeSize = (uint)Marshal.SizeOf<T>();

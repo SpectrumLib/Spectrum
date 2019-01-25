@@ -139,7 +139,7 @@ namespace Spectrum.Graphics
 		// Base function for copying data from the host into the image on the device
 		// Contains all of the functionality that is needed by the different texture types for their own SetData functions
 		// `start` and `length` are in array indices, not bytes.
-		private protected unsafe void SetData<T>(T[] data, uint start, in TextureRegion region, uint layer, uint layerCount)
+		private protected unsafe void SetDataInternal<T>(T[] data, uint start, in TextureRegion region, uint layer, uint layerCount)
 			where T : struct
 		{
 			uint typeSize = (uint)Marshal.SizeOf<T>();
@@ -178,7 +178,7 @@ namespace Spectrum.Graphics
 		/// <param name="offset">The optional offset into the source array.</param>
 		public void SetData<T>(T[] data, uint offset = 0)
 			where T : struct =>
-			SetData(data, offset, (0, 0, 0, Width, Height, Depth), 0, 1);
+			SetDataInternal(data, offset, (0, 0, 0, Width, Height, Depth), 0, 1);
 
 		/// <summary>
 		/// Sets the data for a subset region of the texture.
@@ -189,7 +189,7 @@ namespace Spectrum.Graphics
 		/// <param name="offset">The optional offset into the source array.</param>
 		public void SetData<T>(T[] data, in TextureRegion region, uint offset = 0)
 			where T : struct =>
-			SetData(data, offset, region, 0, 1);
+			SetDataInternal(data, offset, region, 0, 1);
 		#endregion // Set Data
 
 		#region GetData
@@ -197,7 +197,7 @@ namespace Spectrum.Graphics
 		// Contains all of the functionality that is needed by the different texture types for their own GetData functions
 		// `start` and `length` are in array indices, not bytes.
 		// Additionally, if a null array is passed to the function, it will create a new array of the correct size.
-		private protected unsafe void GetData<T>(ref T[] data, uint start, in TextureRegion region, uint layer, uint layerCount)
+		private protected unsafe void GetDataInternal<T>(ref T[] data, uint start, in TextureRegion region, uint layer, uint layerCount)
 			where T : struct
 		{
 			uint typeSize = (uint)Marshal.SizeOf<T>();
@@ -240,7 +240,7 @@ namespace Spectrum.Graphics
 		/// <param name="offset">The optional offset into the destination array.</param>
 		public void GetData<T>(ref T[] data, uint offset = 0)
 			where T : struct =>
-			GetData(ref data, offset, (0, 0, 0, Width, Height, Depth), 0, 1);
+			GetDataInternal(ref data, offset, (0, 0, 0, Width, Height, Depth), 0, 1);
 
 		/// <summary>
 		/// Retrieves the data of a subset of the texture into a buffer.
@@ -254,7 +254,7 @@ namespace Spectrum.Graphics
 		/// <param name="offset">The optional offset into the destination array.</param>
 		public void GetData<T>(ref T[] data, in TextureRegion region, uint offset = 0)
 			where T : struct =>
-			GetData(ref data, offset, region, 0, 1);
+			GetDataInternal(ref data, offset, region, 0, 1);
 		#endregion // GetData
 
 		/// <summary>
