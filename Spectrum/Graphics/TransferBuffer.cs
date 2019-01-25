@@ -59,15 +59,15 @@ namespace Spectrum.Graphics
 				s_pushFence.Reset();
 
 				// Map the staging buffer, and copy the memory
-				IntPtr mapped = s_pushMemory.Map(0, length);
-				Buffer.MemoryCopy(src, mapped.ToPointer(), length, length);
+				IntPtr mapped = s_pushMemory.Map(0, currLength);
+				Buffer.MemoryCopy(src, mapped.ToPointer(), currLength, currLength);
 				s_pushMemory.Unmap();
 
 				// Start recording
 				s_pushCommands.Begin(ONE_TIME_SUBMIT_INFO);
 
 				// Add the transfer command
-				Vk.BufferCopy bc = new Vk.BufferCopy(length, 0, dstOffset);
+				Vk.BufferCopy bc = new Vk.BufferCopy(currLength, 0, currDstOffset);
 				s_pushCommands.CmdCopyBuffer(s_pushBuffer, dst, bc);
 
 				// End recording, and submit
@@ -168,7 +168,38 @@ namespace Spectrum.Graphics
 		// Starts a transfer of raw data from a device buffer to the host
 		public unsafe static void PullBuffer(byte *dst, uint length, Vk.Buffer src, uint srcOffset)
 		{
-			throw new NotImplementedException();
+			// Calculate transfer information
+			uint blockCount = (uint)Mathf.Ceiling(length / (float)DEFAULT_BUFFER_SIZE);
+
+			// Iterate over the transfer blocks
+			for (uint bidx = 0; bidx < blockCount; ++bidx)
+			{
+				// Calculate offsets and block sizes
+				uint blockOff = bidx * DEFAULT_BUFFER_SIZE;
+				byte* currDst = dst + blockOff;
+				uint currSrcOffset = srcOffset + blockOff;
+				uint currLength = Math.Min(length - blockOff, DEFAULT_BUFFER_SIZE);
+
+				// start recording
+				s_pullCommands.Begin(ONE_TIME_SUBMIT_INFO);
+
+				// Add the transfer command
+				Vk.BufferCopy bc = new Vk.BufferCopy(currLength, 0, currSrcOffset);
+				s_pullCommands.CmdCopyBuffer(src, s_pullBuffer, bc);
+
+				// End recording, and submit
+				s_pullCommands.End();
+				s_queue.Submit(s_pullSubmitInfo, fence: s_pullFence);
+
+				// Wait for the transfer to the host to complete
+				s_pullFence.Wait();
+				s_pullFence.Reset();
+
+				// Map the staging buffer, and copy the memory
+				IntPtr mapped = s_pullMemory.Map(0, currLength);
+				Buffer.MemoryCopy(mapped.ToPointer(), dst, currLength, currLength);
+				s_pullMemory.Unmap();
+			}
 		}
 
 		// Starts a transfer of raw data from a device image to the host
@@ -180,7 +211,82 @@ namespace Spectrum.Graphics
 		//   As it stands, we do have 16MB available, which is a 2048x2048 image before the temp buffers are created.
 		public unsafe static void PullImage(byte* dst, uint length, TextureType type, Vk.Image src, in Vk.Offset3D srcOff, in Vk.Extent3D srcSize, uint layer, uint layerCount)
 		{
-			throw new NotImplementedException();
+			var buffer = s_pullBuffer;
+			var memory = s_pullMemory;
+			if (length > DEFAULT_BUFFER_SIZE) // Boo! Make a huge temp buffer
+			{
+				var bci = new Vk.BufferCreateInfo(
+					length,
+					Vk.BufferUsages.TransferDst,
+					flags: Vk.BufferCreateFlags.None,
+					sharingMode: Vk.SharingMode.Exclusive
+				);
+				buffer = s_device.CreateBuffer(bci);
+				var memReq = buffer.GetMemoryRequirements();
+				var mai = new Vk.MemoryAllocateInfo(memReq.Size, s_bufferFamily);
+				memory = s_device.AllocateMemory(mai);
+				buffer.BindMemory(memory);
+			}
+
+			// Start recording
+			s_pullCommands.Begin(ONE_TIME_SUBMIT_INFO);
+
+			// Transition to the transfer src layout
+			var imb = new Vk.ImageMemoryBarrier(
+				src,
+				new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, (int)layer, (int)layerCount),
+				Vk.Accesses.None,
+				Vk.Accesses.TransferRead,
+				Vk.ImageLayout.ShaderReadOnlyOptimal,
+				Vk.ImageLayout.TransferSrcOptimal
+			);
+			s_pullCommands.CmdPipelineBarrier(
+				Vk.PipelineStages.TopOfPipe,
+				Vk.PipelineStages.Transfer,
+				imageMemoryBarriers: new[] { imb }
+			);
+
+			// Make the transfer
+			var bic = new Vk.BufferImageCopy {
+				BufferOffset = 0,
+				BufferRowLength = 0,
+				BufferImageHeight = 0,
+				ImageSubresource = new Vk.ImageSubresourceLayers(Vk.ImageAspects.Color, 0, (int)layer, (int)layerCount),
+				ImageOffset = srcOff,
+				ImageExtent = srcSize
+			};
+			s_pullCommands.CmdCopyImageToBuffer(src, Vk.ImageLayout.TransferSrcOptimal, s_pullBuffer, bic);
+
+			// Transition back to the shader layout
+			imb.SrcAccessMask = Vk.Accesses.TransferRead;
+			imb.DstAccessMask = Vk.Accesses.ShaderRead;
+			imb.OldLayout = Vk.ImageLayout.TransferSrcOptimal;
+			imb.NewLayout = Vk.ImageLayout.ShaderReadOnlyOptimal;
+			s_pullCommands.CmdPipelineBarrier(
+				Vk.PipelineStages.Transfer,
+				Vk.PipelineStages.VertexShader,
+				imageMemoryBarriers: new[] { imb }
+			);
+
+			// End recording, and submit
+			s_pullCommands.End();
+			s_queue.Submit(s_pullSubmitInfo, fence: s_pullFence);
+
+			// Wait for the transfer to the host to complete
+			s_pullFence.Wait();
+			s_pullFence.Reset();
+
+			// Map the staging buffer, and copy the memory
+			IntPtr mapped = memory.Map(0, length);
+			Buffer.MemoryCopy(mapped.ToPointer(), dst, length, length);
+			memory.Unmap();
+
+			// Release the temp buffers if needed
+			if (length > DEFAULT_BUFFER_SIZE)
+			{
+				buffer.Dispose();
+				memory.Dispose();
+			}
 		}
 		#endregion // Device -> Host
 
@@ -225,8 +331,9 @@ namespace Spectrum.Graphics
 
 			// Create the transfer fences
 			var fci = new Vk.FenceCreateInfo(Vk.FenceCreateFlags.Signaled);
-			s_pushFence = s_device.CreateFence(fci);
-			s_pullFence = s_device.CreateFence(fci);
+			s_pushFence = s_device.CreateFence(fci); // Start signaled since we wait BEFORE we submit
+			fci.Flags = Vk.FenceCreateFlags.None;
+			s_pullFence = s_device.CreateFence(fci); // Start unsignaled since we wait AFTER we submit
 
 			// Pre-build the queue submit infos for a little speed boost
 			s_pushSubmitInfo = new Vk.SubmitInfo(commandBuffers: new[] { s_pushCommands });
