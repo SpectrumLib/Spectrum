@@ -66,8 +66,8 @@ namespace Spectrum.Graphics
 		public TextureRegion(uint x, uint w)
 		{
 			X = x;
-			Y = 1;
-			Z = 1;
+			Y = 0;
+			Z = 0;
 			Width = w;
 			Height = 1;
 			Depth = 1;
@@ -84,7 +84,7 @@ namespace Spectrum.Graphics
 		{
 			X = x;
 			Y = y;
-			Z = 1;
+			Z = 0;
 			Width = w;
 			Height = h;
 			Depth = 1;

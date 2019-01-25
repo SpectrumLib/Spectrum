@@ -6,7 +6,8 @@ namespace Spectrum.Graphics
 {
 	/// <summary>
 	/// Base class for all texture types, and cannot be instantiated directly. Types that derive from this one can only
-	/// be used to upload from the CPU and sample in shaders. There is a separate type for textures to render to.
+	/// be used to upload from the CPU and sample in shaders. There is a separate type for textures to render to. All
+	/// texel data to and from textures must be in R8G8B8A8 format (standard 8-bit 4-channel format)
 	/// </summary>
 	public abstract class Texture : IDisposable
 	{
@@ -136,20 +137,23 @@ namespace Spectrum.Graphics
 
 		// Base function for copying data from the host into the image on the device
 		// Contains all of the functionality that is needed by the different texture types for their own SetData functions
-		private protected unsafe void SetData<T>(T[] data, uint start, uint length, in TextureRegion dst, uint layer, uint layerCount)
+		// `start` and `length` are in array indices, not bytes.
+		private protected unsafe void SetData<T>(T[] data, uint start, in TextureRegion region, uint layer, uint layerCount)
 			where T : struct
 		{
+			uint typeSize = (uint)Marshal.SizeOf<T>();
+			uint dstSize = region.TexelCount * layerCount * 4; // * 4 for R8G8B8A8UNorm format
+			uint length = (uint)Mathf.Ceiling((float)dstSize / typeSize);
+
 			if (data == null)
 				throw new ArgumentNullException(nameof(data));
-			if (!dst.ValidFor(Type) || dst.XMax > Width || dst.YMax > Height || dst.ZMax > Depth)
-				throw new ArgumentException($"The texture region {dst.ToString()} is not valid for the texture {{{Width}x{Height}x{Depth}x{Layers}}}");
+			if (!region.ValidFor(Type) || region.XMax > Width || region.YMax > Height || region.ZMax > Depth)
+				throw new ArgumentException($"The texture region {region.ToString()} is not valid for the texture {{{Width}x{Height}x{Depth}x{Layers}}}");
 			if ((data.Length - start) < length)
 				throw new InvalidOperationException($"The texel source data is not large enough to supply the requested number of texels");
 
-			uint typeSize = (uint)Marshal.SizeOf<T>();
-			uint srcLen = (uint)data.Length * typeSize;
+			uint srcLen = length * typeSize;
 			uint srcOff = start * typeSize;
-			uint dstSize = dst.Width * dst.Height * dst.Depth * layerCount * 4; // * 4 for R8G8B8A8UNorm format
 			if (srcLen != dstSize)
 				throw new InvalidOperationException($"Mismatch between the source data length ({srcLen}) and image destination size ({dstSize})");
 
@@ -157,7 +161,43 @@ namespace Spectrum.Graphics
 			try
 			{
 				byte* src = (byte*)handle.AddrOfPinnedObject().ToPointer();
-				TransferBuffer.PushImage(src + srcOff, srcLen, Type, VkImage, dst.Offset, dst.Extent, layer, layerCount);
+				TransferBuffer.PushImage(src + srcOff, srcLen, Type, VkImage, region.Offset, region.Extent, layer, layerCount);
+			}
+			finally
+			{
+				handle.Free();
+			}
+		}
+
+		// Base function for copying data from an image on the device to the host.
+		// Contains all of the functionality that is needed by the different texture types for their own GetData functions
+		// `start` and `length` are in array indices, not bytes.
+		// Additionally, if a null array is passed to the function, it will create a new array of the correct size.
+		private protected unsafe void GetData<T>(ref T[] data, uint start, in TextureRegion region, uint layer, uint layerCount)
+			where T : struct
+		{
+			uint typeSize = (uint)Marshal.SizeOf<T>();
+			uint srcSize = region.TexelCount * layerCount * 4; // * 4 for R8G8B8A8UNorm format
+			uint length = (uint)Mathf.Ceiling((float)srcSize / typeSize);
+
+			if (data == null)
+				data = new T[length + start];
+
+			if (!region.ValidFor(Type) || region.XMax > Width || region.YMax > Height || region.ZMax > Depth)
+				throw new ArgumentException($"The texture region {region.ToString()} is not valid for the texture {{{Width}x{Height}x{Depth}x{Layers}}}");
+			if ((data.Length - start) < length)
+				throw new InvalidOperationException($"The texel destination array is not large enough to receive the requested number of texels");
+
+			uint dstLen = length * typeSize;
+			uint dstOff = start * typeSize;
+			if (dstLen != srcSize)
+				throw new InvalidOperationException($"Mismatch between the destination data length ({dstLen}) and image source size ({srcSize})");
+
+			var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+			try
+			{
+				byte* dst = (byte*)handle.AddrOfPinnedObject().ToPointer();
+				TransferBuffer.PullImage(dst + dstOff, dstLen, Type, VkImage, region.Offset, region.Extent, layer, layerCount);
 			}
 			finally
 			{
