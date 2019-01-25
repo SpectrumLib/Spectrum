@@ -42,16 +42,26 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <typeparam name="T">The type of the input data.</typeparam>
 		/// <param name="data">The data to copy into the buffer.</param>
-		/// <param name="length">The length of the source data to copy, in array indices.</param>
+		/// <param name="length">
+		/// The length of the source data to copy, in array indices. A value of <see cref="UInt32.MaxValue"/> will
+		/// auto-calculate the proper length to fill the buffer, taking into account the offset into the buffer.
+		/// </param>
 		/// <param name="srcOffset">The optional offset into the source data, in array indices.</param>
 		/// <param name="dstOffset">The optional offset into the buffer, in verticies.</param>
 		/// <param name="strict">If `true`, performs additional checks for alignment to vertex boundaries in the buffer.</param>
-		public void SetData<T>(T[] data, uint length, uint srcOffset = 0, uint dstOffset = 0, bool strict = true)
+		public void SetData<T>(T[] data, uint length = UInt32.MaxValue, uint srcOffset = 0, uint dstOffset = 0, bool strict = true)
 			where T : struct
 		{
+			uint typeSize = (uint)Marshal.SizeOf<T>();
+
+			if (length == UInt32.MaxValue)
+			{
+				uint rem = VertexCount - dstOffset;
+				length = (uint)((float)rem * Stride / typeSize);
+			}
+
 			if (strict)
 			{
-				uint typeSize = (uint)Marshal.SizeOf<T>();
 				uint srcSize = length * typeSize;
 				uint srcOff = srcOffset * typeSize;
 				if ((srcOff % Stride) != 0)
@@ -60,7 +70,7 @@ namespace Spectrum.Graphics
 					throw new ArgumentException($"The length of the source data ({srcSize}) does not align to a vertex boundary ({Stride})"); 
 			}
 
-			SetDataInternal(data, length, srcOffset, dstOffset * Stride);
+			SetDataInternal(data, length, srcOffset, dstOffset * Stride); /// if sean==gay: print('yup I knew it boi')
 		}
 	}
 }
