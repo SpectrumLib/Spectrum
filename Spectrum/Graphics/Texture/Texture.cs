@@ -135,6 +135,7 @@ namespace Spectrum.Graphics
 			IsDisposed = true;
 		}
 
+		#region Set Data
 		// Base function for copying data from the host into the image on the device
 		// Contains all of the functionality that is needed by the different texture types for their own SetData functions
 		// `start` and `length` are in array indices, not bytes.
@@ -169,6 +170,29 @@ namespace Spectrum.Graphics
 			}
 		}
 
+		/// <summary>
+		/// Sets the data for the entire texture at once.
+		/// </summary>
+		/// <typeparam name="T">The type of the source texel data.</typeparam>
+		/// <param name="data">The source data.</param>
+		/// <param name="offset">The optional offset into the source array.</param>
+		public void SetData<T>(T[] data, uint offset = 0)
+			where T : struct =>
+			SetData(data, offset, (0, 0, 0, Width, Height, Depth), 0, 1);
+
+		/// <summary>
+		/// Sets the data for a subset region of the texture.
+		/// </summary>
+		/// <typeparam name="T">The type of the source texel data.</typeparam>
+		/// <param name="data">The source data.</param>
+		/// <param name="region">The region of the texture to set the data in.</param>
+		/// <param name="offset">The optional offset into the source array.</param>
+		public void SetData<T>(T[] data, in TextureRegion region, uint offset = 0)
+			where T : struct =>
+			SetData(data, offset, region, 0, 1);
+		#endregion // Set Data
+
+		#region GetData
 		// Base function for copying data from an image on the device to the host.
 		// Contains all of the functionality that is needed by the different texture types for their own GetData functions
 		// `start` and `length` are in array indices, not bytes.
@@ -204,6 +228,34 @@ namespace Spectrum.Graphics
 				handle.Free();
 			}
 		}
+
+		/// <summary>
+		/// Retrieves the data of the entire texture at once into a buffer.
+		/// </summary>
+		/// <typeparam name="T">The type of the destination texel data.</typeparam>
+		/// <param name="data">
+		/// The array to place the data into, or null to have a correctly-size array created automatically. Any new
+		/// array will be large enough to take into account passed offset.
+		/// </param>
+		/// <param name="offset">The optional offset into the destination array.</param>
+		public void GetData<T>(ref T[] data, uint offset = 0)
+			where T : struct =>
+			GetData(ref data, offset, (0, 0, 0, Width, Height, Depth), 0, 1);
+
+		/// <summary>
+		/// Retrieves the data of a subset of the texture into a buffer.
+		/// </summary>
+		/// <typeparam name="T">The type of the destination texel data.</typeparam>
+		/// <param name="data">
+		/// The array to place the data into, or null to have a correctly-size array created automatically. Any new
+		/// array will be large enough to take into account passed offset.
+		/// </param>
+		/// <param name="region">The subset region of the texture to pull data from.</param>
+		/// <param name="offset">The optional offset into the destination array.</param>
+		public void GetData<T>(ref T[] data, in TextureRegion region, uint offset = 0)
+			where T : struct =>
+			GetData(ref data, offset, region, 0, 1);
+		#endregion // GetData
 
 		/// <summary>
 		/// Couples this texture to a sampler for use in a pipeline.
