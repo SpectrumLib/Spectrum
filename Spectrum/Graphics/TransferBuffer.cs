@@ -60,7 +60,7 @@ namespace Spectrum.Graphics
 
 				// Map the staging buffer, and copy the memory
 				IntPtr mapped = s_pushMemory.Map(0, currLength);
-				Buffer.MemoryCopy(src, mapped.ToPointer(), currLength, currLength);
+				System.Buffer.MemoryCopy(src, mapped.ToPointer(), currLength, currLength);
 				s_pushMemory.Unmap();
 
 				// Start recording
@@ -108,7 +108,7 @@ namespace Spectrum.Graphics
 
 			// Map the staging buffer, and copy the memory
 			IntPtr mapped = memory.Map(0, length);
-			Buffer.MemoryCopy(src, mapped.ToPointer(), length, length);
+			System.Buffer.MemoryCopy(src, mapped.ToPointer(), length, length);
 			memory.Unmap();
 
 			// Start recording
@@ -197,7 +197,7 @@ namespace Spectrum.Graphics
 
 				// Map the staging buffer, and copy the memory
 				IntPtr mapped = s_pullMemory.Map(0, currLength);
-				Buffer.MemoryCopy(mapped.ToPointer(), dst, currLength, currLength);
+				System.Buffer.MemoryCopy(mapped.ToPointer(), dst, currLength, currLength);
 				s_pullMemory.Unmap();
 			}
 		}
@@ -278,7 +278,7 @@ namespace Spectrum.Graphics
 
 			// Map the staging buffer, and copy the memory
 			IntPtr mapped = memory.Map(0, length);
-			Buffer.MemoryCopy(mapped.ToPointer(), dst, length, length);
+			System.Buffer.MemoryCopy(mapped.ToPointer(), dst, length, length);
 			memory.Unmap();
 
 			// Release the temp buffers if needed
