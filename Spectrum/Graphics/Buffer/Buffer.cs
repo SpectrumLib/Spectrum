@@ -147,11 +147,6 @@ namespace Spectrum.Graphics
 		/// </summary>
 		Index,
 		/// <summary>
-		/// The buffer is used as a storage of formatted texels (similar to a massive 1D texture), which will always
-		/// support reads in shaders, and may also support stores and atomic operations.
-		/// </summary>
-		Texel,
-		/// <summary>
 		/// The buffer is used to store general structured memory, which shaders have read and store access to, as well
 		/// as atomic operations on buffer members that are unsigned integers.
 		/// </summary>
