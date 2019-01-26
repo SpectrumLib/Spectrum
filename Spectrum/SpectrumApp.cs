@@ -144,8 +144,12 @@ namespace Spectrum
 		private void doUpdate()
 		{
 			PreUpdate();
+			SceneManager.PreUpdate();
 			CoroutineManager.Tick();
 			Update();
+			SceneManager.Update();
+			PostUpdate();
+			SceneManager.PostUpdate();
 		}
 
 		// Performs the render logic for a single frame
@@ -154,7 +158,11 @@ namespace Spectrum
 			GraphicsDevice.BeginFrame();
 
 			PreRender();
+			SceneManager.PreRender();
 			Render();
+			SceneManager.Render();
+			PostRender();
+			SceneManager.PostRender();
 
 			GraphicsDevice.EndFrame();
 		}
@@ -169,6 +177,11 @@ namespace Spectrum
 		/// Update logic. User code does not need to call <c>base.Update()</c>.
 		/// </summary>
 		protected virtual void Update() { }
+		/// <summary>
+		/// Called once per frame to perform logic after the main update logic. Override in base class to implement 
+		/// custom PostUpdate logic. User code does not need to call <c>base.PostUpdate()</c>.
+		/// </summary>
+		protected virtual void PostUpdate() { }
 
 		/// <summary>
 		/// Called once per frame to perform logic before the main render logic. Override in base class to implement
@@ -180,6 +193,11 @@ namespace Spectrum
 		/// Render logic. User code does not need to call <c>base.Render()</c>.
 		/// </summary>
 		protected virtual void Render() { }
+		/// <summary>
+		/// Called once per frame to perform logic after the main render logic. Override in base class to implement
+		/// custom PreRender logic. User code does not need to call <c>base.PostRender()</c>.
+		/// </summary>
+		protected virtual void PostRender() { }
 		#endregion // Main Loop
 
 		internal static void FocusChangeCallback(bool focused) => Instance.FocusChanged?.Invoke(focused);
@@ -201,6 +219,9 @@ namespace Spectrum
 		{
 			if (!IsDisposed)
 			{
+				// Clean up all of the scenes, including the active one
+				SceneManager.Shutdown();
+
 				OnDisposing(disposing);
 
 				GraphicsDevice.Dispose();

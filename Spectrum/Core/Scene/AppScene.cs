@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spectrum.Graphics;
+using System;
 
 namespace Spectrum
 {
@@ -16,17 +17,40 @@ namespace Spectrum
 		/// </summary>
 		public readonly string Name;
 		/// <summary>
+		/// If this scene is the active scene in the application.
+		/// </summary>
+		public bool IsActive { get; private set; } = false;
+
+		/// <summary>
+		/// A reference to the application.
+		/// </summary>
+		public SpectrumApp Application => SpectrumApp.Instance;
+		/// <summary>
+		/// A reference to the current graphics device.
+		/// </summary>
+		public GraphicsDevice GraphicsDevice => SpectrumApp.Instance.GraphicsDevice;
+
+		/// <summary>
 		/// If this scene has been disposed.
 		/// </summary>
 		protected bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
 
 		/// <summary>
-		/// Initializes the base functionality of the scene.
+		/// Initializes the base functionality of the scene. Scenes cannot be constructed directly, and must be
+		/// created with the <see cref="SceneManager.CreateScene{T}"/> functions.
 		/// </summary>
 		/// <param name="name">The name of the scene.</param>
 		protected AppScene(string name)
 		{
+			// Ensure we are creating this through SceneManager, and set to false to prevent this scene from making more scenes
+			lock (SceneManager.CreateLock)
+			{
+				if (!SceneManager.IsCreatingScene)
+					throw new InvalidOperationException("AppScene instances must be created through the SceneManager");
+				SceneManager.IsCreatingScene = false;
+			}
+
 			if (String.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("The scene name cannot be null or empty", nameof(name));
 
@@ -50,6 +74,7 @@ namespace Spectrum
 
 		internal void Start()
 		{
+			IsActive = true;
 			OnStart();
 		}
 
@@ -61,6 +86,7 @@ namespace Spectrum
 		internal void Remove()
 		{
 			OnRemove();
+			IsActive = false;
 		}
 
 		internal void DoPreUpdate()
@@ -181,7 +207,11 @@ namespace Spectrum
 		private void dispose(bool disposing)
 		{
 			if (!IsDisposed)
+			{
 				OnDispose(disposing);
+
+				SceneManager.RemoveScene(this);
+			}
 
 			IsDisposed = true;
 		}
