@@ -97,7 +97,7 @@ namespace Spectrum.Graphics
 				throw new ArgumentException("The buffer is not large enough to supply the requested amount of data");
 			if (data == null)
 				data = new T[length + start];
-			else if (dstLen > (data.Length - start))
+			else if (dstLen > ((data.Length - start) * 4))
 				throw new ArgumentException("The array is not large enough to accept the buffer data");
 
 			var handle = GCHandle.Alloc(data, GCHandleType.Pinned);

@@ -60,7 +60,7 @@ namespace Spectrum.Graphics
 
 				// Map the staging buffer, and copy the memory
 				IntPtr mapped = s_pushMemory.Map(0, currLength);
-				System.Buffer.MemoryCopy(src, mapped.ToPointer(), currLength, currLength);
+				System.Buffer.MemoryCopy(currSrc, mapped.ToPointer(), currLength, currLength);
 				s_pushMemory.Unmap();
 
 				// Start recording
@@ -184,7 +184,7 @@ namespace Spectrum.Graphics
 				s_pullCommands.Begin(ONE_TIME_SUBMIT_INFO);
 
 				// Add the transfer command
-				Vk.BufferCopy bc = new Vk.BufferCopy(currLength, 0, currSrcOffset);
+				Vk.BufferCopy bc = new Vk.BufferCopy(currLength, currSrcOffset, 0);
 				s_pullCommands.CmdCopyBuffer(src, s_pullBuffer, bc);
 
 				// End recording, and submit
@@ -197,7 +197,7 @@ namespace Spectrum.Graphics
 
 				// Map the staging buffer, and copy the memory
 				IntPtr mapped = s_pullMemory.Map(0, currLength);
-				System.Buffer.MemoryCopy(mapped.ToPointer(), dst, currLength, currLength);
+				System.Buffer.MemoryCopy(mapped.ToPointer(), currDst, currLength, currLength);
 				s_pullMemory.Unmap();
 			}
 		}

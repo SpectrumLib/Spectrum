@@ -43,10 +43,10 @@ namespace Spectrum.Graphics
 		/// <typeparam name="T">The type of the input data.</typeparam>
 		/// <param name="data">The data to copy into the buffer.</param>
 		/// <param name="length">
-		/// The length of the source data to copy, in array indices. A value of <see cref="UInt32.MaxValue"/> will
-		/// auto-calculate the proper length to fill the buffer, taking into account the offset into the buffer.
+		/// The length of the source data to copy, in <typeparamref name="T"/>s. A value of <see cref="UInt32.MaxValue"/>
+		/// will auto-calculate the proper length to fill the buffer, taking into account the offset into the buffer.
 		/// </param>
-		/// <param name="srcOffset">The optional offset into the source data, in array indices.</param>
+		/// <param name="srcOffset">The optional offset into the source data, in <typeparamref name="T"/>s.</param>
 		/// <param name="dstOffset">The optional offset into the buffer, in verticies.</param>
 		/// <param name="strict">If `true`, performs additional checks for alignment to vertex boundaries in the buffer.</param>
 		public void SetData<T>(T[] data, uint length = UInt32.MaxValue, uint srcOffset = 0, uint dstOffset = 0, bool strict = true)
