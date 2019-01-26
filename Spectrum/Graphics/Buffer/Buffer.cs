@@ -23,7 +23,6 @@ namespace Spectrum.Graphics
 		// Vulkan objects
 		internal readonly Vk.Buffer VkBuffer;
 		internal readonly Vk.DeviceMemory VkMemory;
-		internal readonly Vk.BufferView VkView;
 
 		// The handle to the graphics device for this buffer
 		protected readonly GraphicsDevice Device;
@@ -125,7 +124,6 @@ namespace Spectrum.Graphics
 		{
 			if (disposing)
 			{
-				VkView?.Dispose();
 				VkBuffer.Dispose();
 				VkMemory?.Dispose();
 			}
