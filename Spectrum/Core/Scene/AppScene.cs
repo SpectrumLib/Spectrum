@@ -67,20 +67,15 @@ namespace Spectrum
 			OnInitialize();
 		}
 
-		internal void Enable()
+		internal void QueueChange(bool hasTransition)
 		{
-			OnEnable();
+			OnQueueChange(hasTransition);
 		}
 
 		internal void Start()
 		{
 			IsActive = true;
 			OnStart();
-		}
-
-		internal void Disable()
-		{
-			OnDisable();
 		}
 
 		internal void Remove()
@@ -128,24 +123,24 @@ namespace Spectrum
 		protected virtual void OnInitialize() { }
 
 		/// <summary>
-		/// Called when the scene is initially queued to become the new active scene. Note that there may be more
-		/// rendered frames between when this function is called and when it becomes active, if there is a scene
-		/// transition. Asynchronous resource/content loading can be started in this function.
+		/// Called when a new scene is queued to become the active scene, and this scene is either the newely queued
+		/// scene, or the currently active scene that will be replaced.
 		/// </summary>
-		protected virtual void OnEnable() { }
+		/// <remarks>
+		/// The scenes should check <see cref="AppScene.IsActive"/> to decide if they are the newely queued scene, or the
+		/// active scene that is being replaced. Note that there can be many frames between this call and the actual change,
+		/// if there is a scene transition occuring. New scenes should not load resources/content on the main thread in this
+		/// function, and active scenes should not start unloading resources/content as it may be rendered for multiple
+		/// frames before actually being disposed.
+		/// </remarks>
+		/// <param name="hasTransition">If there is a scene transition running.</param>
+		protected virtual void OnQueueChange(bool hasTransition) { }
 
 		/// <summary>
 		/// Called when the old active scene is destroyed, and this scene becomes the new active scene. Most of the
 		/// resource/content loading for the scene should be done here.
 		/// </summary>
 		protected virtual void OnStart() { }
-
-		/// <summary>
-		/// Called when this scene is queued to be removed as the active scene. Note that there may be more
-		/// rendered frames between when this function is called and when it gets removed, if there is a scene
-		/// transition.
-		/// </summary>
-		protected virtual void OnDisable() { }
 
 		/// <summary>
 		/// Called when this scene is removed as the active scene. Resource/content unloading should be done here.
