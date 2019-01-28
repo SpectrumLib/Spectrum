@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Vk = VulkanCore;
+using static Spectrum.Utilities.CollectionUtils;
 
 namespace Spectrum.Graphics
 {
@@ -28,6 +29,11 @@ namespace Spectrum.Graphics
 	///			If the builder was not derived from an existing render pass, and if it was not created with no
 	///			attachments specified, its attachments must be specified using the <c>AddAttachment</c> functions.
 	///		</item>
+	///		<item>
+	///			Add subpasses with the <see cref="AddSubpass(SubpassInfo)"/> function. The first time this function is
+	///			called, the attachments are finalized and cannot be edited or added to any further. The subpasses will
+	///			execute in the order that they are added.
+	///		</item>
 	/// </list>
 	/// Attempting to add attachments after subpasses are added, or adding a subpass without attachments described,
 	/// will result in an exception being thrown.
@@ -36,18 +42,29 @@ namespace Spectrum.Graphics
 	public sealed class RenderPassBuilder : IDisposable
 	{
 		#region Fields
-
 		// Cached attachment info
-		private readonly List<AttachmentInfo> _attachments = new List<AttachmentInfo>();
+		private readonly List<AttachmentInfo> _attachmentCache = new List<AttachmentInfo>();
 		private readonly bool _hasAttachments; // If the user has specified that the render pass has attachments
-		public bool AttachmentsSpecified => !_hasAttachments || (_attachments.Count > 0);
+		
+		// Cached subpass info
+		private readonly List<SubpassInfo> _subpassCache = new List<SubpassInfo>();
 
+		// Attachment Vulkan info
+		private Vk.AttachmentDescription[] _attDescriptions = null;
+
+		/// <summary>
+		/// If the attachments in this subpass have been finalized, and it is ready to add subpasses.
+		/// </summary>
+		public bool AttachmentsFinalized => (_attDescriptions != null);
+		
 		private bool _isDisposed = false;
 		#endregion // Fields
 
 		private RenderPassBuilder(bool hasAttachments)
 		{
 			_hasAttachments = hasAttachments;
+			if (!hasAttachments)
+				FinalizeAttachments();
 		}
 		~RenderPassBuilder()
 		{
@@ -74,34 +91,94 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="pass">The pass to derive the attachments in this builder on.</param>
 		/// <returns>A new render pass builder, with attachments already specified.</returns>
-		//public static RenderPassBuilder New(RenderPass pass)
-		//{
-		//	var rpb = new RenderPassBuilder();
-		//	// TODO: Add attachment description from existing render pass
-		//	return rpb;
-		//}
+		public static RenderPassBuilder New(RenderPass pass)
+		{
+			var rpb = new RenderPassBuilder(true /* TODO */);
+			// TODO: Add attachment description from existing render pass
+			rpb.FinalizeAttachments();
+			return rpb;
+		}
 
 		#region Attachment Specification
 		/// <summary>
-		/// Adds an attachment for the render pass builder to include. Attempting to add render passes after 
+		/// Adds an attachment for the render pass builder to include. Attempting to add attachments after starting to
+		/// add subpasses will result in an exception.
 		/// </summary>
-		/// <param name="info"></param>
-		/// <returns></returns>
+		/// <param name="name">The name of the attachment. Must be non-null, not empty, and unique within a render pass instance.</param>
+		/// <param name="format">The texel format for the attachment.</param>
+		/// <param name="op">The load operation for the attachment.</param>
+		/// <param name="preserve">If the attachment's contents should be preserved past the end of the render pass.</param>
+		/// <returns>The builder instance, for function chaining.</returns>
+		public RenderPassBuilder AddAttachment(string name, TexelFormat format, AttachmentOp op, bool preserve) =>
+			AddAttachment(new AttachmentInfo(name, format, op, preserve));
+
+		/// <summary>
+		/// Adds an attachment for the render pass builder to include. Attempting to add attachments after starting to
+		/// add subpasses will result in an exception.
+		/// </summary>
+		/// <param name="info">The description of the attachment to add.</param>
+		/// <returns>The builder instance, for function chaining.</returns>
 		public RenderPassBuilder AddAttachment(AttachmentInfo info)
 		{
-			// TODO: check for subpass specification
-
+			// Check if we have finalized the attachments
+			if (_attDescriptions != null)
+				throw new InvalidOperationException("Cannot specify new render pass attachments after subpasses are added");
 			// Check for no attachments
 			if (!_hasAttachments)
 				throw new InvalidOperationException("Cannot add an attachment to a render pass builder that does not use attachments");
 			// Ensure the name is unique
-			if (_attachments.Any(att => att.Name == info.Name))
+			if (_attachmentCache.Any(att => att.Name == info.Name))
 				throw new InvalidOperationException($"The render pass builder already contains an attachment with the name '{info.Name}'");
 
-			_attachments.Add(info);
+			_attachmentCache.Add(info);
+			return this;
+		}
+
+		/// <summary>
+		/// Uses the current set of added attachments as the final set for this builder. Attempting to add attachments
+		/// after this is called will result in exceptions. This function does not need to be called on builders that
+		/// do not use attachments, or those created from existing render passes.
+		/// </summary>
+		/// <returns>The builder instance, for function chaining.<returns>
+		public RenderPassBuilder FinalizeAttachments()
+		{
+			if (!AttachmentsFinalized)
+			{
+				_attDescriptions = new Vk.AttachmentDescription[_attachmentCache.Count];
+				_attachmentCache.ForEach((att, idx) => {
+					_attDescriptions[idx] = new Vk.AttachmentDescription(
+						Vk.AttachmentDescriptions.MayAlias,
+						(Vk.Format)att.Format,
+						Vk.SampleCounts.Count1,
+						(Vk.AttachmentLoadOp)att.LoadOp,
+						att.Preserve ? Vk.AttachmentStoreOp.Store : Vk.AttachmentStoreOp.DontCare,
+						(Vk.AttachmentLoadOp)att.LoadOp,
+						att.Preserve ? Vk.AttachmentStoreOp.Store : Vk.AttachmentStoreOp.DontCare,
+						AttachmentInfo.GetInitialLayout(att),
+						AttachmentInfo.GetFinalLayout(att)
+					);
+				});
+			}
+
 			return this;
 		}
 		#endregion // Attachment Specification
+
+		#region Subpass Specification
+		/// <summary>
+		/// Adds a subpass to this render pass. Attachments must be specified before calling this function.
+		/// </summary>
+		/// <param name="info"></param>
+		/// <returns></returns>
+		public RenderPassBuilder AddSubpass(SubpassInfo info)
+		{
+			// Make sure the attachments are ready
+			if (!AttachmentsFinalized)
+				throw new InvalidOperationException("Cannot add a subpass to a render pass until attachments are finalized");
+
+			return this;
+		}
+		#endregion // Subpas Specification
 
 		#region IDisposable
 		public void Dispose()

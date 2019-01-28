@@ -44,6 +44,21 @@ namespace Spectrum.Graphics
 			LoadOp = op;
 			Preserve = preserve;
 		}
+
+		// Finds the initial layout of an image from its use info
+		internal static Vk.ImageLayout GetInitialLayout(in AttachmentInfo info)
+		{
+			if (info.LoadOp != AttachmentOp.Preserve)
+				return Vk.ImageLayout.Undefined;
+			else
+				return Vk.ImageLayout.General; // Very inefficient, find some way to improve this soon
+		}
+
+		// Finds the final layout of an image from its use info
+		internal static Vk.ImageLayout GetFinalLayout(in AttachmentInfo info)
+		{
+			return Vk.ImageLayout.General; // Very inefficient, find some way to improve this soon
+		}
 	}
 
 	/// <summary>
