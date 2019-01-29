@@ -113,5 +113,24 @@ namespace Spectrum.Utilities
 				.Select(pair => pair.idx);
 			return keyPairs.ToArray();
 		}
+
+		/// <summary>
+		/// Finds the index of the first value in the collection that matches the predicate.
+		/// </summary>
+		/// <typeparam name="T">The type stored in the collection.</typeparam>
+		/// <param name="coll">The collection to search in.</param>
+		/// <param name="predicate">The predicate to search with.</param>
+		/// <returns>The index of the matching value, or -1 if no indices matched.</returns>
+		public static int IndexOf<T>(this IReadOnlyCollection<T> coll, Func<T, bool> predicate)
+		{
+			int idx = 0;
+			foreach (var item in coll)
+			{
+				if (predicate(item))
+					return idx;
+				++idx;
+			}
+			return -1;
+		}
 	}
 }

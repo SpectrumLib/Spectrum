@@ -209,5 +209,12 @@ namespace Spectrum.Graphics
 		{
 			return (fmt == TexelFormat.Depth16) || (fmt == TexelFormat.Depth24Stencil8) || (fmt == TexelFormat.Depth32);
 		}
+
+		/// <summary>
+		/// Gets if the format has a stencil component.
+		/// </summary>
+		/// <param name="fmt">The format to check.</param>
+		/// <returns>If the texel format contains a stencil component.</returns>
+		public static bool HasStencilComponent(this TexelFormat fmt) => fmt == TexelFormat.Depth24Stencil8;
 	}
 }
