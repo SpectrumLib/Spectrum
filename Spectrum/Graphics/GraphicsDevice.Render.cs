@@ -19,8 +19,8 @@ namespace Spectrum.Graphics
 		// Used to set the initial state for each frame.
 		private void setInitialState()
 		{
-			Viewport = Viewport.Full;
-			Scissor = Scissor.Full;
+			var winSize = Application.Window.Size;
+			Viewport = new Viewport(0, 0, (uint)winSize.X, (uint)winSize.Y);
 		}
 	}
 }

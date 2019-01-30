@@ -5,82 +5,79 @@ using Vk = VulkanCore;
 namespace Spectrum.Graphics
 {
 	/// <summary>
-	/// Defines the region of a rendertarget that can have output written to it. All values are normalized to [0, 1].
+	/// Defines the region of a render target that can have output written to it.
 	/// </summary>
-	/// <remarks></remarks>
+	/// <remarks>
+	/// Unlike the <see cref="Viewport"/> type, this type controls the portion of the render target that is allowed to
+	/// receive output, instead of scaling the entire output to a specific area of the render target.
+	/// </remarks>
 	public struct Scissor : IEquatable<Scissor>
 	{
-		#region Constants
-		/// <summary>
-		/// The entire target.
-		/// </summary>
-		public static readonly Scissor Full = new Scissor(0, 0, 1, 1);
-		/// <summary>
-		/// The left half of the target.
-		/// </summary>
-		public static readonly Scissor Left = new Scissor(0, 0, 0.5f, 1);
-		/// <summary>
-		/// The right half of the target.
-		/// </summary>
-		public static readonly Scissor Right = new Scissor(0.5f, 0, 0.5f, 1);
-		/// <summary>
-		/// The top half of the target.
-		/// </summary>
-		public static readonly Scissor Top = new Scissor(0, 0, 1, 0.5f);
-		/// <summary>
-		/// The bottom half of the target.
-		/// </summary>
-		public static readonly Scissor Bottom = new Scissor(0, 0.5f, 1, 0.5f);
-		/// <summary>
-		/// The top-left quarter of the target.
-		/// </summary>
-		public static readonly Scissor TopLeft = new Scissor(0, 0, 0.5f, 0.5f);
-		/// <summary>
-		/// The top-right quarter of the target.
-		/// </summary>
-		public static readonly Scissor TopRight = new Scissor(0.5f, 0, 0.5f, 0.5f);
-		/// <summary>
-		/// The bottom-left quarter of the target.
-		/// </summary>
-		public static readonly Scissor BottomLeft = new Scissor(0, 0.5f, 0.5f, 0.5f);
-		/// <summary>
-		/// The bottom-right quarter of the target.
-		/// </summary>
-		public static readonly Scissor BottomRight = new Scissor(0.5f, 0.5f, 0.5f, 0.5f);
-		#endregion // Constants
-
 		#region Fields
 		/// <summary>
-		/// The normalized left side of the viewport.
+		/// The left side of the scissor region.
 		/// </summary>
-		public float X;
+		public uint X;
 		/// <summary>
-		/// The normalized right side of the viewport.
+		/// The top of the scissor region.
 		/// </summary>
-		public float Y;
+		public uint Y;
 		/// <summary>
-		/// The normalized width of the viewport.
+		/// The width of the scissor region.
 		/// </summary>
-		public float Width;
+		public uint Width;
 		/// <summary>
-		/// The normalized height of the viewport.
+		/// The height of the scissor region.
 		/// </summary>
-		public float Height;
+		public uint Height;
 
 		/// <summary>
-		/// The bounds of the viewport as a rectangle.
+		/// The bounds of the scissor region as a rectangle.
 		/// </summary>
-		public Rectf Bounds => new Rectf(X, Y, Width, Height);
+		public Rect Bounds => new Rect((int)X, (int)Y, (int)Width, (int)Height);
+
+		/// <summary>
+		/// Gets a scissor describing the left half of this scissor.
+		/// </summary>
+		public Scissor Left => new Scissor(X, Y, Width / 2, Height);
+		/// <summary>
+		/// Gets a scissor describing the right half of this scissor.
+		/// </summary>
+		public Scissor Right => new Scissor(X + (Width / 2), Y, Width / 2, Height);
+		/// <summary>
+		/// Gets a scissor describing the top half of this scissor.
+		/// </summary>
+		public Scissor Top => new Scissor(X, Y, Width, Height / 2);
+		/// <summary>
+		/// Gets a scissor describing the bottom half of this scissor.
+		/// </summary>
+		public Scissor Bottom => new Scissor(X, Y + (Height / 2), Width, Height / 2);
+		/// <summary>
+		/// Gets a scissor describing the top-left quarter of this scissor.
+		/// </summary>
+		public Scissor TopLeft => new Scissor(X, Y, Width / 2, Height / 2);
+		/// <summary>
+		/// Gets a scissor describing the top-right quarter of this scissor.
+		/// </summary>
+		public Scissor TopRight => new Scissor(X + (Width / 2), Y, Width / 2, Height / 2);
+		/// <summary>
+		/// Gets a scissor describing the bottom-left quarter of this scissor.
+		/// </summary>
+		public Scissor BottomLeft => new Scissor(X, Y + (Height / 2), Width / 2, Height / 2);
+		/// <summary>
+		/// Gets a scissor describing the bottom-right quarter of this scissor.
+		/// </summary>
+		public Scissor BottomRight => new Scissor(X + (Width / 2), Y + (Height / 2), Width / 2, Height / 2);
 		#endregion // Fields
 
 		/// <summary>
 		/// Creates a new scissor from normlized target coordinates.
 		/// </summary>
-		/// <param name="x">The left side of the scissor.</param>
-		/// <param name="y">The right side of the scissor.</param>
-		/// <param name="w">The width of the scissor.</param>
-		/// <param name="h">The height of the scissor.</param>
-		public Scissor(float x, float y, float w, float h)
+		/// <param name="x">The left side of the scissor region.</param>
+		/// <param name="y">The top of the scissor region.</param>
+		/// <param name="w">The width of the scissor region.</param>
+		/// <param name="h">The height of the scissor region.</param>
+		public Scissor(uint x, uint y, uint w, uint h)
 		{
 			X = x;
 			Y = y;
@@ -116,7 +113,7 @@ namespace Spectrum.Graphics
 		public static bool operator != (in Scissor l, in Scissor r) =>
 			(l.X != r.X) || (l.Y != r.Y) || (l.Width != r.Width) || (l.Height != r.Height);
 
-		internal Vk.Rect2D ToVulkanNative(int w, int h) => 
-			new Vk.Rect2D((int)(X * w), (int)(Y * h), (int)(Width * w), (int)(Height * h));
+		internal Vk.Rect2D ToVulkanNative() => 
+			new Vk.Rect2D((int)X, (int)Y, (int)Width, (int)Height);
 	}
 }

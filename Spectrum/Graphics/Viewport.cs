@@ -5,70 +5,31 @@ using Vk = VulkanCore;
 namespace Spectrum.Graphics
 {
 	/// <summary>
-	/// Describes the output region of rendering commands to a render target. All values are normalized to [0, 1].
+	/// Describes the output region of rendering commands to a render target.
 	/// </summary>
 	/// <remarks>
 	/// Unlike the <see cref="Scissor"/> type, this type actually scales the entire output to a region, instead of
-	/// defining the region that output is allowed to be written to.
+	/// defining the region that output can be written to.
 	/// </remarks>
 	public struct Viewport : IEquatable<Viewport>
 	{
-		#region Constants
-		/// <summary>
-		/// The entire target.
-		/// </summary>
-		public static readonly Viewport Full = new Viewport(0, 0, 1, 1);
-		/// <summary>
-		/// The left half of the target.
-		/// </summary>
-		public static readonly Viewport Left = new Viewport(0, 0, 0.5f, 1);
-		/// <summary>
-		/// The right half of the target.
-		/// </summary>
-		public static readonly Viewport Right = new Viewport(0.5f, 0, 0.5f, 1);
-		/// <summary>
-		/// The top half of the target.
-		/// </summary>
-		public static readonly Viewport Top = new Viewport(0, 0, 1, 0.5f);
-		/// <summary>
-		/// The bottom half of the target.
-		/// </summary>
-		public static readonly Viewport Bottom = new Viewport(0, 0.5f, 1, 0.5f);
-		/// <summary>
-		/// The top-left quarter of the target.
-		/// </summary>
-		public static readonly Viewport TopLeft = new Viewport(0, 0, 0.5f, 0.5f);
-		/// <summary>
-		/// The top-right quarter of the target.
-		/// </summary>
-		public static readonly Viewport TopRight = new Viewport(0.5f, 0, 0.5f, 0.5f);
-		/// <summary>
-		/// The bottom-left quarter of the target.
-		/// </summary>
-		public static readonly Viewport BottomLeft = new Viewport(0, 0.5f, 0.5f, 0.5f);
-		/// <summary>
-		/// The bottom-right quarter of the target.
-		/// </summary>
-		public static readonly Viewport BottomRight = new Viewport(0.5f, 0.5f, 0.5f, 0.5f);
-		#endregion // Constants
-
 		#region Fields
 		/// <summary>
-		/// The normalized left side of the viewport.
+		/// The left side of the viewport.
 		/// </summary>
-		public float X;
+		public uint X;
 		/// <summary>
-		/// The normalized right side of the viewport.
+		/// The top of the viewport.
 		/// </summary>
-		public float Y;
+		public uint Y;
 		/// <summary>
-		/// The normalized width of the viewport.
+		/// The width of the viewport.
 		/// </summary>
-		public float Width;
+		public uint Width;
 		/// <summary>
-		/// The normalized height of the viewport.
+		/// The height of the viewport.
 		/// </summary>
-		public float Height;
+		public uint Height;
 		/// <summary>
 		/// The minimum depth value, should be left at zero except for special cases.
 		/// </summary>
@@ -81,22 +42,54 @@ namespace Spectrum.Graphics
 		/// <summary>
 		/// The bounds of the viewport as a rectangle.
 		/// </summary>
-		public Rectf Bounds => new Rectf(X, Y, Width, Height);
-
+		public Rect Bounds => new Rect((int)X, (int)Y, (int)Width, (int)Height);
 		/// <summary>
 		/// The aspect ratio of the viewport.
 		/// </summary>
-		public float Aspect => MathUtils.NearlyEqual(Height, 0f) ? 0f : (Width / Height);
+		public float Aspect => (Height == 0) ? 0f : ((float)Width / Height);
+
+		/// <summary>
+		/// Gets a viewport describing the left half of this viewport.
+		/// </summary>
+		public Viewport Left => new Viewport(X, Y, Width / 2, Height);
+		/// <summary>
+		/// Gets a viewport describing the right half of this viewport.
+		/// </summary>
+		public Viewport Right => new Viewport(X + (Width / 2), Y, Width / 2, Height);
+		/// <summary>
+		/// Gets a viewport describing the top half of this viewport.
+		/// </summary>
+		public Viewport Top => new Viewport(X, Y, Width, Height / 2);
+		/// <summary>
+		/// Gets a viewport describing the bottom half of this viewport.
+		/// </summary>
+		public Viewport Bottom => new Viewport(X, Y + (Height / 2), Width, Height / 2);
+		/// <summary>
+		/// Gets a viewport describing the top-left quarter of this viewport.
+		/// </summary>
+		public Viewport TopLeft => new Viewport(X, Y, Width / 2, Height / 2);
+		/// <summary>
+		/// Gets a viewport describing the top-right quarter of this viewport.
+		/// </summary>
+		public Viewport TopRight => new Viewport(X + (Width / 2), Y, Width / 2, Height / 2);
+		/// <summary>
+		/// Gets a viewport describing the bottom-left quarter of this viewport.
+		/// </summary>
+		public Viewport BottomLeft => new Viewport(X, Y + (Height / 2), Width / 2, Height / 2);
+		/// <summary>
+		/// Gets a viewport describing the bottom-right quarter of this viewport.
+		/// </summary>
+		public Viewport BottomRight => new Viewport(X + (Width / 2), Y + (Height / 2), Width / 2, Height / 2);
 		#endregion // Fields
 
 		/// <summary>
-		/// Creates a new viewport from normlized target coordinates.
+		/// Creates a new viewport.
 		/// </summary>
 		/// <param name="x">The left side of the viewport.</param>
-		/// <param name="y">The right side of the viewport.</param>
+		/// <param name="y">The top of the viewport.</param>
 		/// <param name="w">The width of the viewport.</param>
 		/// <param name="h">The height of the viewport.</param>
-		public Viewport(float x, float y, float w, float h)
+		public Viewport(uint x, uint y, uint w, uint h)
 		{
 			X = x;
 			Y = y;
@@ -107,15 +100,15 @@ namespace Spectrum.Graphics
 		}
 
 		/// <summary>
-		/// Creates a new viewport from normlized target coordinates.
+		/// Creates a new viewport.
 		/// </summary>
 		/// <param name="x">The left side of the viewport.</param>
-		/// <param name="y">The right side of the viewport.</param>
+		/// <param name="y">The top of the viewport.</param>
 		/// <param name="w">The width of the viewport.</param>
 		/// <param name="h">The height of the viewport.</param>
 		/// <param name="min">The minimum value of the viewport depth.</param>
 		/// <param name="max">The maximum value of the viewport depth.</param>
-		public Viewport(float x, float y, float w, float h, float min, float max)
+		public Viewport(uint x, uint y, uint w, uint h, float min, float max)
 		{
 			X = x;
 			Y = y;
@@ -153,7 +146,6 @@ namespace Spectrum.Graphics
 		public static bool operator != (in Viewport l, in Viewport r) =>
 			(l.X != r.X) || (l.Y != r.Y) || (l.Width != r.Width) || (l.Height != r.Height) || (l.MinDepth != r.MinDepth) || (l.MaxDepth != r.MaxDepth);
 
-		internal Vk.Viewport ToVulkanNative(int w, int h) =>
-			new Vk.Viewport(X * w, Y * h, Width * w, Height * h, MinDepth, MaxDepth);
+		internal Vk.Viewport ToVulkanNative() => new Vk.Viewport(X, Y, Width, Height, MinDepth, MaxDepth);
 	}
 }

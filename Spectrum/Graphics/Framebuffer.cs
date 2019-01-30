@@ -42,6 +42,15 @@ namespace Spectrum.Graphics
 		/// <returns>An opaque reference to the attachment with the given name.</returns>
 		public FramebufferAttachment this [string name] => GetAttachment(name);
 
+		/// <summary>
+		/// The default viewport for 1:1 rendering with textures from this framebuffer.
+		/// </summary>
+		public Viewport DefaultViewport => new Viewport(0, 0, Width, Height);
+		/// <summary>
+		/// The default scissor region for full rendering with textures from this framebuffer.
+		/// </summary>
+		public Scissor DefaultScissor => new Scissor(0, 0, Width, Height);
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
@@ -157,7 +166,7 @@ namespace Spectrum.Graphics
 				Format = (Vk.Format)info.Format,
 				Tiling = Vk.ImageTiling.Optimal,
 				InitialLayout = info.Format.IsDepthFormat() ? Vk.ImageLayout.DepthStencilAttachmentOptimal : Vk.ImageLayout.ColorAttachmentOptimal,
-				Usage = Vk.ImageUsages.TransientAttachment | Vk.ImageUsages.TransferSrc | usage,
+				Usage = Vk.ImageUsages.TransferSrc | usage,
 				SharingMode = Vk.SharingMode.Exclusive,
 				Samples = Vk.SampleCounts.Count1,
 				Flags = Vk.ImageCreateFlags.None
@@ -166,11 +175,12 @@ namespace Spectrum.Graphics
 
 			// Create the backing memory
 			var memReq = image.GetMemoryRequirements();
-			var memIdx = Device.FindMemoryTypeIndex(memReq.MemoryTypeBits, Vk.MemoryProperties.DeviceLocal | Vk.MemoryProperties.LazilyAllocated);
+			var memIdx = Device.FindMemoryTypeIndex(memReq.MemoryTypeBits, Vk.MemoryProperties.DeviceLocal);
 			if (memIdx == -1)
 				throw new InvalidOperationException("Cannot find a memory type that supports framebuffer textures");
 			var mai = new Vk.MemoryAllocateInfo(memReq.Size, memIdx);
 			var memory = Device.VkDevice.AllocateMemory(mai);
+			image.BindMemory(memory);
 
 			// Create the image view
 			var aspect = info.Format.IsDepthFormat() ? Vk.ImageAspects.Depth : Vk.ImageAspects.Color;
