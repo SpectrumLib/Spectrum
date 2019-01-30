@@ -12,7 +12,7 @@ namespace Spectrum.Graphics
 	/// <para>
 	/// A render pass is first and foremost described by the attachments it contains, which are texture resources
 	/// that are used within the render pass. Any two render passes derived from the same attachment set are considered
-	/// compatible. Once the attachments are described, a render pass then as subpasses within it. Each subpass
+	/// compatible. Once the attachments are described, a render pass then has subpasses within it. Each subpass
 	/// uses a single pipeline, shader, and buffer set, but must describe which attachments it will use, and in
 	/// what way.
 	/// </para>
@@ -42,143 +42,98 @@ namespace Spectrum.Graphics
 	public sealed class RenderPassBuilder : IDisposable
 	{
 		#region Fields
+		// The list of attachments added to the builder so far
+		private readonly List<Attachment> _attachments = new List<Attachment>();
+		// The framebuffer size that attachments must be compatible with, set by the first attachment added
+		private Point _validSize = Point.Zero;
+		// If the attachments are marked as finalized
+		private bool _attachmentsComplete = false;
+
+		// Cached framebuffer create info
+		private Vk.FramebufferCreateInfo _fbci = default;
 		// Cached attachment info
-		private readonly List<AttachmentInfo> _attachmentCache = new List<AttachmentInfo>();
-		private readonly bool _hasAttachments; // If the user has specified that the render pass has attachments
-		
-		// Cached subpass info
-		private readonly List<SubpassInfo> _subpassCache = new List<SubpassInfo>();
+		private Vk.AttachmentDescription[] _descriptions = null;
 
-		// Attachment Vulkan info
-		private Vk.AttachmentDescription[] _attDescriptions = null;
-
-		/// <summary>
-		/// If the attachments in this subpass have been finalized, and it is ready to add subpasses.
-		/// </summary>
-		public bool AttachmentsFinalized => (_attDescriptions != null);
-		
 		private bool _isDisposed = false;
 		#endregion // Fields
 
-		private RenderPassBuilder(bool hasAttachments)
+		private RenderPassBuilder()
 		{
-			_hasAttachments = hasAttachments;
-			if (!hasAttachments)
-				FinalizeAttachments();
+
 		}
 		~RenderPassBuilder()
 		{
 			dispose(false);
 		}
 
-		/// <summary>
-		/// Creates a brand new builder without attachments or subpasses specified. The attachments must be specified
-		/// before subpasses are added.
-		/// </summary>
-		/// <param name="hasAttachments">
-		/// If <c>true</c>, then the render passes from this builder will have attachments, and the attachments must be
-		/// specified before subpasses. Defaults to true.
-		/// </param>
-		/// <returns>A new render pass builder, with no descriptive information.</returns>
-		public static RenderPassBuilder New(bool hasAttachments = true)
-		{
-			return new RenderPassBuilder(hasAttachments);
-		}
-
-		/// <summary>
-		/// Creates a new builder without subpasses, but inherits an identical attachment set from the provided render
-		/// pass.
-		/// </summary>
-		/// <param name="pass">The pass to derive the attachments in this builder on.</param>
-		/// <returns>A new render pass builder, with attachments already specified.</returns>
-		public static RenderPassBuilder New(RenderPass pass)
-		{
-			var rpb = new RenderPassBuilder(true /* TODO */);
-			// TODO: Add attachment description from existing render pass
-			rpb.FinalizeAttachments();
-			return rpb;
-		}
-
 		#region Attachment Specification
 		/// <summary>
-		/// Adds an attachment for the render pass builder to include. Attempting to add attachments after starting to
-		/// add subpasses will result in an exception.
+		/// Adds an attachment resource from a framebuffer for use in this builder.
 		/// </summary>
-		/// <param name="name">The name of the attachment. Must be non-null, not empty, and unique within a render pass instance.</param>
-		/// <param name="format">The texel format for the attachment.</param>
-		/// <param name="op">The load operation for the attachment.</param>
-		/// <param name="preserve">If the attachment's contents should be preserved past the end of the render pass.</param>
-		/// <returns>The builder instance, for function chaining.</returns>
-		public RenderPassBuilder AddAttachment(string name, TexelFormat format, AttachmentOp op, bool preserve) =>
-			AddAttachment(new AttachmentInfo(name, format, op, preserve));
-
-		/// <summary>
-		/// Adds an attachment for the render pass builder to include. Attempting to add attachments after starting to
-		/// add subpasses will result in an exception.
-		/// </summary>
-		/// <param name="info">The description of the attachment to add.</param>
-		/// <returns>The builder instance, for function chaining.</returns>
-		public RenderPassBuilder AddAttachment(AttachmentInfo info)
+		/// <param name="att">The attachment to add. It must be compatible with any previously added attachments.</param>
+		/// <param name="loadOp">The operation to perform on the attachment when it is loaded for a render pass.</param>
+		/// <param name="preserve">If the attachment contents should be preserved at the end of a render pass.</param>
+		public void AddAttachment(FramebufferAttachment att, AttachmentOp loadOp, bool preserve)
 		{
-			// Check if we have finalized the attachments
-			if (_attDescriptions != null)
-				throw new InvalidOperationException("Cannot specify new render pass attachments after subpasses are added");
-			// Check for no attachments
-			if (!_hasAttachments)
-				throw new InvalidOperationException("Cannot add an attachment to a render pass builder that does not use attachments");
-			// Ensure the name is unique
-			if (_attachmentCache.Any(att => att.Name == info.Name))
-				throw new InvalidOperationException($"The render pass builder already contains an attachment with the name '{info.Name}'");
+			// Cannot add attachments after they are finalized
+			if (_attachmentsComplete)
+				throw new InvalidOperationException("Cannot add attachments to render pass builder after they are finalized");
 
-			_attachmentCache.Add(info);
-			return this;
+			// Validate the attachment itself
+			if (att.Name == null || att.Framebuffer == null || att.View == null)
+				throw new ArgumentException("The framebuffer attachment added to the render pass builder is invalid", nameof(att));
+			// Check for name overlap
+			if (_attachments.FindIndex(a => a.Attach.Name == att.Name) != -1)
+				throw new ArgumentException($"The render pass builder already has an attachment with the name '{att.Name}'", nameof(att));
+
+			// Set the valid size (if first attachment), otherwise check against valid size
+			if (_validSize.X == 0)
+				_validSize = new Point((int)att.Framebuffer.Width, (int)att.Framebuffer.Height);
+			else if (_validSize.X != att.Framebuffer.Width || _validSize.Y != att.Framebuffer.Height)
+				throw new ArgumentException($"The attachment '{att.Name}' is not a compatible size with the render pass builder", nameof(att));
+
+			// Save the attachment for use
+			_attachments.Add(new Attachment(att, loadOp, preserve));
 		}
 
 		/// <summary>
-		/// Uses the current set of added attachments as the final set for this builder. Attempting to add attachments
-		/// after this is called will result in exceptions. This function does not need to be called on builders that
-		/// do not use attachments, or those created from existing render passes.
+		/// Marks the current set of added attachments as the final attachments to use to build render passes with.
+		/// Subpasses can only be added after this function is called.
 		/// </summary>
-		/// <returns>The builder instance, for function chaining.<returns>
-		public RenderPassBuilder FinalizeAttachments()
+		public void FinalizeAttachments()
 		{
-			if (!AttachmentsFinalized)
-			{
-				_attDescriptions = new Vk.AttachmentDescription[_attachmentCache.Count];
-				_attachmentCache.ForEach((att, idx) => {
-					_attDescriptions[idx] = new Vk.AttachmentDescription(
-						Vk.AttachmentDescriptions.MayAlias,
-						(Vk.Format)att.Format,
-						Vk.SampleCounts.Count1,
-						(Vk.AttachmentLoadOp)att.LoadOp,
-						att.Preserve ? Vk.AttachmentStoreOp.Store : Vk.AttachmentStoreOp.DontCare,
-						(Vk.AttachmentLoadOp)att.LoadOp,
-						att.Preserve ? Vk.AttachmentStoreOp.Store : Vk.AttachmentStoreOp.DontCare,
-						AttachmentInfo.GetInitialLayout(att),
-						AttachmentInfo.GetFinalLayout(att)
-					);
-				});
-			}
+			if (_attachmentsComplete)
+				return;
+			if (_attachments.Count == 0)
+				throw new InvalidOperationException("Render pass builder must have attachments specified");
 
-			return this;
+			// Create the cached framebuffer create info
+			_fbci = new Vk.FramebufferCreateInfo(
+				_attachments.Select(att => att.Attach.View).ToArray(),
+				_validSize.X,
+				_validSize.Y,
+				layers: 1
+			);
+
+			// Build the attachment descriptions
+			_descriptions = new Vk.AttachmentDescription[_attachments.Count];
+			_attachments.ForEach((att, idx) => {
+				_descriptions[idx] = new Vk.AttachmentDescription(
+					Vk.AttachmentDescriptions.MayAlias,
+					(Vk.Format)att.Attach.Format,
+					Vk.SampleCounts.Count1,
+					(Vk.AttachmentLoadOp)att.LoadOp,
+					att.Preserve ? Vk.AttachmentStoreOp.Store : Vk.AttachmentStoreOp.DontCare,
+					(Vk.AttachmentLoadOp)att.LoadOp,
+					att.Preserve ? Vk.AttachmentStoreOp.Store : Vk.AttachmentStoreOp.DontCare,
+					GetInitialLayout(att),
+					GetFinalLayout(att)
+				);
+			});
+
+			_attachmentsComplete = true;
 		}
 		#endregion // Attachment Specification
-
-		#region Subpass Specification
-		/// <summary>
-		/// Adds a subpass to this render pass. Attachments must be specified before calling this function.
-		/// </summary>
-		/// <param name="info"></param>
-		/// <returns></returns>
-		public RenderPassBuilder AddSubpass(SubpassInfo info)
-		{
-			// Make sure the attachments are ready
-			if (!AttachmentsFinalized)
-				throw new InvalidOperationException("Cannot add a subpass to a render pass until attachments are finalized");
-
-			return this;
-		}
-		#endregion // Subpas Specification
 
 		#region IDisposable
 		public void Dispose()
@@ -197,5 +152,58 @@ namespace Spectrum.Graphics
 			_isDisposed = true;
 		}
 		#endregion // IDisposable
+
+		// Gets the initial layout for an attachment
+		private static Vk.ImageLayout GetInitialLayout(in Attachment att)
+		{
+			if (att.LoadOp == AttachmentOp.Clear || att.LoadOp == AttachmentOp.Discard)
+				return Vk.ImageLayout.Undefined;
+			else if (att.Attach.Format.IsDepthFormat())
+				return Vk.ImageLayout.DepthStencilAttachmentOptimal;
+			return Vk.ImageLayout.ColorAttachmentOptimal;
+		}
+
+		// Gets the final layout for an attachment
+		private static Vk.ImageLayout GetFinalLayout(in Attachment att)
+		{
+			if (att.Attach.Format.IsDepthFormat())
+				return Vk.ImageLayout.DepthStencilAttachmentOptimal;
+			return Vk.ImageLayout.ColorAttachmentOptimal;
+		}
+
+		// Object describing a framebuffer attachment used in a render pass, and descriptive info about it
+		private struct Attachment
+		{
+			public readonly FramebufferAttachment Attach;
+			public readonly AttachmentOp LoadOp;
+			public readonly bool Preserve;
+
+			public Attachment(in FramebufferAttachment a, AttachmentOp l, bool p)
+			{
+				Attach = a;
+				LoadOp = l;
+				Preserve = p;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Operations that can be performed on render pass attachments when they are loaded for use.
+	/// </summary>
+	public enum AttachmentOp
+	{
+		/// <summary>
+		/// The existing contents of the attachment are preserved.
+		/// </summary>
+		Preserve = Vk.AttachmentLoadOp.Load,
+		/// <summary>
+		/// All texels in the attachment are cleared to a constant value.
+		/// </summary>
+		Clear = Vk.AttachmentLoadOp.Clear,
+		/// <summary>
+		/// The existing contents of the attachment are not important, Vulkan is allowed to do whatever it wants with
+		/// them before we write to or read from the attachment.
+		/// </summary>
+		Discard = Vk.AttachmentLoadOp.DontCare
 	}
 }

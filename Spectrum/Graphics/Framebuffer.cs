@@ -7,7 +7,9 @@ using static Spectrum.Utilities.CollectionUtils;
 namespace Spectrum.Graphics
 {
 	/// <summary>
-	/// Holds a collection of textures that can be used as render targets and input attachments in render passes.
+	/// Holds a collection of textures that can be used as render targets and input attachments in render passes. Be
+	/// aware that framebuffer attachments can be used by multiple render passes at once, but it is up to the programmer
+	/// to coordinate the access so that the resources are not used at the same time.
 	/// </summary>
 	public sealed class Framebuffer : IDisposable
 	{
