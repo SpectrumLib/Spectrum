@@ -8,35 +8,21 @@ namespace Spectrum.Graphics
 {
 	/// <summary>
 	/// Creates instances that are used to build render passes, either from scratch, or derived from existing 
-	/// render passes. Also assists in building multiple similar render passes quickly.
+	/// render passes.
 	/// <para>
-	/// A render pass is first and foremost described by the attachments it contains, which are texture resources
-	/// that are used within the render pass. Any two render passes derived from the same attachment set are considered
-	/// compatible. Once the attachments are described, a render pass then has subpasses within it. Each subpass
-	/// uses a single pipeline, shader, and buffer set, but must describe which attachments it will use, and in
-	/// what way.
+	/// A render pass is defined by the texture resources it accesses as attachments, and the subpasses that
+	/// act on those attachments in a well-defined fashion. This type allows these descriptive objects to be
+	/// built up and swapped out to generate render pass instances.
 	/// </para>
 	/// </summary>
 	/// <remarks>
 	/// <para>
 	/// Creating render passes is very verbose and time consuming, but the tradeoff is fully defined rendering states
-	/// that can be strongly optimized by the driver when they is created, and quickly and efficiently bound at runtime
+	/// that can be strongly optimized by the driver when they are created, and quickly and efficiently bound at runtime
 	/// with minimal backend work. The render passes must be described in a specific order, which will greatly affect
-	/// how they work. This order is:
-	/// <list type="number">
-	///		<item>A new builder is created with <see cref="New()"/> or <see cref="New(RenderPass)"/>.</item>
-	///		<item>
-	///			If the builder was not derived from an existing render pass, and if it was not created with no
-	///			attachments specified, its attachments must be specified using the <c>AddAttachment</c> functions.
-	///		</item>
-	///		<item>
-	///			Add subpasses with the <see cref="AddSubpass(SubpassInfo)"/> function. The first time this function is
-	///			called, the attachments are finalized and cannot be edited or added to any further. The subpasses will
-	///			execute in the order that they are added.
-	///		</item>
-	/// </list>
-	/// Attempting to add attachments after subpasses are added, or adding a subpass without attachments described,
-	/// will result in an exception being thrown.
+	/// how they work. All attachments must first be specified, then subpasses can be added. Attempting to add 
+	/// attachments after subpasses are added, or adding a subpass without attachments described, will result in an 
+	/// exception being thrown.
 	/// </para>
 	/// </remarks>
 	public sealed class RenderPassBuilder : IDisposable
@@ -64,6 +50,15 @@ namespace Spectrum.Graphics
 		~RenderPassBuilder()
 		{
 			dispose(false);
+		}
+
+		/// <summary>
+		/// Creates a new incomplete render pass builder. This object must be disposed.
+		/// </summary>
+		/// <returns>A new builder instance.</returns>
+		public static RenderPassBuilder New()
+		{
+			return new RenderPassBuilder();
 		}
 
 		#region Attachment Specification

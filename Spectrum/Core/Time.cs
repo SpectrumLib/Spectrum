@@ -22,6 +22,10 @@ namespace Spectrum
 		/// The total amount of wall-time elapsed since the start of the application.
 		/// </summary>
 		public static TimeSpan ElapsedTime { get; private set; } = TimeSpan.Zero;
+		/// <summary>
+		/// The total amount of wall-time elapsed in the last frame since the start of the application.
+		/// </summary>
+		public static TimeSpan LastElapsedTime { get; private set; } = TimeSpan.Zero;
 
 		// The current time scale
 		private static float s_timeScale = 1.0f;
@@ -56,15 +60,19 @@ namespace Spectrum
 		/// The value of <see cref="ElapsedTime"/> expressed as whole and fractional seconds.
 		/// </summary>
 		public static float Elapsed => (float)ElapsedTime.TotalSeconds;
+		/// <summary>
+		/// The value of <see cref="LastElapsedTime"/> expressed as whole and fractional seconds.
+		/// </summary>
+		public static float LastElapsed => (float)LastElapsedTime.TotalSeconds;
 
 		/// <summary>
 		/// The smallest time difference measureable by the underlying timer, in nanoseconds.
 		/// </summary>
-		public static readonly uint Precision;
+		public static readonly uint Resolution;
 		/// <summary>
 		/// Gets if the underlying timer used is considered high resolution. Spectrum defines "high resolution"
 		/// as having the smallest measureable time difference as &lt;=0.01ms (10 us), i.e. the value of
-		/// <see cref="Precision"/> is &lt;= 10,000.
+		/// <see cref="Resolution"/> is &lt;= 10,000.
 		/// </summary>
 		public static readonly bool IsHighResolution;
 
@@ -97,8 +105,8 @@ namespace Spectrum
 
 		static Time()
 		{
-			Precision = Math.Max((uint)(1e9 / Stopwatch.Frequency), 1);
-			IsHighResolution = Precision <= 10_000;
+			Resolution = Math.Max((uint)(1e9 / Stopwatch.Frequency), 1);
+			IsHighResolution = Resolution <= 10_000;
 			s_timer = Stopwatch.StartNew();
 			Array.Clear(s_fpsHistory, 0, (int)FPS_HISTORY_SIZE);
 		}
@@ -117,6 +125,7 @@ namespace Spectrum
 			}
 
 			// Update the timing values
+			LastElapsedTime = ElapsedTime;
 			ElapsedTime = s_timer.Elapsed;
 			RealDeltaTime = ElapsedTime - s_lastTime;
 			DeltaTime = TimeSpan.FromTicks((long)(RealDeltaTime.Ticks * s_timeScale));
@@ -131,6 +140,20 @@ namespace Spectrum
 				FPS = s_fpsHistory.Sum() / FrameCount;
 			s_currIndex = s_nextIndex;
 		}
+
+		/// <summary>
+		/// Will return true only on the first frame that is at or greater than the given elapsed wall time.
+		/// </summary>
+		/// <param name="time">The elapsed wall time to check, in seconds.</param>
+		/// <returns>True on the first frame at or past the given time.</returns>
+		public static bool IsTime(float time) => (LastElapsed < time) && (Elapsed >= time);
+
+		/// <summary>
+		/// Returns true if the current <see cref="FrameCount"/> is equal to the given frame number.
+		/// </summary>
+		/// <param name="frame">The frame number to check for.</param>
+		/// <returns>If the current frame count is equal to the given frame number.</returns>
+		public static bool IsFrame(ulong frame) => FrameCount == frame;
 	}
 
 	/// <summary>

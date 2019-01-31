@@ -37,7 +37,8 @@
   <!-- See https://www.meziantou.net/2018/08/28/merging-assemblies-using-ilrepack -->
   <Target Name="Repack" AfterTargets="Build">
 	<Move SourceFiles="$(OUTDIR)\Spectrum.dll" DestinationFiles="$(OUTDIR)\Spectrum.tmp.dll" />
-	<Exec IgnoreExitCode="True" WorkingDirectory="$(OUTDIR)" Command="$(SolutionDir)Resources\Tools\ILRepack.exe /target:library /internalize Spectrum.tmp.dll VulkanCore.dll /out:Spectrum.dll" />
+	<Exec IgnoreExitCode="True" WorkingDirectory="$(OUTDIR)" 	
+		Command="$(SolutionDir)Resources\Tools\ILRepack.exe /target:library /internalize /parallel Spectrum.tmp.dll VulkanCore.dll /out:Spectrum.dll" />
 	<Delete Files="$(OUTDIR)\Spectrum.tmp.dll" />
   </Target>
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vk = VulkanCore;
 using static Spectrum.Utilities.CollectionUtils;
+using System.Diagnostics;
 
 namespace Spectrum.Graphics
 {
@@ -53,6 +54,11 @@ namespace Spectrum.Graphics
 		/// </summary>
 		public Scissor DefaultScissor => new Scissor(0, 0, Width, Height);
 
+		/// <summary>
+		/// The amount of time it took to rebuild the resources during the last <see cref="Rebuild(uint, uint)"/> call.
+		/// </summary>
+		public TimeSpan LastRebuildTime { get; private set; } = TimeSpan.Zero;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
@@ -91,6 +97,8 @@ namespace Spectrum.Graphics
 			Width = width;
 			Height = height;
 
+			Stopwatch timer = Stopwatch.StartNew();
+
 			// Dispose and clear the old images
 			_images.ForEach(im => {
 				im.VkView.Dispose();
@@ -101,6 +109,8 @@ namespace Spectrum.Graphics
 
 			// Create images with the new size
 			_resources.ForEach(res => _images.Add(createImage(res)));
+
+			LastRebuildTime = timer.Elapsed;
 		}
 
 		/// <summary>
