@@ -189,7 +189,7 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="fmt">The format to check.</param>
 		/// <returns>If the format is valid for shader input attachments.</returns>
-		public static bool IsValidForInput(this TexelFormat fmt)
+		public static bool IsValidInputFormat(this TexelFormat fmt)
 		{
 			string fStr = fmt.ToString();
 			if (fStr[fStr.Length - 1] == '3')
@@ -204,11 +204,18 @@ namespace Spectrum.Graphics
 		/// Gets if the format is a depth or depth/stencil format.
 		/// </summary>
 		/// <param name="fmt">The format to check.</param>
-		/// <returns>If the format holds depth data.</returns>
+		/// <returns>If the format holds depth or depth/stencil data.</returns>
 		public static bool IsDepthFormat(this TexelFormat fmt)
 		{
 			return (fmt == TexelFormat.Depth16) || (fmt == TexelFormat.Depth24Stencil8) || (fmt == TexelFormat.Depth32);
 		}
+
+		/// <summary>
+		/// Gets if the format is a a color format (anything that isn't a depth or depth/stencil format).
+		/// </summary>
+		/// <param name="fmt">The format to check.</param>
+		/// <returns>If the format holds color data.</returns>
+		public static bool IsColorFormat(this TexelFormat fmt) => !IsDepthFormat(fmt);
 
 		/// <summary>
 		/// Gets if the format has a stencil component.

@@ -125,7 +125,7 @@ namespace Spectrum.Graphics
 				throw new ArgumentException($"The attachment name cannot be null or empty", nameof(name));
 			if (_resources.Any(res => res.Name == name))
 				throw new ArgumentException($"The framebuffer already has a resource with the name '{name}'", nameof(name));
-			if (allowRead && !format.IsValidForInput())
+			if (allowRead && !format.IsValidInputFormat())
 				throw new ArgumentException($"The attachment format ({format}) cannot be used in an attachment that allows shader reads", nameof(format));
 
 			var info = new ResourceInfo(name, format, allowRead);

@@ -30,10 +30,15 @@ namespace Spectrum.Graphics
 		#region Fields
 		// The list of attachments added to the builder so far
 		private readonly List<Attachment> _attachments = new List<Attachment>();
+		// A mapping of attachment names to indices (mostly for convenience)
+		private readonly Dictionary<string, int> _attachPoints = new Dictionary<string, int>();
 		// The framebuffer size that attachments must be compatible with, set by the first attachment added
 		private Point _validSize = Point.Zero;
 		// If the attachments are marked as finalized
 		private bool _attachmentsComplete = false;
+
+		// The list of subpass descriptions added to the builder
+		private readonly List<Subpass> _subpasses = new List<Subpass>();
 
 		// Cached framebuffer create info
 		private Vk.FramebufferCreateInfo _fbci = default;
@@ -89,6 +94,7 @@ namespace Spectrum.Graphics
 
 			// Save the attachment for use
 			_attachments.Add(new Attachment(att, loadOp, preserve));
+			_attachPoints.Add(att.Name, _attachments.Count - 1);
 		}
 
 		/// <summary>
@@ -129,6 +135,102 @@ namespace Spectrum.Graphics
 			_attachmentsComplete = true;
 		}
 		#endregion // Attachment Specification
+
+		#region Subpass Specification
+		/// <summary>
+		/// Adds a subpass to the builder. Subpasses will be executed in the order that they are added.
+		/// </summary>
+		/// <param name="info">The descriptive information about the subpass.</param>
+		public void AddSubpass(SubpassInfo info)
+		{
+			if (info.Name == null)
+				throw new ArgumentException($"Invalid subpass added to render pass builder (no name)", nameof(info));
+			if (_subpasses.IndexOf(i => i.Info.Name == info.Name) != -1)
+				throw new ArgumentException($"The render pass builder already contains a subpass with the name '{info.Name}'", nameof(info));
+
+			List<string> used = new List<string>(); // Ones that have already been used (to prevent double usage)
+
+			// Create the input attachment refs
+			Vk.AttachmentReference[] inputRefs = null;
+			if ((info.InputAttachments?.Length ?? 0) > 0)
+			{
+				validateAttachments(used, info.InputAttachments, info.Name, "input", TexelFormatExtensions.IsValidInputFormat);
+
+				inputRefs = new Vk.AttachmentReference[info.InputAttachments.Length];
+				info.InputAttachments.ForEach((aname, idx) => {
+					used.Add(aname);
+					int aidx = _attachPoints[aname];
+					inputRefs[idx] = new Vk.AttachmentReference(
+						aidx,
+						_attachments[aidx].Attach.Format.IsDepthFormat() ? Vk.ImageLayout.DepthStencilReadOnlyOptimal : Vk.ImageLayout.ShaderReadOnlyOptimal
+					);
+				});
+			}
+
+			// Create the color attachment refs
+			Vk.AttachmentReference[] colorRefs = null;
+			if ((info.ColorAttachments?.Length ?? 0) > 0)
+			{
+				validateAttachments(used, info.ColorAttachments, info.Name, "color", TexelFormatExtensions.IsColorFormat);
+
+				colorRefs = new Vk.AttachmentReference[info.ColorAttachments.Length];
+				info.ColorAttachments.ForEach((aname, idx) => {
+					used.Add(aname);
+					inputRefs[idx] = new Vk.AttachmentReference(
+						_attachPoints[aname],
+						Vk.ImageLayout.ColorAttachmentOptimal
+					);
+				});
+			}
+
+			// Create the depth/stencil attachment
+			Vk.AttachmentReference dsRef = new Vk.AttachmentReference(-1, Vk.ImageLayout.General);
+			if (info.DepthStencilAttachment != null)
+			{
+				validateAttachments(used, new[] { info.DepthStencilAttachment }, info.Name, "depth/stencil", TexelFormatExtensions.IsDepthFormat);
+				used.Add(info.DepthStencilAttachment);
+				dsRef = new Vk.AttachmentReference(
+					_attachPoints[info.DepthStencilAttachment],
+					Vk.ImageLayout.DepthStencilAttachmentOptimal
+				);
+			}
+
+			// Generate the preserve indices
+			var remaining = _attachPoints.Keys.Where(aname => !used.Contains(aname));
+			int[] preserve = remaining.Select(aname => _attachPoints[aname]).ToArray();
+
+			// Save the subpass
+			_subpasses.Add(new Subpass(info, inputRefs, colorRefs, dsRef, preserve));
+		}
+
+		// Validates that all of the specified attachments are available and have not been used already
+		private void validateAttachments(List<string> used, string[] atts, string spname, string typeName, Func<TexelFormat, bool> formatCheck)
+		{
+			var navail = atts.FirstOrDefault(aname => used.Contains(aname));
+			if (navail != null)
+				throw new InvalidOperationException($"The subpass '{spname}' has specified the attachment '{navail}' for use more than once");
+			var missing = atts.FirstOrDefault(aname => !_attachPoints.ContainsKey(aname));
+			if (missing != null)
+				throw new InvalidOperationException($"The subpass '{spname}' has specified the attachment '{missing}', which does not exist in the render pass");
+			var badFormat = atts.FirstOrDefault(aname => !formatCheck(_attachments[_attachPoints[aname]].Attach.Format));
+			if (badFormat != null)
+				throw new InvalidOperationException($"The subpass '{spname}' has specified an invalid format {typeName} attachment '{badFormat}'");
+		}
+		#endregion // Subpass Specification
+
+		/// <summary>
+		/// Builds a new <see cref="RenderPass"/> instance using the information so far provided to the builder.
+		/// </summary>
+		/// <returns>A new render pass object.</returns>
+		public RenderPass Build()
+		{
+			if (!_attachmentsComplete)
+				throw new InvalidOperationException("Cannot build a render pass without finalized attatchments");
+			if (_subpasses.Count == 0)
+				throw new InvalidOperationException("Cannot build a render pass with zero subpasses");
+
+			return null;
+		}
 
 		#region IDisposable
 		public void Dispose()
@@ -178,6 +280,25 @@ namespace Spectrum.Graphics
 				Attach = a;
 				LoadOp = l;
 				Preserve = p;
+			}
+		}
+
+		// Object describing a subpass and its cached creation info
+		private struct Subpass
+		{
+			public readonly SubpassInfo Info;
+			public readonly Vk.AttachmentReference[] InputRefs;
+			public readonly Vk.AttachmentReference[] ColorRefs;
+			public readonly Vk.AttachmentReference DepthStencilRef;
+			public readonly int[] PreserveIndices;
+
+			public Subpass(SubpassInfo info, Vk.AttachmentReference[] i, Vk.AttachmentReference[] c, Vk.AttachmentReference ds, int[] p)
+			{
+				Info = info;
+				InputRefs = i;
+				ColorRefs = c;
+				DepthStencilRef = ds;
+				PreserveIndices = p;
 			}
 		}
 	}
