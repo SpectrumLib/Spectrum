@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vk = VulkanCore;
 using static Spectrum.Utilities.CollectionUtils;
+using Spectrum.Utilities;
 
 namespace Spectrum.Graphics
 {
@@ -44,6 +45,8 @@ namespace Spectrum.Graphics
 		private Vk.FramebufferCreateInfo _fbci = default;
 		// Cached attachment info
 		private Vk.AttachmentDescription[] _descriptions = null;
+		// Framebuffer object shared by the renderpasses created with this builder
+		private FramebufferInstance _fbInstance = null;
 
 		// Reference to the graphics device
 		private readonly GraphicsDevice _device;
@@ -253,7 +256,15 @@ namespace Spectrum.Graphics
 			);
 			var renderPass = _device.VkDevice.CreateRenderPass(rpci);
 
-			return new RenderPass(name, renderPass);
+			// Create the framebuffer object (if needed)
+			if (_fbInstance == null)
+			{
+				var srcList = _attachments.Select(att => att.Attach.Framebuffer).Distinct(new RefComparer<Framebuffer>()).ToArray();
+				var fbObject = renderPass.CreateFramebuffer(_fbci);
+				_fbInstance = new FramebufferInstance(fbObject, srcList);
+			}
+
+			return new RenderPass(name, renderPass, _fbInstance);
 		}
 
 		#region IDisposable

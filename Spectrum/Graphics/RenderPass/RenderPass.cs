@@ -18,14 +18,19 @@ namespace Spectrum.Graphics
 
 		// The Vulkan object containing this render pass
 		internal readonly Vk.RenderPass VkRenderPass;
+		// The instance of the framebuffer referenced by this render pass (and maybe others)
+		internal readonly FramebufferInstance Framebuffer;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
 
-		internal RenderPass(string name, Vk.RenderPass pass)
+		internal RenderPass(string name, Vk.RenderPass pass, FramebufferInstance inst)
 		{
 			Name = name;
 			VkRenderPass = pass;
+			Framebuffer = inst;
+
+			Framebuffer.IncRefCount();
 
 			LINFO($"Created new render pass '{name}'.");
 		}
@@ -46,6 +51,7 @@ namespace Spectrum.Graphics
 			if (!_isDisposed && disposing)
 			{
 				VkRenderPass.Dispose();
+				Framebuffer.DecRefCount(); // Will dispose of the framebuffer if this is the last reference
 			}
 			LINFO($"Disposed render pass '{Name}'.");
 			_isDisposed = true;

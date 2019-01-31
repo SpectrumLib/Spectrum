@@ -59,6 +59,10 @@ namespace Spectrum.Graphics
 		/// </summary>
 		public TimeSpan LastRebuildTime { get; private set; } = TimeSpan.Zero;
 
+		// Objects used to track render pass references to attachments in this framebuffer
+		private readonly object _countLock = new object();
+		private uint _refCount = 0;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
@@ -208,6 +212,18 @@ namespace Spectrum.Graphics
 			// Collect and return
 			return new FBImage(image, memory, view);
 		}
+
+		// Used by FramebufferInstance to increment the number of references to this object
+		internal void IncRefCount()
+		{
+			lock (_countLock) { _refCount += 1; }
+		}
+
+		// Used by FramebufferInstance to decrement the number of references to this object
+		internal void DecRefCount()
+		{
+			lock (_countLock) { if (_refCount > 0) _refCount -= 1; }
+		}
 		
 		#region IDisposable
 		public void Dispose()
@@ -220,6 +236,13 @@ namespace Spectrum.Graphics
 		{
 			if (!_isDisposed && disposing)
 			{
+				// Bad to dispose this object when render passes are still referencing it
+				lock (_countLock)
+				{
+					if (_refCount > 0)
+						throw new InvalidOperationException($"Cannot dispose a Framebuffer object while RenderPass instances are referencing its attachments (ref count: {_refCount})");
+				}
+
 				// Dispose and clear the images
 				_images.ForEach(im => {
 					im.VkView.Dispose();
