@@ -1,10 +1,12 @@
 ﻿using System;
+using Vk = VulkanCore;
+using static Spectrum.InternalLog;
 
 namespace Spectrum.Graphics
 {
 	/// <summary>
-	/// Fully defines the attachments, shaders, states, and output of a rendering pipeline, with the ability to split
-	/// rendering up into multiple subpasses. Rendering cannot happen without a valid RenderPass instance bound.
+	/// !!!TODO!!!
+	/// Rendering cannot happen without a valid RenderPass instance bound.
 	/// </summary>
 	public sealed class RenderPass : IDisposable
 	{
@@ -14,12 +16,18 @@ namespace Spectrum.Graphics
 		/// </summary>
 		public readonly string Name;
 
+		// The Vulkan object containing this render pass
+		internal readonly Vk.RenderPass VkRenderPass;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
-		internal RenderPass(string name)
+		internal RenderPass(string name, Vk.RenderPass pass)
 		{
 			Name = name;
+			VkRenderPass = pass;
+
+			LINFO($"Created new render pass '{name}'.");
 		}
 		~RenderPass()
 		{
@@ -35,10 +43,11 @@ namespace Spectrum.Graphics
 
 		private void dispose(bool disposing)
 		{
-			if (!_isDisposed)
+			if (!_isDisposed && disposing)
 			{
-
+				VkRenderPass.Dispose();
 			}
+			LINFO($"Disposed render pass '{Name}'.");
 			_isDisposed = true;
 		}
 		#endregion // IDisposable

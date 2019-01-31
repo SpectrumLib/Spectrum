@@ -45,12 +45,15 @@ namespace Spectrum.Graphics
 		// Cached attachment info
 		private Vk.AttachmentDescription[] _descriptions = null;
 
+		// Reference to the graphics device
+		private readonly GraphicsDevice _device;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
 		private RenderPassBuilder()
 		{
-
+			_device = SpectrumApp.Instance.GraphicsDevice;
 		}
 		~RenderPassBuilder()
 		{
@@ -143,6 +146,8 @@ namespace Spectrum.Graphics
 		/// <param name="info">The descriptive information about the subpass.</param>
 		public void AddSubpass(SubpassInfo info)
 		{
+			if (!_attachmentsComplete)
+				throw new InvalidOperationException("Cannot add subpasses to a render pass builder until the attachments are finalized");
 			if (info.Name == null)
 				throw new ArgumentException($"Invalid subpass added to render pass builder (no name)", nameof(info));
 			if (_subpasses.IndexOf(i => i.Info.Name == info.Name) != -1)
@@ -199,8 +204,18 @@ namespace Spectrum.Graphics
 			var remaining = _attachPoints.Keys.Where(aname => !used.Contains(aname));
 			int[] preserve = remaining.Select(aname => _attachPoints[aname]).ToArray();
 
+			// Create the description
+			Vk.SubpassDescription desc = new Vk.SubpassDescription(
+				flags: Vk.SubpassDescriptionFlags.None,
+				colorAttachments: colorRefs,
+				inputAttachments: inputRefs,
+				resolveAttachments: null,
+				depthStencilAttachment: (dsRef.Attachment == -1) ? (Vk.AttachmentReference?)null : dsRef,
+				preserveAttachments: preserve
+			);
+
 			// Save the subpass
-			_subpasses.Add(new Subpass(info, inputRefs, colorRefs, dsRef, preserve));
+			_subpasses.Add(new Subpass(info, desc));
 		}
 
 		// Validates that all of the specified attachments are available and have not been used already
@@ -221,15 +236,24 @@ namespace Spectrum.Graphics
 		/// <summary>
 		/// Builds a new <see cref="RenderPass"/> instance using the information so far provided to the builder.
 		/// </summary>
+		/// <param name="name">The name of the render pass, for identification and debugging.</param>
 		/// <returns>A new render pass object.</returns>
-		public RenderPass Build()
+		public RenderPass Build(string name)
 		{
 			if (!_attachmentsComplete)
 				throw new InvalidOperationException("Cannot build a render pass without finalized attatchments");
 			if (_subpasses.Count == 0)
 				throw new InvalidOperationException("Cannot build a render pass with zero subpasses");
 
-			return null;
+			// Create the renderpass object
+			var rpci = new Vk.RenderPassCreateInfo(
+				_subpasses.Select(sp => sp.Description).ToArray(),
+				attachments: _descriptions,
+				dependencies: null // TODO
+			);
+			var renderPass = _device.VkDevice.CreateRenderPass(rpci);
+
+			return new RenderPass(name, renderPass);
 		}
 
 		#region IDisposable
@@ -287,18 +311,12 @@ namespace Spectrum.Graphics
 		private struct Subpass
 		{
 			public readonly SubpassInfo Info;
-			public readonly Vk.AttachmentReference[] InputRefs;
-			public readonly Vk.AttachmentReference[] ColorRefs;
-			public readonly Vk.AttachmentReference DepthStencilRef;
-			public readonly int[] PreserveIndices;
+			public readonly Vk.SubpassDescription Description;
 
-			public Subpass(SubpassInfo info, Vk.AttachmentReference[] i, Vk.AttachmentReference[] c, Vk.AttachmentReference ds, int[] p)
+			public Subpass(SubpassInfo info, Vk.SubpassDescription desc)
 			{
 				Info = info;
-				InputRefs = i;
-				ColorRefs = c;
-				DepthStencilRef = ds;
-				PreserveIndices = p;
+				Description = desc;
 			}
 		}
 	}
