@@ -4,6 +4,7 @@ using System.Linq;
 using Vk = VulkanCore;
 using static Spectrum.Utilities.CollectionUtils;
 using Spectrum.Utilities;
+using static Spectrum.InternalLog;
 
 namespace Spectrum.Graphics
 {
@@ -40,6 +41,9 @@ namespace Spectrum.Graphics
 
 		// The list of subpass descriptions added to the builder
 		private readonly List<Subpass> _subpasses = new List<Subpass>();
+
+		// Contains a list of uses for each attachment to generate subpass dependencies with
+		private readonly Dictionary<string, List<(int spidx, bool input)>> _useList = new Dictionary<string, List<(int, bool)>>();
 
 		// Cached framebuffer create info
 		private Vk.FramebufferCreateInfo _fbci = default;
@@ -101,6 +105,7 @@ namespace Spectrum.Graphics
 			// Save the attachment for use
 			_attachments.Add(new Attachment(att, loadOp, preserve));
 			_attachPoints.Add(att.Name, _attachments.Count - 1);
+			_useList.Add(att.Name, new List<(int, bool)>());
 		}
 
 		/// <summary>
@@ -157,6 +162,7 @@ namespace Spectrum.Graphics
 				throw new ArgumentException($"The render pass builder already contains a subpass with the name '{info.Name}'", nameof(info));
 
 			List<string> used = new List<string>(); // Ones that have already been used (to prevent double usage)
+			int spIndex = _subpasses.Count;
 
 			// Create the input attachment refs
 			Vk.AttachmentReference[] inputRefs = null;
@@ -167,6 +173,7 @@ namespace Spectrum.Graphics
 				inputRefs = new Vk.AttachmentReference[info.InputAttachments.Length];
 				info.InputAttachments.ForEach((aname, idx) => {
 					used.Add(aname);
+					_useList[aname].Add((spIndex, true));
 					int aidx = _attachPoints[aname];
 					inputRefs[idx] = new Vk.AttachmentReference(
 						aidx,
@@ -184,7 +191,8 @@ namespace Spectrum.Graphics
 				colorRefs = new Vk.AttachmentReference[info.ColorAttachments.Length];
 				info.ColorAttachments.ForEach((aname, idx) => {
 					used.Add(aname);
-					inputRefs[idx] = new Vk.AttachmentReference(
+					_useList[aname].Add((spIndex, false));
+					colorRefs[idx] = new Vk.AttachmentReference(
 						_attachPoints[aname],
 						Vk.ImageLayout.ColorAttachmentOptimal
 					);
@@ -192,11 +200,12 @@ namespace Spectrum.Graphics
 			}
 
 			// Create the depth/stencil attachment
-			Vk.AttachmentReference dsRef = new Vk.AttachmentReference(-1, Vk.ImageLayout.General);
+			Vk.AttachmentReference? dsRef = null;
 			if (info.DepthStencilAttachment != null)
 			{
 				validateAttachments(used, new[] { info.DepthStencilAttachment }, info.Name, "depth/stencil", TexelFormatExtensions.IsDepthFormat);
 				used.Add(info.DepthStencilAttachment);
+				_useList[info.DepthStencilAttachment].Add((spIndex, false));
 				dsRef = new Vk.AttachmentReference(
 					_attachPoints[info.DepthStencilAttachment],
 					Vk.ImageLayout.DepthStencilAttachmentOptimal
@@ -213,7 +222,7 @@ namespace Spectrum.Graphics
 				colorAttachments: colorRefs,
 				inputAttachments: inputRefs,
 				resolveAttachments: null,
-				depthStencilAttachment: (dsRef.Attachment == -1) ? (Vk.AttachmentReference?)null : dsRef,
+				depthStencilAttachment: dsRef,
 				preserveAttachments: preserve
 			);
 
@@ -248,11 +257,73 @@ namespace Spectrum.Graphics
 			if (_subpasses.Count == 0)
 				throw new InvalidOperationException("Cannot build a render pass with zero subpasses");
 
+			// Optmization warning
+			var unused = _useList.Where(pair => pair.Value.Count == 0).Select(pair => pair.Key).ToArray();
+			if (unused.Length > 0)
+				LWARN($"The render pass '{name}' does not use the included attachment(s): {String.Join(", ", unused)}.");
+
+			// Generate the subpass dependencies
+			HashSet<Vk.SubpassDependency> deps = new HashSet<Vk.SubpassDependency>();
+			foreach (var att in _attachments)
+			{
+				var uses = _useList[att.Attach.Name];
+				if (uses.Count == 0)
+					continue;
+				bool extIn = (att.LoadOp == AttachmentOp.Preserve), // Requires external input dependency
+					 extOut = att.Preserve;                         // Requires external output dependency
+
+				// Create an external incoming dependency, if needed
+				if (extIn)
+				{
+					var first = uses[0];
+					deps.Add(new Vk.SubpassDependency(
+						Vk.Constant.SubpassExternal,
+						first.spidx,
+						Vk.PipelineStages.BottomOfPipe,
+						first.input ? Vk.PipelineStages.VertexShader : Vk.PipelineStages.FragmentShader,
+						Vk.Accesses.None,
+						first.input ? Vk.Accesses.InputAttachmentRead : (att.Attach.Format.IsDepthFormat() ? Vk.Accesses.DepthStencilAttachmentRead : Vk.Accesses.ColorAttachmentRead),
+						dependencyFlags: Vk.Dependencies.ByRegion
+					));
+				}
+
+				// Generate a dependency for each adjacent pair of uses
+				for (int uidx = 1; uidx < uses.Count; ++uidx)
+				{
+					var prev = uses[uidx - 1];
+					var curr = uses[uidx];
+					deps.Add(new Vk.SubpassDependency(
+						prev.spidx,
+						curr.spidx,
+						prev.input ? Vk.PipelineStages.VertexShader : Vk.PipelineStages.FragmentShader,
+						curr.input ? Vk.PipelineStages.VertexShader : Vk.PipelineStages.FragmentShader,
+						prev.input ? Vk.Accesses.InputAttachmentRead : (att.Attach.Format.IsDepthFormat() ? Vk.Accesses.DepthStencilAttachmentRead : Vk.Accesses.ColorAttachmentRead),
+						curr.input ? Vk.Accesses.InputAttachmentRead : (att.Attach.Format.IsDepthFormat() ? Vk.Accesses.DepthStencilAttachmentRead : Vk.Accesses.ColorAttachmentRead),
+						dependencyFlags: Vk.Dependencies.ByRegion
+					));
+				}
+
+				// Create an external outgoing dependency, if needed
+				if (extOut)
+				{
+					var last = uses[uses.Count - 1];
+					deps.Add(new Vk.SubpassDependency(
+						last.spidx,
+						Vk.Constant.SubpassExternal,
+						last.input ? Vk.PipelineStages.VertexShader : Vk.PipelineStages.FragmentShader,
+						Vk.PipelineStages.TopOfPipe,
+						last.input ? Vk.Accesses.InputAttachmentRead : (att.Attach.Format.IsDepthFormat() ? Vk.Accesses.DepthStencilAttachmentRead : Vk.Accesses.ColorAttachmentRead),
+						Vk.Accesses.None,
+						dependencyFlags: Vk.Dependencies.ByRegion
+					));
+				}
+			}
+
 			// Create the renderpass object
 			var rpci = new Vk.RenderPassCreateInfo(
 				_subpasses.Select(sp => sp.Description).ToArray(),
 				attachments: _descriptions,
-				dependencies: null // TODO
+				dependencies: deps.ToArray()
 			);
 			var renderPass = _device.VkDevice.CreateRenderPass(rpci);
 
