@@ -92,10 +92,12 @@ namespace Spectrum.Graphics
 		/// when this function is called, or an exception will be thrown.
 		/// </summary>
 		/// <param name="name">The name of the new pipeline.</param>
+		/// <param name="renderPass">The render pass containing the subpass that the built pipeline will be compatible with.</param>
+		/// <param name="subpass">The name of the subpass that the build pipeline will be compatible with.</param>
 		/// <returns>The new pipeline object.</returns>
-		public Pipeline Build(string name)
+		public Pipeline Build(string name, RenderPass renderPass, string subpass)
 		{
-			Build(name, out Pipeline p);
+			Build(name, renderPass, subpass, out Pipeline p);
 			return p;
 		}
 
@@ -105,19 +107,45 @@ namespace Spectrum.Graphics
 		/// facilitate chaining.
 		/// </summary>
 		/// <param name="name">The name of the new pipeline.</param>
+		/// <param name="renderPass">The render pass containing the subpass that the built pipeline will be compatible with.</param>
+		/// <param name="subpass">The name of the subpass that the build pipeline will be compatible with.</param>
 		/// <param name="pipeline">The new pipeline object.</param>
 		/// <returns>The pipeline builder, to facilitate method chaining.</returns>
-		public PipelineBuilder Build(string name, out Pipeline pipeline)
+		public PipelineBuilder Build(string name, RenderPass renderPass, string subpass, out Pipeline pipeline)
 		{
 			if (String.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("The pipeline name cannot be null or whitespace", nameof(name));
 			if (!IsComplete)
 				throw new InvalidOperationException("Cannot build a pipeline that is not fully specified."); // TODO: report the missing states
+			int spIdx = renderPass.SubpassNames.IndexOf(subpass);
+			if (spIdx == -1)
+				throw new ArgumentException($"The render pass specified to create the pipeline with does not contain a subpass with the name '{subpass}'", nameof(subpass));
 
 			var lci = new Vk.PipelineLayoutCreateInfo(null, null);
 			var layout = Device.VkDevice.CreatePipelineLayout(lci);
 
-			pipeline = new Pipeline(name, null, layout);
+			// Create the pipeline object
+			var gpci = new Vk.GraphicsPipelineCreateInfo(
+				layout,
+				renderPass.VkRenderPass,
+				spIdx,
+				null, // TODO: shader stages
+				_inputAssemblyCI.Value,
+				_vertexInputStateCI.Value,
+				_rasterizationCI.Value,
+				tessellationState: null, // TODO: look into tesselation state and what it controls and requires
+				viewportState: null, // TODO: default viewport state, even though it will be dynamic
+				multisampleState: null, // TODO: enable multisampling eventually, probably drawn from the given render pass
+				depthStencilState: _depthStencilCI.Value,
+				colorBlendState: _colorBlendCI.Value,
+				dynamicState: DEFAULT_DYNAMIC_STATE,
+				flags: Vk.PipelineCreateFlags.None, // TODO: look into derivative pipelines
+				basePipelineHandle: null, // TODO: look into derivative pipelines
+				basePipelineIndex: -1  // TODO: look into derivative pipelines
+			);
+			var vkpipeline = Device.VkDevice.CreateGraphicsPipeline(gpci); // TODO: look into pipeline caches and how/if to use them
+
+			pipeline = new Pipeline(name, vkpipeline, layout);
 			return this;
 		}
 

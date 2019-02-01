@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using Vk = VulkanCore;
 using static Spectrum.InternalLog;
 
@@ -21,14 +22,20 @@ namespace Spectrum.Graphics
 		// The instance of the framebuffer referenced by this render pass (and maybe others)
 		internal readonly FramebufferInstance Framebuffer;
 
+		/// <summary>
+		/// The names of the subpasses within this render pass.
+		/// </summary>
+		public readonly ReadOnlyCollection<string> SubpassNames;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
-		internal RenderPass(string name, Vk.RenderPass pass, FramebufferInstance inst)
+		internal RenderPass(string name, Vk.RenderPass pass, FramebufferInstance inst, string[] subpasses)
 		{
 			Name = name;
 			VkRenderPass = pass;
 			Framebuffer = inst;
+			SubpassNames = Array.AsReadOnly(subpasses);
 
 			Framebuffer.IncRefCount();
 
