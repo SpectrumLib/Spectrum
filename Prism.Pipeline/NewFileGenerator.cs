@@ -17,14 +17,12 @@ namespace Prism
 			string ext = Path.GetExtension(path);
 			if (ext.Length == 0)
 				path = Path.Combine(path, "Content.prism");
-			else if (ext != ".prism")
-				Console.WriteLine("WARNING: the file path '{path}' does not end in the standard '.prism' extension.");
 
 			// Check if it already exists
 			path = Path.GetFullPath(path);
 			var pathDir = Path.GetDirectoryName(path);
 			if (File.Exists(path))
-				throw new Exception("A file already exists at the given path");
+				throw new Exception($"A file already exists at the path '{path}'");
 			if (!Directory.Exists(pathDir))
 				Directory.CreateDirectory(pathDir);
 
