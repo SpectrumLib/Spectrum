@@ -2,6 +2,9 @@ language: csharp
 mono: latest
 dotnet: 2.1.403
 dist: trusty
+install:
+  # workaround for missing .net 4.5 targing pack
+  - export FrameworkPathOverride=$(dirname $(which mono))/../lib/mono/4.5/
 script:
   - dotnet restore
   - dotnet build -c Release
