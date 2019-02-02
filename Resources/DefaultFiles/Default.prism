@@ -1,0 +1,10 @@
+{
+	"project": {
+		"rootDir": ".",
+		"intermediateDir": "obj",
+		"outputDir": "bin"
+	},
+	"files": {
+		
+	}
+}
