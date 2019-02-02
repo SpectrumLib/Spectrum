@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2041
@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectrum", "Spectrum\Spectr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectrum.Native", "Spectrum.Native\Spectrum.Native.csproj", "{C5738CAC-DBA5-448F-9B27-5A874F1C73EB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Prism", "Prism\Prism.csproj", "{F8B27D5B-9F48-4B25-9729-BEE73EBAAEC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Prism.Pipeline", "Prism.Pipeline\Prism.Pipeline.csproj", "{F8B27D5B-9F48-4B25-9729-BEE73EBAAEC4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
