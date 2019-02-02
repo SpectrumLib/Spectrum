@@ -29,5 +29,18 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Reference Include="System.Json">
+      <HintPath>..\Dependencies\Json\System.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  
+  <!-- See https://www.meziantou.net/2018/08/28/merging-assemblies-using-ilrepack -->
+  <Target Name="Repack" AfterTargets="Build">
+	<Move SourceFiles="$(OUTDIR)\Prism.Pipeline.dll" DestinationFiles="$(OUTDIR)\Prism.Pipeline.tmp.dll" />
+	<Exec IgnoreExitCode="True" WorkingDirectory="$(OUTDIR)" Command="$(SolutionDir)Resources\Tools\ILRepack.exe /target:library /internalize /parallel Prism.Pipeline.tmp.dll System.Json.dll /out:Prism.Pipeline.dll" />
+	<Delete Files="$(OUTDIR)\Prism.Pipeline.tmp.dll" />
+  </Target>
 
 </Project>
