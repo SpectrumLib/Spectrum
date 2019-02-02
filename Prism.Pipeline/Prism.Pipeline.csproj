@@ -5,7 +5,7 @@
     <Platforms>x64</Platforms>
     <Version>0.1.0</Version>
     <Authors>Sean Moss</Authors>
-    <Description>Pipeline for pre-processing content files for consumption by the Spectrum library</Description>
+    <Description>Base functionality for pre-processing content files for consumption by the Spectrum library</Description>
     <Company>N/A</Company>
     <Copyright>Copyright © 2019 Sean Moss. All rights reserved.</Copyright>
     <PackageProjectUrl>spectrumlib.github.io</PackageProjectUrl>
@@ -14,7 +14,9 @@
     <PackageTags>Vulkan, Gamedev, Simulation, Graphics-Engine</PackageTags>
     <LangVersion>7.3</LangVersion>
     <RootNamespace>Prism</RootNamespace>
-    <AssemblyName>Prism</AssemblyName>
+    <AssemblyName>Prism.Pipeline</AssemblyName>
+    <PackageId>Prism.Pipeline</PackageId>
+    <Product>Prism.Pipeline</Product>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -27,20 +29,5 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Spectrum\Spectrum.csproj" />
-  </ItemGroup>
-  
-  <!-- See https://www.meziantou.net/2018/08/28/merging-assemblies-using-ilrepack -->
-  <Target Name="Repack" AfterTargets="Build">
-	<Move SourceFiles="$(OUTDIR)\Prism.dll" DestinationFiles="$(OUTDIR)\Prism.tmp.dll" />
-	<Exec IgnoreExitCode="True" WorkingDirectory="$(OUTDIR)" Command="$(SolutionDir)Resources\Tools\ILRepack.exe /target:library /parallel Prism.tmp.dll Spectrum.dll /out:Prism.dll" />
-	<Delete Files="$(OUTDIR)\Prism.tmp.dll" />
-  </Target>
-  
-  <Target Name="RemoveSpectrumNative" AfterTargets="Build">
-	<Delete Files="$(OUTDIR)\Spectrum.Native.dll;$(OUTDIR)\Spectrum.Native.pdb" />
-  </Target>
 
 </Project>
