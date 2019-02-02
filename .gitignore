@@ -1,10 +1,15 @@
 # Visual Studio Files
-.vs/
+\.vs/
 
 # Build Files
 Spectrum/bin/
 Spectrum/obj/
-Spectrum.Native/bin/
-Spectrum.Native/obj/
-Prism.Pipeline/bin/
-Prism.Pipeline/obj/
+Spectrum\.Native/bin/
+Spectrum\.Native/obj/
+Prism\.Pipeline/bin/
+Prism\.Pipeline/obj/
+Prism/bin/
+Prism/obj/
+
+# Other annoying VS files
+Prism/Prism\.csproj\.user
