@@ -335,7 +335,7 @@ namespace Spectrum.Graphics
 				_fbInstance = new FramebufferInstance(fbObject, srcList);
 			}
 
-			return new RenderPass(name, renderPass, _fbInstance, _subpasses.Select(sp => sp.Info.Name).ToArray());
+			return new RenderPass(name, renderPass, _fbInstance, _subpasses.Select(sp => sp.Info.Name).ToArray(), _validSize);
 		}
 
 		#region IDisposable

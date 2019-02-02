@@ -16,6 +16,19 @@ namespace Spectrum.Graphics
 		/// The name of the render pass, used for debugging and identification.
 		/// </summary>
 		public readonly string Name;
+		/// <summary>
+		/// The size of the attachments rendered to by this render pass.
+		/// </summary>
+		public readonly Point Size;
+
+		/// <summary>
+		/// The default viewport for rendering with this render pass.
+		/// </summary>
+		public readonly Viewport DefaultViewport;
+		/// <summary>
+		/// The default scissor region for rendering with this render pass.
+		/// </summary>
+		public readonly Scissor DefaultScissor;
 
 		// The Vulkan object containing this render pass
 		internal readonly Vk.RenderPass VkRenderPass;
@@ -30,9 +43,12 @@ namespace Spectrum.Graphics
 		private bool _isDisposed = false;
 		#endregion // Fields
 
-		internal RenderPass(string name, Vk.RenderPass pass, FramebufferInstance inst, string[] subpasses)
+		internal RenderPass(string name, Vk.RenderPass pass, FramebufferInstance inst, string[] subpasses, Point size)
 		{
 			Name = name;
+			Size = size;
+			DefaultViewport = new Viewport(0, 0, (uint)size.X, (uint)size.Y);
+			DefaultScissor = new Scissor(0, 0, (uint)size.X, (uint)size.Y);
 			VkRenderPass = pass;
 			Framebuffer = inst;
 			SubpassNames = Array.AsReadOnly(subpasses);
