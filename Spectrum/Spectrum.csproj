@@ -42,7 +42,7 @@
       <RepackFlags>/target:library /internalize /parallel</RepackFlags>
       <!-- Quick and dirty way to detect we are running on TravisCI -->
       <RepackLibs Condition="'$(OS)' == 'Unix' and Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">
-        /lib:$(SolutionDir)Resources/TravisCI
+        /lib:$(SolutionDir)Resources/TravisCI/
       </RepackLibs>
     </PropertyGroup>
 
