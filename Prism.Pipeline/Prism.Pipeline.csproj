@@ -44,7 +44,7 @@
   <Target Name="Repack" AfterTargets="Build">
     <PropertyGroup>
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
-      <RepackExe>$(SolutionDir)Resources/Tools/ILRepack.exe</RepackExe>
+      <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:library /internalize /parallel</RepackFlags>
     </PropertyGroup>
 

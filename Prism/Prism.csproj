@@ -45,7 +45,7 @@
   <Target Name="Repack" AfterTargets="Build" Condition="'$(OS)' != 'Unix' or !Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">
     <PropertyGroup>
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
-      <RepackExe>$(SolutionDir)Resources/Tools/ILRepack.exe</RepackExe>
+      <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:exe /internalize /parallel</RepackFlags>
     </PropertyGroup>
 
