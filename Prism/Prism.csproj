@@ -47,7 +47,9 @@
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:exe /internalize /parallel /log:ILRepack.log</RepackFlags>
-      <RepackLibs Condition="'$(OS)'=='Unix' and Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">netstandard.dll</RepackLibs>
+      <RepackLibs Condition="'$(OS)'=='Unix' and Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">
+        /lib:&quot;$(ProjectDir)../Resources/TravisCI/&quot; netstandard.dll
+      </RepackLibs>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Prism.exe" DestinationFiles="$(OUTDIR)/Prism.tmp.exe" />
