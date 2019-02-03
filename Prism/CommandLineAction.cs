@@ -6,7 +6,7 @@ namespace Prism
 	public static class CommandLineAction
 	{
 		// Runs the action passed, with the original command line arguments tacked on (path should be args[1])
-		public static int RunCommand(string action, string[] args, bool verbose)
+		public static int RunAction(string action, string[] args, bool verbose)
 		{
 			Console.WriteLine($"INFO: Performing command line action '{action}'.");
 

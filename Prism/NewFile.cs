@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Prism
 {
-	// Decodes and dispatches command line 'new' commands
+	// Decodes and dispatches command line 'new' action
 	public static class NewFile
 	{
 		private static readonly string[] VALID_NEW_TYPES = { "project" };
