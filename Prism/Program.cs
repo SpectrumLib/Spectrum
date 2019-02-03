@@ -34,7 +34,7 @@ namespace Prism
 			// If we want verbose
 			bool verbose = ContainsArgument(args, "verbose") || ContainsArgument(args, "v");
 
-			// Check for a valid command
+			// Check for a valid command (this will eventually choose whether to open the GUI)
 			string command;
 			if (!GetCommand(args, out command))
 			{
@@ -46,6 +46,9 @@ namespace Prism
 			switch (command)
 			{
 				case "new": return NewFile.Create(args, verbose);
+				case "build":
+				case "rebuild":
+				case "clean": return CommandLineAction.RunCommand(command, args, verbose);
 				default: Console.WriteLine($"ERROR: The command '{command}' is not yet implemented."); return -1;
 			}
 		}
@@ -68,7 +71,8 @@ namespace Prism
 			Console.WriteLine("    > rebuild        - Builds the project file, ignoring the current cache for a full rebuild.");
 			Console.WriteLine("    > clean          - Cleans the cache and the output for the project file.");
 			Console.WriteLine("The command must come as the first argument to the program. The GUI will open if one of these\n" +
-							  "commands is not specified.");
+							  "commands is not specified. The content file to operate on must always come immediately after\n" +
+							  "the command.");
 
 			Console.WriteLine("\nThe command line arguments are:");
 			Console.WriteLine("    > /help;/?       - Prints this help message, and then quits.");

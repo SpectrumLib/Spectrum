@@ -4,6 +4,7 @@ using System.Json;
 
 namespace Prism
 {
+	// Holds the properties and raw content items for a content project file
 	internal class ContentProject
 	{
 		#region Fields
@@ -21,17 +22,18 @@ namespace Prism
 			Properties = pp;
 
 			// Convert the paths to absolute and perform some validations
-			if (!IOUtils.TryGetFullPath(pp.RootDir, out var rPath))
+			var pDir = Path.GetDirectoryName(path);
+			if (!IOUtils.TryGetFullPath(pp.RootDir, out var rPath, pDir))
 				throw new Exception($"The root content directory '{rPath}' is not a valid filesystem path");
-			if (!IOUtils.TryGetFullPath(pp.IntermediateDir, out var iPath))
+			if (!IOUtils.TryGetFullPath(pp.IntermediateDir, out var iPath, pDir))
 				throw new Exception($"The intermediate directory '{iPath}' is not a valid filesystem path");
-			if (!IOUtils.TryGetFullPath(pp.OutputDir, out var oPath))
+			if (!IOUtils.TryGetFullPath(pp.OutputDir, out var oPath, pDir))
 				throw new Exception($"The output directory '{oPath}' is not a valid filesystem path");
 			if (rPath == iPath || rPath == oPath || iPath == oPath)
 				throw new Exception($"The content root, intermediate, and output paths must all be different");
 			Paths = new ProjectPaths {
 				ProjectPath = path,
-				ProjectDirectory = Path.GetDirectoryName(path),
+				ProjectDirectory = pDir,
 				ContentRoot = rPath,
 				IntermediateRoot = iPath,
 				OutputRoot = oPath
@@ -54,7 +56,7 @@ namespace Prism
 			}
 			catch (Exception e)
 			{
-				throw new Exception($"{e.Message} ({e.GetType().Name})");
+				throw new Exception($"{e.Message} ({e.GetType().Name})", e);
 			}
 			JsonValue fileObj = null;
 			try
@@ -63,7 +65,7 @@ namespace Prism
 			}
 			catch (Exception e)
 			{
-				throw new Exception($"Invalid Json, {e.Message}");
+				throw new Exception($"Invalid Json, {e.Message}", e);
 			}
 
 			// Get and load the properties

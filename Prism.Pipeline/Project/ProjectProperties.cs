@@ -19,20 +19,14 @@ namespace Prism
 
 			// Get the tokens
 			if (!obj.TryGetValue("rootDir", out var rDir))
-			{
 				missing = "rootDir";
-				return false;
-			}
 			if (!obj.TryGetValue("intermediateDir", out var iDir))
-			{
 				missing = "intermediateDir";
-				return false;
-			}
 			if (!obj.TryGetValue("outputDir", out var oDir))
-			{
 				missing = "outputDir";
+
+			if (missing != null)
 				return false;
-			}
 
 			// Populate the parameters object
 			pp.RootDir = rDir;

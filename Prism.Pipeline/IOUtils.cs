@@ -18,10 +18,17 @@ namespace Prism
 		}
 
 		// Attempts to convert the path into an absolute path, returns if the path was valid and could be converted
-		public static bool TryGetFullPath(string path, out string fullPath)
+		// Optional override for the working directory to fix paths relative to
+		public static bool TryGetFullPath(string path, out string fullPath, string workingDir = null)
 		{
 			try
 			{
+				if (!Path.IsPathRooted(path))
+				{
+					if (workingDir == null)
+						workingDir = Directory.GetCurrentDirectory();
+					path = Path.Combine(workingDir, path);
+				}
 				fullPath = Path.GetFullPath(path);
 				return true;
 			}
