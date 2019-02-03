@@ -29,11 +29,12 @@ namespace Prism
 			}
 
 			// Call out to the pipline, handle any errors
+			string newPath = "";
 			try
 			{
 				switch (newType)
 				{
-					case "project": NewFileGenerator.NewProjectFile(args[2]); break;
+					case "project": newPath = NewFileGenerator.NewProjectFile(args[2]); break;
 					default: Console.WriteLine("ERROR: The new file type '{newType}' is not yet implemented."); return -1;
 				}
 			}
@@ -42,6 +43,9 @@ namespace Prism
 				Console.WriteLine($"ERROR: Could not create new file, reason: {e.Message}.");
 				return -1;
 			}
+
+			// Report
+			Console.WriteLine($"INFO: Created a new {newType} file at '{newPath}'.");
 
 			return 0;
 		}

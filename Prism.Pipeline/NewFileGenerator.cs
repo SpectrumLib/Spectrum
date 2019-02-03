@@ -11,7 +11,7 @@ namespace Prism
 		private static readonly string NEW_PROJECT_RES = "Prism.Resources.Default.prism";
 
 		// Creates a new default, empty project file at the given path
-		public static void NewProjectFile(string path)
+		public static string NewProjectFile(string path)
 		{
 			// If a directory is specified, append the file name
 			string ext = Path.GetExtension(path);
@@ -33,6 +33,9 @@ namespace Prism
 				var raw = reader.ReadToEnd();
 				writer.Write(raw);
 			}
+
+			// Return the absolute path of the new file
+			return path;
 		}
 	}
 }
