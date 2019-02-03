@@ -40,12 +40,13 @@
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:library /internalize /parallel /log:ILRepack.log</RepackFlags>
+      <RepackLibs Condition="'$(OS)'=='Unix' and Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">netstandard.dll</RepackLibs>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Spectrum.dll" DestinationFiles="$(OUTDIR)/Spectrum.tmp.dll" />
     <Exec 
       WorkingDirectory="$(OUTDIR)"
-      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Spectrum.tmp.dll VulkanCore.dll /out:Spectrum.dll" />
+      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Spectrum.tmp.dll VulkanCore.dll $(RepackLibs) /out:Spectrum.dll" />
     <Delete Files="$(OUTDIR)/Spectrum.tmp.dll" />
   </Target>
 
