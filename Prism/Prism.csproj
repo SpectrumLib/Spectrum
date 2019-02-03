@@ -47,15 +47,15 @@
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:exe /internalize /parallel /log:ILRepack.log</RepackFlags>
-      <RepackLibs Condition="'$(OS)'=='Unix' and Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">
-        /lib:&quot;$(ProjectDir)../Resources/TravisCI/&quot; netstandard.dll
-      </RepackLibs>
+      <IgnoreExit>false</IgnoreExit>
+      <IgnoreExit Condition="'$(OS)'=='Unix' and Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">true</IgnoreExit>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Prism.exe" DestinationFiles="$(OUTDIR)/Prism.tmp.exe" />
     <Exec
       WorkingDirectory="$(OUTDIR)"
-      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Prism.tmp.exe Prism.Pipeline.dll $(RepackLibs) /out:Prism.exe" />
+      IgnoreExitCode="$(IgnoreExit)"
+      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Prism.tmp.exe Prism.Pipeline.dll /out:Prism.exe" />
     <Delete Files="$(OUTDIR)/Prism.tmp.exe" />
   </Target>
 </Project>
