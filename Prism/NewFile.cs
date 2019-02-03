@@ -34,8 +34,14 @@ namespace Prism
 			{
 				switch (newType)
 				{
-					case "project": newPath = NewFileGenerator.NewProjectFile(args[2]); break;
-					default: Console.WriteLine("ERROR: The new file type '{newType}' is not yet implemented."); return -1;
+					case "project":
+						{
+							newPath = NewFileGenerator.NewProjectFile(args[2]);
+							if (!newPath.EndsWith(".prism"))
+								Console.WriteLine("WARNING: The project file does not end with the standard '.prism' extension.");
+							break;
+						}
+					default: Console.WriteLine($"ERROR: The new file type '{newType}' is not yet implemented."); return -1;
 				}
 			}
 			catch (Exception e)
