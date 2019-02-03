@@ -2,9 +2,15 @@ language: csharp
 mono: latest
 dotnet: 2.1.502
 dist: trusty
-install:
-  # workaround for missing .net 4.5 targing pack
-  - export FrameworkPathOverride=$(dirname $(which mono))/../lib/mono/4.5/
 script:
   - dotnet restore
+  - cd ./Spectrum.Native
+  - dotnet build -c Debug
+  - cd ../Spectrum
+  - dotnet build -c Debug
+  - cd ../Prism.Pipeline
+  - dotnet build -c Debug
+  - cd ../Prism
+  # workaround for missing .net target pack
+  - export FrameworkPathOverride=$(dirname $(which mono))/../lib/mono/4.5/
   - dotnet build -c Debug
