@@ -51,10 +51,7 @@
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Prism.Pipeline.dll" DestinationFiles="$(OUTDIR)/Prism.Pipeline.tmp.dll" />
-    <Exec
-      WorkingDirectory="$(OUTDIR)"
-      IgnoreExitCode="$(IgnoreExit)"
-      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Prism.Pipeline.tmp.dll System.Json.dll /out:Prism.Pipeline.dll" />
+    <Exec WorkingDirectory="$(OUTDIR)" IgnoreExitCode="$(IgnoreExit)" Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Prism.Pipeline.tmp.dll System.Json.dll /out:Prism.Pipeline.dll" />
     <Delete Files="$(OUTDIR)/Prism.Pipeline.tmp.dll" />
   </Target>
 
