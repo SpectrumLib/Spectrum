@@ -39,7 +39,7 @@
     <PropertyGroup>
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
-      <RepackFlags>/target:library /internalize /parallel</RepackFlags>
+      <RepackFlags>/target:library /internalize /parallel /log:ILRepack.log</RepackFlags>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Spectrum.dll" DestinationFiles="$(OUTDIR)/Spectrum.tmp.dll" />

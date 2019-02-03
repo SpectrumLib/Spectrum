@@ -46,7 +46,7 @@
     <PropertyGroup>
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
-      <RepackFlags>/target:exe /internalize /parallel</RepackFlags>
+      <RepackFlags>/target:exe /internalize /parallel /log:ILRepack.log</RepackFlags>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Prism.exe" DestinationFiles="$(OUTDIR)/Prism.tmp.exe" />
