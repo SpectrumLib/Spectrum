@@ -93,8 +93,16 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- See https://www.meziantou.net/2018/08/28/merging-assemblies-using-ilrepack -->
   <Target Name="Repack" AfterTargets="Build">
+    <PropertyGroup>
+      <RepackPrefix Condition="'$(OS)' != 'Windows_NT'">mono</RepackPrefix>
+      <RepackExe>$(SolutionDir)Resources\Tools\ILRepack.exe</RepackExe>
+      <RepackFlags>/target:exe /internalize /parallel</RepackFlags>
+    </PropertyGroup>
+
     <Move SourceFiles="$(OUTDIR)\Prism.exe" DestinationFiles="$(OUTDIR)\Prism.tmp.exe" />
-    <Exec IgnoreExitCode="True" WorkingDirectory="$(OUTDIR)" Command="$(SolutionDir)Resources\Tools\ILRepack.exe /target:exe /internalize /parallel Prism.tmp.exe Prism.Pipeline.dll /out:Prism.exe" />
+    <Exec 
+      WorkingDirectory="$(OUTDIR)" 
+      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Prism.tmp.exe Prism.Pipeline.dll /out:Prism.exe" />
     <Delete Files="$(OUTDIR)\Prism.tmp.exe" />
   </Target>
 </Project>

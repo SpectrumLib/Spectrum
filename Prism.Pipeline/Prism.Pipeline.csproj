@@ -42,9 +42,17 @@
   
   <!-- See https://www.meziantou.net/2018/08/28/merging-assemblies-using-ilrepack -->
   <Target Name="Repack" AfterTargets="Build">
-	<Move SourceFiles="$(OUTDIR)\Prism.Pipeline.dll" DestinationFiles="$(OUTDIR)\Prism.Pipeline.tmp.dll" />
-	<Exec IgnoreExitCode="True" WorkingDirectory="$(OUTDIR)" Command="$(SolutionDir)Resources\Tools\ILRepack.exe /target:library /internalize /parallel Prism.Pipeline.tmp.dll System.Json.dll /out:Prism.Pipeline.dll" />
-	<Delete Files="$(OUTDIR)\Prism.Pipeline.tmp.dll" />
+    <PropertyGroup>
+      <RepackPrefix Condition="'$(OS)' != 'Windows_NT'">mono</RepackPrefix>
+      <RepackExe>$(SolutionDir)Resources\Tools\ILRepack.exe</RepackExe>
+      <RepackFlags>/target:library /internalize /parallel</RepackFlags>
+    </PropertyGroup>
+
+    <Move SourceFiles="$(OUTDIR)\Prism.Pipeline.dll" DestinationFiles="$(OUTDIR)\Prism.Pipeline.tmp.dll" />
+    <Exec
+      WorkingDirectory="$(OUTDIR)" 
+      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Prism.Pipeline.tmp.dll System.Json.dll /out:Prism.Pipeline.dll" />
+    <Delete Files="$(OUTDIR)\Prism.Pipeline.tmp.dll" />
   </Target>
 
 </Project>
