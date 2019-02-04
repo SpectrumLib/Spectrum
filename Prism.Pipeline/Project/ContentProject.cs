@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Json;
+using Prism.Content;
 
-namespace Prism
+namespace Prism.Content
 {
 	// Holds the properties and raw content items for a content project file
 	internal class ContentProject

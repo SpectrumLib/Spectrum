@@ -1,4 +1,5 @@
 ﻿using System;
+using Prism.Build;
 
 namespace Prism
 {

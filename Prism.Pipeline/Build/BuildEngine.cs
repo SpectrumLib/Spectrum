@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Prism.Content;
 
-namespace Prism
+namespace Prism.Build
 {
 	// Encapsultes the entire build pipeline state and related objects for a single build instance
 	//   The tasks run in a separate thread, so the returned tasks should be waited on

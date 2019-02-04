@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Prism
+namespace Prism.Content
 {
 	// Contains filesystem path information for a ContentItem, all paths are absolute
 	internal struct ItemPaths

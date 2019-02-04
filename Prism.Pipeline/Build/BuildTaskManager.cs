@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
+using Prism.Content;
 
-namespace Prism
+namespace Prism.Build
 {
 	// Manages the distribution of content items to build tasks, as well as maintining the state of the pipeline
 	//  and task cancellation

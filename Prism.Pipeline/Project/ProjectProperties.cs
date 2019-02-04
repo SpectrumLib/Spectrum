@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Json;
 
-namespace Prism
+namespace Prism.Content
 {
 	internal struct ProjectProperties
 	{

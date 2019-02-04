@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Threading;
+using Prism.Content;
 
-namespace Prism
+namespace Prism.Build
 {
 	// Represents a single thread in a build process, which can operate on a single content item at a time
 	//   A task is responsible for guiding a single content item through the build pipeline stages

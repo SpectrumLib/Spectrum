@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Prism
+namespace Prism.Content
 {
 	// All paths in this type are absolute
 	internal struct ProjectPaths

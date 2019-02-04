@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Json;
 
-namespace Prism
+namespace Prism.Content
 {
 	// Contains the item name, path, and build paramaters as loaded from the content project file
 	internal class ContentItem

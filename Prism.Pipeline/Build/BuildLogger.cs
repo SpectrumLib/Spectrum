@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Prism.Content;
 
-namespace Prism
+namespace Prism.Build
 {
 	// Base class for the Prism tool to implement build process loggers
 	internal abstract class BuildLogger
