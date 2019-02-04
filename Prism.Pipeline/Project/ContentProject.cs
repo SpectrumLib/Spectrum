@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Json;
+using System.Linq;
 
 namespace Prism
 {
@@ -15,11 +17,16 @@ namespace Prism
 
 		// The aboslute path to the file loaded by this content project
 		public string FilePath => Paths.ProjectPath;
+
+		// The list of content items contained in this project
+		private readonly List<ContentItem> _items;
+		public IReadOnlyList<ContentItem> Items => _items;
 		#endregion // Fields
 
-		private ContentProject(string path, in ProjectProperties pp)
+		private ContentProject(string path, in ProjectProperties pp, List<ContentItem> items)
 		{
 			Properties = pp;
+			_items = items;
 
 			// Convert the paths to absolute and perform some validations
 			var pDir = Path.GetDirectoryName(path);
@@ -58,10 +65,13 @@ namespace Prism
 			{
 				throw new Exception($"Unable to read content file, {e.Message}", e);
 			}
-			JsonValue fileObj = null;
+			JsonObject fileObj = null;
 			try
 			{
-				fileObj = JsonValue.Parse(fileText);
+				var json = JsonValue.Parse(fileText);
+				if (json.JsonType != JsonType.Object)
+					throw new Exception("the file is not a top-level Json object");
+				fileObj = json as JsonObject;
 			}
 			catch (Exception e)
 			{
@@ -69,13 +79,32 @@ namespace Prism
 			}
 
 			// Get and load the properties
-			if (!fileObj.ContainsKey("project") || (fileObj["project"].JsonType != JsonType.Object))
+			if (!fileObj.TryGetValue("project", out var propObj) || (propObj.JsonType != JsonType.Object))
 				throw new Exception("The content file does not contain the section for project properties");
-			if (!ProjectProperties.LoadJson(fileObj["project"] as JsonObject, out var pp, out var missing))
+			if (!ProjectProperties.LoadJson(propObj as JsonObject, out var pp, out var missing))
 				throw new Exception($"The project properties section does not contain the required entry '{missing}', or it is not a valid string");
 
+			// Get the content root path to load the items with
+			var pDir = Path.GetDirectoryName(path);
+			if (!IOUtils.TryGetFullPath(pp.RootDir, out var rPath, pDir))
+				throw new Exception($"The root content directory '{rPath}' is not a valid filesystem path");
+
+			// Load the items
+			if (!fileObj.TryGetValue("items", out var itemsObj) || (itemsObj.JsonType != JsonType.Object))
+				throw new Exception("The content file does not contain the section for content items");
+			List<ContentItem> items = new List<ContentItem>();
+			foreach (var item in (itemsObj as JsonObject))
+			{
+				if (item.Value.JsonType != JsonType.Object)
+					throw new Exception($"The content item '{item.Key}' is not a valid Json object");
+				var citem = ContentItem.LoadJson(item.Key, item.Value as JsonObject, rPath);
+				if (items.Any(ci => ci.ItemPath == citem.ItemPath))
+					throw new Exception($"The content project file has more than one entry for the item '{item.Key}'");
+				items.Add(citem);
+			}
+
 			// Good to go
-			return new ContentProject(path, pp);
+			return new ContentProject(path, pp, items);
 		}
 		#endregion // Load/Save
 	}

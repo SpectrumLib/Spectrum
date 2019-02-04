@@ -4,7 +4,12 @@
 		"intermediateDir": "obj",
 		"outputDir": "bin"
 	},
-	"files": {
-		
+	"items": {
+		"example_file.txt": {
+			"itype": "DefaultImporter",
+			"ptype": "DefaultProcessor",
+			"iargs": "arg1=value1;arg2=value2",
+			"pargs": "arg1=value1;arg2=value2"
+		}
 	}
 }
