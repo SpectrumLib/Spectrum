@@ -82,8 +82,13 @@ namespace Prism
 							  "action.");
 
 			Console.WriteLine("\nThe command line flags are:");
-			Console.WriteLine("    > /help;/?       - Prints this help message, and then quits.");
-			Console.WriteLine("    > /verbose;/v    - Prints out more information while running. Valid for all commands.");
+			Console.WriteLine("    > /help;/?                - Prints this help message, and then quits.");
+			Console.WriteLine("    > /verbose;/v             - Prints out more information while running. Valid for all commands.");
+			Console.WriteLine("    > (/parallel;/p)[:<num>]  - Sets the number of threads to use in build or rebuild tasks. If");
+			Console.WriteLine("                                '0' or no number is specified, then the number of threads will be");
+			Console.WriteLine("                                set to the numer of cores. If not specified, only a single thread");
+			Console.WriteLine("                                will be used. The thread count will be clamped to the number of");
+			Console.WriteLine("                                available cores.");
 			Console.WriteLine("For compatibility, all flags can be specified with '/', '-', or '--'.\n");
 		}
 	}

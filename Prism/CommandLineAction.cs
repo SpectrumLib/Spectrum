@@ -38,6 +38,11 @@ namespace Prism
 								  $"      Output Root:        {project.Paths.OutputRoot}");
 			}
 
+			// Get the parallelization info
+			uint threadCount = (action == "clean") ? 1 : ArgParser.Parallel(args);
+			if (threadCount > 1)
+				Console.WriteLine($"INFO: Using {threadCount} threads for {action} process.");
+
 			// Create the build engine to manage this action
 			BuildEngine engine = null;
 			try

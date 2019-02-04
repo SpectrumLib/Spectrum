@@ -15,13 +15,13 @@ namespace Prism
 			Verbose = verbose;
 		}
 
-		public void Info(string msg) => Console.WriteLine($"INFO:  {msg}");
+		public void Info(string msg) => Console.WriteLine($"INFO: {msg}");
 
 		public void Warn(string msg)
 		{
 			var old = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Yellow;
-			Console.WriteLine($"WARN:  {msg}");
+			Console.WriteLine($"WARN: {msg}");
 			Console.ForegroundColor = old;
 		}
 
