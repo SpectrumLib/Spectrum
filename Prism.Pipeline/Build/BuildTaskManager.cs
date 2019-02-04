@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using Prism.Content;
 
@@ -11,6 +12,7 @@ namespace Prism.Build
 	{
 		#region Fields
 		public readonly BuildEngine Engine;
+		public ContentProject Project => Engine.Project;
 
 		// Objects for tracking if the build pipeline is running
 		private readonly object _busyLock = new object();
@@ -68,6 +70,12 @@ namespace Prism.Build
 			{
 				Engine.Logger.BuildStart(rebuild);
 
+				// Ensure that the intermediate and output directories exist
+				if (!Directory.Exists(Project.Paths.IntermediateRoot))
+					Directory.CreateDirectory(Project.Paths.IntermediateRoot);
+				if (!Directory.Exists(Project.Paths.OutputRoot))
+					Directory.CreateDirectory(Project.Paths.OutputRoot);
+
 				// Launch the build tasks
 				foreach (var task in _tasks)
 					task.Start(rebuild);
@@ -98,8 +106,18 @@ namespace Prism.Build
 			{
 				Engine.Logger.CleanStart();
 
-				// For testing
-				Thread.Sleep(500);
+				// Clean all .pcf files out of the intermediate path
+				var iInfo = (new DirectoryInfo(Project.Paths.IntermediateRoot)).GetFiles("*.pcf", SearchOption.TopDirectoryOnly);
+				for (int i = 0; i < iInfo.Length; ++i)
+				{
+					// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
+					if (((i % 5) == 0) && ShouldStop)
+						return;
+					iInfo[i].Delete();
+				}
+
+				// TODO: Clean output path
+				
 				success = true;
 			}
 			finally
@@ -112,6 +130,9 @@ namespace Prism.Build
 		// Sets the pipeline to stop processing, and then waits for it to finish
 		public void Cancel()
 		{
+			if (!Busy)
+				return;
+
 			ShouldStop = true;
 			if (_isCleaning)
 			{
@@ -121,9 +142,8 @@ namespace Prism.Build
 			}
 			else
 			{
-				// TODO: Wait for tasks instead
-				while (Busy)
-					Thread.Sleep(50);
+				foreach (var task in _tasks)
+					task.Join();
 			}
 		}
 		#endregion // Task Functions

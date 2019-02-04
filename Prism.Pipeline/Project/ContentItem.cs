@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Json;
 
 namespace Prism.Content
@@ -35,7 +36,10 @@ namespace Prism.Content
 			ProcessorArgs = pArgs;
 		}
 
-		public static ContentItem LoadJson(string path, JsonObject obj, string rootDir)
+		public static string ToIntermedateFile(string path) =>
+			Path.GetFileNameWithoutExtension(path.Replace(Path.DirectorySeparatorChar, '.').Replace(Path.AltDirectorySeparatorChar, '.')) + ".pcf";
+
+		public static ContentItem LoadJson(string path, JsonObject obj, in ProjectPaths ppaths)
 		{
 			if (!IOUtils.IsValidPath(path))
 				throw new Exception($"The item path '{path}' is not valid");
@@ -47,11 +51,14 @@ namespace Prism.Content
 				throw new Exception($"The item '{path}' did not specify a valid processor string");
 
 			// Make the paths
-			if (!IOUtils.TryGetFullPath(path, out string srcPath, rootDir))
+			if (!IOUtils.TryGetFullPath(path, out string srcPath, ppaths.ContentRoot))
 				throw new Exception($"The item path '{path}' does not map to a valid filesystem path");
+			var intFile = ToIntermedateFile(path);
 			ItemPaths paths = new ItemPaths {
 				ItemPath = path,
-				SourcePath = srcPath
+				SourcePath = srcPath,
+				IntermediateFile = intFile,
+				IntermediatePath = IOUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile)
 			};
 
 			// Parse the type paramters

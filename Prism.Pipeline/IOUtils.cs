@@ -34,5 +34,8 @@ namespace Prism
 			}
 			catch { fullPath = path; return false; }
 		}
+
+		// Combines paths and makes them absolute in one step (no validity checking on this)
+		public static string CombineToAbsolute(params string[] paths) => Path.GetFullPath(Path.Combine(paths));
 	}
 }

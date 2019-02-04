@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Json;
-using Prism.Content;
 
 namespace Prism.Content
 {
@@ -11,9 +10,9 @@ namespace Prism.Content
 	{
 		#region Fields
 		// The absolute paths for this project
-		public ProjectPaths Paths { get; private set; }
+		public readonly ProjectPaths Paths;
 		// The properties of the project
-		public ProjectProperties Properties { get; private set; }
+		public readonly ProjectProperties Properties;
 
 		// The aboslute path to the file loaded by this content project
 		public string FilePath => Paths.ProjectPath;
@@ -23,28 +22,11 @@ namespace Prism.Content
 		public IReadOnlyDictionary<string, ContentItem> Items => _items;
 		#endregion // Fields
 
-		private ContentProject(string path, in ProjectProperties pp, Dictionary<string, ContentItem> items)
+		private ContentProject(string path, in ProjectPaths paths, in ProjectProperties pp, Dictionary<string, ContentItem> items)
 		{
+			Paths = paths;
 			Properties = pp;
 			_items = items;
-
-			// Convert the paths to absolute and perform some validations
-			var pDir = Path.GetDirectoryName(path);
-			if (!IOUtils.TryGetFullPath(pp.RootDir, out var rPath, pDir))
-				throw new Exception($"The root content directory '{rPath}' is not a valid filesystem path");
-			if (!IOUtils.TryGetFullPath(pp.IntermediateDir, out var iPath, pDir))
-				throw new Exception($"The intermediate directory '{iPath}' is not a valid filesystem path");
-			if (!IOUtils.TryGetFullPath(pp.OutputDir, out var oPath, pDir))
-				throw new Exception($"The output directory '{oPath}' is not a valid filesystem path");
-			if (rPath == iPath || rPath == oPath || iPath == oPath)
-				throw new Exception($"The content root, intermediate, and output paths must all be different");
-			Paths = new ProjectPaths {
-				ProjectPath = path,
-				ProjectDirectory = pDir,
-				ContentRoot = rPath,
-				IntermediateRoot = iPath,
-				OutputRoot = oPath
-			};
 		}
 
 		#region Load/Save
@@ -84,10 +66,23 @@ namespace Prism.Content
 			if (!ProjectProperties.LoadJson(propObj as JsonObject, out var pp, out var missing))
 				throw new Exception($"The project properties section does not contain the required entry '{missing}', or it is not a valid string");
 
-			// Get the content root path to load the items with
+			// Convert the paths to absolute and perform some validations
 			var pDir = Path.GetDirectoryName(path);
 			if (!IOUtils.TryGetFullPath(pp.RootDir, out var rPath, pDir))
 				throw new Exception($"The root content directory '{rPath}' is not a valid filesystem path");
+			if (!IOUtils.TryGetFullPath(pp.IntermediateDir, out var iPath, pDir))
+				throw new Exception($"The intermediate directory '{iPath}' is not a valid filesystem path");
+			if (!IOUtils.TryGetFullPath(pp.OutputDir, out var oPath, pDir))
+				throw new Exception($"The output directory '{oPath}' is not a valid filesystem path");
+			if (rPath == iPath || rPath == oPath || iPath == oPath)
+				throw new Exception($"The content root, intermediate, and output paths must all be different");
+			var paths = new ProjectPaths {
+				ProjectPath = path,
+				ProjectDirectory = pDir,
+				ContentRoot = rPath,
+				IntermediateRoot = iPath,
+				OutputRoot = oPath
+			};
 
 			// Load the items
 			if (!fileObj.TryGetValue("items", out var itemsObj) || (itemsObj.JsonType != JsonType.Object))
@@ -97,14 +92,14 @@ namespace Prism.Content
 			{
 				if (item.Value.JsonType != JsonType.Object)
 					throw new Exception($"The content item '{item.Key}' is not a valid Json object");
-				var citem = ContentItem.LoadJson(item.Key, item.Value as JsonObject, rPath);
+				var citem = ContentItem.LoadJson(item.Key, item.Value as JsonObject, paths);
 				if (items.ContainsKey(citem.ItemPath))
 					throw new Exception($"The content project file has more than one entry for the item '{citem.ItemPath}'");
 				items.Add(citem.ItemPath, citem);
 			}
 
 			// Good to go
-			return new ContentProject(path, pp, items);
+			return new ContentProject(path, paths, pp, items);
 		}
 		#endregion // Load/Save
 	}
