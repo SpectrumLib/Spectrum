@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Prism
 {
@@ -8,8 +10,6 @@ namespace Prism
 		// Runs the action passed, with the original command line arguments tacked on (path should be args[1])
 		public static int RunAction(string action, string[] args, bool verbose)
 		{
-			Console.WriteLine($"INFO: Performing command line action '{action}'.");
-
 			// Try to load the content project file
 			string filePath = args[1];
 			ContentProject project = null;
@@ -29,22 +29,77 @@ namespace Prism
 				return -1;
 			}
 
-			// Create the build engine to manage this action
-			using (BuildEngine engine = new BuildEngine(project, new CommandLineLogger(verbose)))
+			// Report project information
+			if (verbose)
 			{
-				// Report project information
+				Console.WriteLine($"INFO: --- Project Info ---\n" +
+								  $"      Content Root:       {project.Paths.ContentRoot}\n" +
+								  $"      Intermediate Root:  {project.Paths.IntermediateRoot}\n" +
+								  $"      Output Root:        {project.Paths.OutputRoot}");
+			}
+
+			// Create the build engine to manage this action
+			BuildEngine engine = null;
+			try
+			{
+				engine = new BuildEngine(project, new CommandLineLogger(verbose));
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"ERROR: Unable to create build engine, reason: {e.Message}.");
 				if (verbose)
 				{
-					Console.WriteLine($"INFO: --- Project Info ---\n" +
-									  $"      Content Root:       {project.Paths.ContentRoot}\n" +
-									  $"      Intermediate Root:  {project.Paths.IntermediateRoot}\n" +
-									  $"      Output Root:        {project.Paths.OutputRoot}");
+					Console.WriteLine($"EXCEPTION: ({e.GetType().Name})");
+					Console.WriteLine(e.StackTrace);
 				}
+			}
 
-				(engine.Logger as CommandLineLogger).Info("Info test");
-				(engine.Logger as CommandLineLogger).Warn("Warn test");
-				(engine.Logger as CommandLineLogger).Error("Error test");
-				(engine.Logger as CommandLineLogger).Fatal("Fatal test");
+			// Start the action task and logging
+			using (engine)
+			{
+				try
+				{
+					// Launch the correct task
+					Task task = null;
+					switch (action)
+					{
+						case "build": task = engine.Build(false); break;
+						case "rebuild": task = engine.Build(true); break;
+						case "clean": task = engine.Clean(); break;
+						default: Console.WriteLine($"ERROR: The action '{action}' was not understood."); return -1; // Should never be reached
+					}
+					task.Start();
+
+					// Wait for the task to finish, logging while we go
+					while (!task.IsCompleted)
+					{
+						Thread.Sleep(50);
+						engine.Logger.Poll();
+					}
+
+					// Check that the task did not encounter an exception
+					if (task.IsFaulted)
+					{
+						var te = task.Exception.InnerException;
+						Console.WriteLine($"ERROR: Action '{action}' encountered an exception, message: {te?.Message}.");
+						if (verbose)
+						{
+							Console.WriteLine($"EXCEPTION: ({te?.GetType().Name})");
+							Console.WriteLine(te?.StackTrace);
+						}
+						return -1;
+					}
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine($"ERROR: Unhandled exception during action '{action}', message: {e.Message}.");
+					if (verbose)
+					{
+						Console.WriteLine($"EXCEPTION: ({e.GetType().Name})");
+						Console.WriteLine(e.StackTrace);
+					}
+					return -1;
+				}
 			}
 
 			// Everything went well
