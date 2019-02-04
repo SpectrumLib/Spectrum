@@ -46,9 +46,9 @@ namespace Prism
 				{
 					Console.WriteLine($"      Full Path:   {item.Paths.SourcePath}");
 					Console.WriteLine($"      Importer:    {item.ImporterName}");
-					Console.WriteLine($"         Args:     {String.Join(";", item.ImporterArgs.Select(pair => $"{pair.Key}={pair.Value}"))}");
+					Console.WriteLine($"                     {String.Join(";", item.ImporterArgs.Select(pair => $"{pair.Key}={pair.Value}"))}");
 					Console.WriteLine($"      Processor:   {item.ProcessorName}");
-					Console.WriteLine($"         Args:     {String.Join(";", item.ProcessorArgs.Select(pair => $"{pair.Key}={pair.Value}"))}");
+					Console.WriteLine($"                     {String.Join(";", item.ProcessorArgs.Select(pair => $"{pair.Key}={pair.Value}"))}");
 				}
 				else
 				{
@@ -60,7 +60,7 @@ namespace Prism
 			// Items info
 			Console.WriteLine($"=========== ITEMS SUMMARY ===========");
 			foreach (var item in project.Items)
-				__printItem(item);
+				__printItem(item.Value);
 			Console.WriteLine($"");
 
 			// All went well

@@ -29,6 +29,9 @@ namespace Prism
 				return -1;
 			}
 
+			// Create the build engine to manage this action
+			BuildEngine engine = new BuildEngine(project);
+
 			// Report project information
 			if (verbose)
 			{

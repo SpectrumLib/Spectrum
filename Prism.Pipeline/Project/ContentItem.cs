@@ -7,6 +7,9 @@ namespace Prism
 	// Contains the item name, path, and build paramaters as loaded from the content project file
 	internal class ContentItem
 	{
+		private static readonly char[] PAIR_SPLIT = { ';' };
+		private static readonly char[] KEYVALUE_SPLIT = { '=' };
+
 		#region Fields
 		// The path information for this item
 		public ItemPaths Paths;
@@ -58,10 +61,10 @@ namespace Prism
 			{
 				if (iaObj.JsonType == JsonType.String)
 				{
-					var argList = ((string)iaObj).Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+					var argList = ((string)iaObj).Split(PAIR_SPLIT, StringSplitOptions.RemoveEmptyEntries);
 					foreach (var argPair in argList)
 					{
-						var keyVal = argPair.Split(new[] { '=' }, 2);
+						var keyVal = argPair.Split(KEYVALUE_SPLIT, 2);
 						if (keyVal.Length != 2)
 							throw new Exception($"The item '{path}' specified an invalid importer key/value pair ('{argPair}')");
 						iArgs.Add((keyVal[0], keyVal[1]));
@@ -74,10 +77,10 @@ namespace Prism
 			{
 				if (paObj.JsonType == JsonType.String)
 				{
-					var argList = ((string)paObj).Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+					var argList = ((string)paObj).Split(PAIR_SPLIT, StringSplitOptions.RemoveEmptyEntries);
 					foreach (var argPair in argList)
 					{
-						var keyVal = argPair.Split(new[] { '=' }, 2);
+						var keyVal = argPair.Split(KEYVALUE_SPLIT, 2);
 						if (keyVal.Length != 2)
 							throw new Exception($"The item '{path}' specified an invalid processor key/value pair ('{argPair}')");
 						pArgs.Add((keyVal[0], keyVal[1]));

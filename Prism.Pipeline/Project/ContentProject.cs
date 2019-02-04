@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Json;
-using System.Linq;
 
 namespace Prism
 {
@@ -19,11 +18,11 @@ namespace Prism
 		public string FilePath => Paths.ProjectPath;
 
 		// The list of content items contained in this project
-		private readonly List<ContentItem> _items;
-		public IReadOnlyList<ContentItem> Items => _items;
+		private readonly Dictionary<string, ContentItem> _items;
+		public IReadOnlyDictionary<string, ContentItem> Items => _items;
 		#endregion // Fields
 
-		private ContentProject(string path, in ProjectProperties pp, List<ContentItem> items)
+		private ContentProject(string path, in ProjectProperties pp, Dictionary<string, ContentItem> items)
 		{
 			Properties = pp;
 			_items = items;
@@ -92,15 +91,15 @@ namespace Prism
 			// Load the items
 			if (!fileObj.TryGetValue("items", out var itemsObj) || (itemsObj.JsonType != JsonType.Object))
 				throw new Exception("The content file does not contain the section for content items");
-			List<ContentItem> items = new List<ContentItem>();
+			Dictionary<string, ContentItem> items = new Dictionary<string, ContentItem>();
 			foreach (var item in (itemsObj as JsonObject))
 			{
 				if (item.Value.JsonType != JsonType.Object)
 					throw new Exception($"The content item '{item.Key}' is not a valid Json object");
 				var citem = ContentItem.LoadJson(item.Key, item.Value as JsonObject, rPath);
-				if (items.Any(ci => ci.ItemPath == citem.ItemPath))
-					throw new Exception($"The content project file has more than one entry for the item '{item.Key}'");
-				items.Add(citem);
+				if (items.ContainsKey(citem.ItemPath))
+					throw new Exception($"The content project file has more than one entry for the item '{citem.ItemPath}'");
+				items.Add(citem.ItemPath, citem);
 			}
 
 			// Good to go
