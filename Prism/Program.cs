@@ -5,7 +5,7 @@ namespace Prism
 {
 	public static class Program
 	{
-		private static readonly string[] VALID_ACTIONS = { "new", "build", "rebuild", "clean" };
+		private static readonly string[] VALID_ACTIONS = { "new", "build", "rebuild", "clean", "view" };
 
 		public static int Main(string[] args)
 		{
@@ -56,6 +56,7 @@ namespace Prism
 				case "build":
 				case "rebuild":
 				case "clean": return CommandLineAction.RunAction(action, args, verbose);
+				case "view": return ViewProject.Summarize(args, verbose);
 				default: Console.WriteLine($"ERROR: The action '{action}' is not yet implemented."); return -1;
 			}
 		}
@@ -75,6 +76,7 @@ namespace Prism
 			Console.WriteLine("    > build          - Builds the project file.");
 			Console.WriteLine("    > rebuild        - Builds the project file, ignoring the current cache for a full rebuild.");
 			Console.WriteLine("    > clean          - Cleans the cache and the output for the project file.");
+			Console.WriteLine("    > view           - Shows a summary of the content project file.");
 			Console.WriteLine("The action must come as the first argument to the program. The GUI will open if one of the valid\n" +
 							  "actions is not specified. The content file to operate on must always come immediately after the\n" +
 							  "action.");
