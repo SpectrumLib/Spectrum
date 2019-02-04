@@ -18,11 +18,11 @@ namespace Prism
 			missing = null;
 
 			// Get the tokens
-			if (!obj.TryGetValue("rootDir", out var rDir))
+			if (!obj.TryGetValue("rootDir", out var rDir) || (rDir.JsonType != JsonType.String))
 				missing = "rootDir";
-			if (!obj.TryGetValue("intermediateDir", out var iDir))
+			if (!obj.TryGetValue("intermediateDir", out var iDir) || (iDir.JsonType != JsonType.String))
 				missing = "intermediateDir";
-			if (!obj.TryGetValue("outputDir", out var oDir))
+			if (!obj.TryGetValue("outputDir", out var oDir) || (oDir.JsonType != JsonType.String))
 				missing = "outputDir";
 
 			if (missing != null)

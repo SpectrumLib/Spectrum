@@ -56,7 +56,7 @@ namespace Prism
 			}
 			catch (Exception e)
 			{
-				throw new Exception($"{e.Message} ({e.GetType().Name})", e);
+				throw new Exception($"Unable to read content file, {e.Message}", e);
 			}
 			JsonValue fileObj = null;
 			try
@@ -72,7 +72,7 @@ namespace Prism
 			if (!fileObj.ContainsKey("project") || (fileObj["project"].JsonType != JsonType.Object))
 				throw new Exception("The content file does not contain the section for project properties");
 			if (!ProjectProperties.LoadJson(fileObj["project"] as JsonObject, out var pp, out var missing))
-				throw new Exception($"The project properties section does not contain the required entry '{missing}'");
+				throw new Exception($"The project properties section does not contain the required entry '{missing}', or it is not a valid string");
 
 			// Good to go
 			return new ContentProject(path, pp);
