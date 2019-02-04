@@ -47,7 +47,7 @@ namespace Prism
 			BuildEngine engine = null;
 			try
 			{
-				engine = new BuildEngine(project, new CommandLineLogger(verbose));
+				engine = new BuildEngine(project, new CommandLineLogger(verbose), threadCount);
 			}
 			catch (Exception e)
 			{

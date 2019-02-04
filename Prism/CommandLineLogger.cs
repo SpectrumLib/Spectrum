@@ -42,7 +42,7 @@ namespace Prism
 		}
 
 		protected override void onBuildStart(DateTime start, bool rebuild) =>
-			Info($"{(rebuild ? "Rebuild" : "Build")} started on {start.ToShortDateString()} at {start.ToShortTimeString()}.");
+			Info($"{(rebuild ? "Rebuild" : "Build")} started on {start.ToShortDateString()} at {start.ToLongTimeString()}.");
 
 		protected override void onBuildEnd(bool success, TimeSpan elapsed, bool cancelled)
 		{

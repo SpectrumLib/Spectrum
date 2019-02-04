@@ -18,13 +18,13 @@ namespace Prism
 		#endregion // Fields
 
 		// Creates an initial build pipeline for the given project and settings
-		public BuildEngine(ContentProject project, BuildLogger logger)
+		public BuildEngine(ContentProject project, BuildLogger logger, uint threads)
 		{
 			Project = project ?? throw new ArgumentNullException(nameof(project));
 			Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			Logger.Engine = this;
 
-			_manager = new BuildTaskManager(this);
+			_manager = new BuildTaskManager(this, threads);
 		}
 		~BuildEngine()
 		{

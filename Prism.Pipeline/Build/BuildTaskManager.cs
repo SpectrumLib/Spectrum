@@ -29,15 +29,31 @@ namespace Prism
 			private set { lock(_stopLock) { _shouldStop = value; } }
 		}
 
+		// The list of available tasks
+		private readonly BuildTask[] _tasks;
+
 		// Tracks if the current process is a clean action
 		private bool _isCleaning = false;
 		#endregion // Fields
 
-		public BuildTaskManager(BuildEngine engine)
+		public BuildTaskManager(BuildEngine engine, uint threads)
 		{
 			Engine = engine;
+
+			_tasks = new BuildTask[threads];
+			for (uint i = 0; i < threads; ++i)
+				_tasks[i] = new BuildTask(this);
 		}
 
+		// Called by BuildTask instances to get the next available content item to start building
+		//   Returns false when no items are left
+		internal bool GetTaskItem(out ContentItem item)
+		{
+			item = null;
+			return false;
+		}
+
+		#region Task Functions
 		// The pipeline control function for build tasks that runs on the separate build thread
 		public void Build(bool rebuild)
 		{
@@ -51,8 +67,14 @@ namespace Prism
 			{
 				Engine.Logger.BuildStart(rebuild);
 
-				// For testing
-				Thread.Sleep(1000);
+				// Launch the build tasks
+				foreach (var task in _tasks)
+					task.Start(rebuild);
+
+				// Wait for the tasks to complete
+				foreach (var task in _tasks)
+					task.Join();
+
 				success = true;
 			}
 			finally
@@ -76,7 +98,7 @@ namespace Prism
 				Engine.Logger.CleanStart();
 
 				// For testing
-				Thread.Sleep(1000);
+				Thread.Sleep(500);
 				success = true;
 			}
 			finally
@@ -103,5 +125,6 @@ namespace Prism
 					Thread.Sleep(50);
 			}
 		}
+		#endregion // Task Functions
 	}
 }
