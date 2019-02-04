@@ -17,6 +17,7 @@ namespace Prism
 		{
 			Project = project ?? throw new ArgumentNullException(nameof(project));
 			Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+			Logger.Engine = this;
 		}
 		~BuildEngine()
 		{

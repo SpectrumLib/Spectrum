@@ -27,12 +27,12 @@ namespace Prism
 		}
 
 		#region Internal Logging
-		internal void BuildStart()
+		internal void BuildStart(bool rebuild)
 		{
 			_startTime = DateTime.Now;
 			_timer.Restart();
 
-			_messages.Enqueue(new Message(MessageType.BuildStart, _startTime));
+			_messages.Enqueue(new Message(MessageType.BuildStart, _startTime, rebuild));
 		}
 
 		internal void BuildEnd(bool success, TimeSpan elapsed, bool cancelled) =>
@@ -46,8 +46,8 @@ namespace Prism
 			_messages.Enqueue(new Message(MessageType.CleanStart, _startTime));
 		}
 
-		internal void CleanEnd(bool success, TimeSpan elapsed) =>
-			_messages.Enqueue(new Message(MessageType.CleanEnd, _startTime + _timer.Elapsed, success, elapsed));
+		internal void CleanEnd(bool success, TimeSpan elapsed, bool cancelled) =>
+			_messages.Enqueue(new Message(MessageType.CleanEnd, _startTime + _timer.Elapsed, success, elapsed, cancelled));
 		#endregion // Internal Logging
 
 		// Called on the main thread in the Prism tool to process all queued messages
@@ -59,24 +59,24 @@ namespace Prism
 				MessageTime = msg.Time;
 				switch (msg.Type)
 				{
-					case MessageType.BuildStart: onBuildStart(MessageTime); break;
+					case MessageType.BuildStart: onBuildStart(MessageTime, (bool)msg.Args[0]); break;
 					case MessageType.BuildEnd: onBuildEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1], (bool)msg.Args[2]); break;
 					case MessageType.CleanStart: onCleanStart(MessageTime); break;
-					case MessageType.CleanEnd: onCleanEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1]); break;
+					case MessageType.CleanEnd: onCleanEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1], (bool)msg.Args[2]); break;
 				}
 			}
 		}
 
 		#region Message Handlers
 		// Called when a new build or rebuild action starts
-		protected abstract void onBuildStart(DateTime start);
+		protected abstract void onBuildStart(DateTime start, bool rebuild);
 		// Called when a build or rebuild action ends, either through success, early failure, or if it was cancelled
 		protected abstract void onBuildEnd(bool success, TimeSpan elapsed, bool cancelled);
 
 		// Called when a new clean action starts
 		protected abstract void onCleanStart(DateTime start);
 		// Called when a clean action ends
-		protected abstract void onCleanEnd(bool success, TimeSpan elapsed);
+		protected abstract void onCleanEnd(bool success, TimeSpan elapsed, bool cancelled);
 		#endregion // Message Handlers
 
 		#region Message Impl
