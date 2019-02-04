@@ -30,15 +30,18 @@ namespace Prism
 			}
 
 			// Create the build engine to manage this action
-			BuildEngine engine = new BuildEngine(project);
+			using (BuildEngine engine = new BuildEngine(project, null))
+			{
+
+			}
 
 			// Report project information
 			if (verbose)
 			{
 				Console.WriteLine($"INFO: --- Project Info ---\n" +
-								  $"      Content Root:       {project.Paths.ContentRoot}\n" +
-								  $"      Intermediate Root:  {project.Paths.IntermediateRoot}\n" +
-								  $"      Output Root:        {project.Paths.OutputRoot}");
+									$"      Content Root:       {project.Paths.ContentRoot}\n" +
+									$"      Intermediate Root:  {project.Paths.IntermediateRoot}\n" +
+									$"      Output Root:        {project.Paths.OutputRoot}");
 			}
 
 			// Everything went well
