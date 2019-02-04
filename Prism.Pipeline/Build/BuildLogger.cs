@@ -28,6 +28,10 @@ namespace Prism.Build
 		}
 
 		#region Internal Logging
+		internal void Warn(string msg) => _messages.Enqueue(new Message(MessageType.Warn, DateTime.Now, msg));
+
+		internal void Error(string msg) => _messages.Enqueue(new Message(MessageType.Error, DateTime.Now, msg));
+
 		internal void BuildStart(bool rebuild)
 		{
 			_startTime = DateTime.Now;
@@ -60,6 +64,8 @@ namespace Prism.Build
 				MessageTime = msg.Time;
 				switch (msg.Type)
 				{
+					case MessageType.Warn: onWarning((string)msg.Args[0]); break;
+					case MessageType.Error: onError((string)msg.Args[0]); break;
 					case MessageType.BuildStart: onBuildStart(MessageTime, (bool)msg.Args[0]); break;
 					case MessageType.BuildEnd: onBuildEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1], (bool)msg.Args[2]); break;
 					case MessageType.CleanStart: onCleanStart(MessageTime); break;
@@ -69,6 +75,11 @@ namespace Prism.Build
 		}
 
 		#region Message Handlers
+		// Called when the build engine produces a general warning message
+		protected abstract void onWarning(string msg);
+		// Called when the build engine produces a general error message
+		protected abstract void onError(string msg);
+
 		// Called when a new build or rebuild action starts
 		protected abstract void onBuildStart(DateTime start, bool rebuild);
 		// Called when a build or rebuild action ends, either through success, early failure, or if it was cancelled
@@ -97,6 +108,8 @@ namespace Prism.Build
 
 		private enum MessageType
 		{
+			Warn,
+			Error,
 			BuildStart,
 			BuildEnd,
 			CleanStart,

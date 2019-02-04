@@ -18,7 +18,7 @@ namespace Prism
 
 		public void Info(string msg) => Console.WriteLine($"INFO: {msg}");
 
-		public void Warn(string msg)
+		public new void Warn(string msg)
 		{
 			var old = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Yellow;
@@ -26,7 +26,7 @@ namespace Prism
 			Console.ForegroundColor = old;
 		}
 
-		public void Error(string msg)
+		public new void Error(string msg)
 		{
 			var old = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Red;
@@ -41,6 +41,10 @@ namespace Prism
 			Console.WriteLine($"FATAL: {msg}");
 			Console.ForegroundColor = old;
 		}
+
+		protected override void onWarning(string msg) => Warn(msg);
+
+		protected override void onError(string msg) => Error(msg);
 
 		protected override void onBuildStart(DateTime start, bool rebuild) =>
 			Info($"{(rebuild ? "Rebuild" : "Build")} started on {start.ToShortDateString()} at {start.ToLongTimeString()}.");
