@@ -8,7 +8,7 @@ namespace Prism
 	/// <typeparam name="Tin">The type containing the data created by a <see cref="ContentImporter{Tout}"/> instance.</typeparam>
 	/// <typeparam name="Tout">The type containing the data passed to a <see cref="ContentWriter{Tin}"/> instance.</typeparam>
 	/// <typeparam name="Twriter">The <see cref="ContentWriter{Tin}"/> type that writes the data from this processor.</typeparam>
-	public abstract class ContentProcessor<Tin, Tout, Twriter>
+	public abstract class ContentProcessor<Tin, Tout, Twriter> : IContentProcessor
 		where Tin : class
 		where Tout : class
 		where Twriter : ContentWriter<Tout>
@@ -35,5 +35,8 @@ namespace Prism
 		/// <param name="ctx">The context information about the current processing step.</param>
 		/// <returns>The data to pass into the content processing step.</returns>
 		public abstract Tout Process(Tin input, ProcessorContext ctx);
+
+		// The pipeline will ensure that input is of type Tin before this is called, so null will never be passed accidentally
+		object IContentProcessor.Process(object input, ProcessorContext ctx) => Process(input as Tin, ctx);
 	}
 }

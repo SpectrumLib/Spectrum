@@ -6,7 +6,7 @@ namespace Prism
 	/// Base class for implementing content file writing logic, the last step in the content pipeline.
 	/// </summary>
 	/// <typeparam name="Tin">The type containing the data created by a <see cref="ContentProcessor{Tin, Tout, Twriter}"/> instance.</typeparam>
-	public abstract class ContentWriter<Tin>
+	public abstract class ContentWriter<Tin> : IContentWriter
 		where Tin : class
 	{
 		#region Fields
@@ -21,5 +21,8 @@ namespace Prism
 		/// </summary>
 		/// <param name="input">The processed content data to write.</param>
 		public abstract void Write(Tin input);
+
+		// The pipeline will ensure that input is of type Tin before this is called, so null will never be passed accidentally
+		void IContentWriter.Write(object input) => Write(input as Tin);
 	}
 }
