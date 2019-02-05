@@ -1,5 +1,6 @@
 ﻿using System;
 using Prism.Build;
+using Prism.Content;
 
 namespace Prism
 {
@@ -18,7 +19,7 @@ namespace Prism
 
 		public void Info(string msg) => Console.WriteLine($"INFO: {msg}");
 
-		public new void Warn(string msg)
+		public void Warn(string msg)
 		{
 			var old = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Yellow;
@@ -26,7 +27,7 @@ namespace Prism
 			Console.ForegroundColor = old;
 		}
 
-		public new void Error(string msg)
+		public void Error(string msg)
 		{
 			var old = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Red;
@@ -42,9 +43,11 @@ namespace Prism
 			Console.ForegroundColor = old;
 		}
 
-		protected override void onWarning(string msg) => Warn(msg);
+		protected override void onEngineInfo(string msg) => Info($"Build Engine: {msg}");
 
-		protected override void onError(string msg) => Error(msg);
+		protected override void onEngineWarning(string msg) => Warn($"Build Engine: {msg}");
+
+		protected override void onEngineError(string msg) => Error($"Build Engine: {msg}");
 
 		protected override void onBuildStart(DateTime start, bool rebuild) =>
 			Info($"{(rebuild ? "Rebuild" : "Build")} started on {start.ToShortDateString()} at {start.ToLongTimeString()}.");
@@ -52,11 +55,11 @@ namespace Prism
 		protected override void onBuildEnd(bool success, TimeSpan elapsed, bool cancelled)
 		{
 			if (cancelled)
-				Warn($"Build process was cancelled after {elapsed.TotalSeconds} seconds.");
+				Warn($"Build process was cancelled after {elapsed.TotalSeconds:0.000} seconds.");
 			else if (!success)
-				Error($"Build process failed after {elapsed.TotalSeconds} seconds.");
+				Error($"Build process failed after {elapsed.TotalSeconds:0.000} seconds.");
 			else
-				Info($"Build process succeeded ({elapsed.TotalSeconds} seconds).");
+				Info($"Build process succeeded ({elapsed.TotalSeconds:0.000} seconds).");
 		}
 
 		protected override void onCleanStart(DateTime start) =>
@@ -65,11 +68,29 @@ namespace Prism
 		protected override void onCleanEnd(bool success, TimeSpan elapsed, bool cancelled)
 		{
 			if (cancelled)
-				Warn($"Clean process was cancelled after {elapsed.TotalSeconds} seconds.");
+				Warn($"Clean process was cancelled after {elapsed.TotalSeconds:0.000} seconds.");
 			else if (!success)
-				Error($"Clean process failed after {elapsed.TotalSeconds} seconds.");
+				Error($"Clean process failed after {elapsed.TotalSeconds:0.000} seconds.");
 			else
-				Info($"Clean process succeeded ({elapsed.TotalSeconds} seconds).");
+				Info($"Clean process succeeded ({elapsed.TotalSeconds:0.000} seconds).");
+		}
+
+		protected override void onItemStarted(ContentItem item, uint id)
+		{
+			if (Verbose)
+				Info($"Started building content item '{item.ItemPath}' at {MessageTime.ToLongTimeString()}.");
+		}
+
+		protected override void onItemFinished(ContentItem item, uint id, TimeSpan elapsed) =>
+			Info($"Finished building content item '{item.ItemPath}' ({elapsed.TotalSeconds:0.000} seconds).");
+
+		protected override void onItemFailed(ContentItem item, uint idx, string message) =>
+			Error($"Failed to build content item '{item.ItemPath}', reason: {message}.");
+
+		protected override void onItemSkipped(ContentItem item)
+		{
+			if (Verbose)
+				Info($"Skipped content item '{item.ItemPath}'.");
 		}
 	}
 }

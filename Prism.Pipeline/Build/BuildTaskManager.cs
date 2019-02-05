@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -32,6 +33,11 @@ namespace Prism.Build
 			private set { lock(_stopLock) { _shouldStop = value; } }
 		}
 
+		// Objects for tracking and dispensing items to build tasks
+		private readonly object _taskLock = new object();
+		private uint _itemIndex = 0;
+		private IEnumerator<KeyValuePair<string, ContentItem>> _itemEnumerator;
+
 		// The list of available tasks
 		private readonly BuildTask[] _tasks;
 
@@ -50,10 +56,23 @@ namespace Prism.Build
 
 		// Called by BuildTask instances to get the next available content item to start building
 		//   Returns false when no items are left
-		internal bool GetTaskItem(out ContentItem item)
+		internal bool GetTaskItem(out ContentItem item, out uint id)
 		{
-			item = null;
-			return false;
+			lock (_taskLock)
+			{
+				if (_itemEnumerator.MoveNext())
+				{
+					item = _itemEnumerator.Current.Value;
+					id = _itemIndex++;
+					return true;
+				}
+				else
+				{
+					item = null;
+					id = UInt32.MaxValue;
+					return false;
+				}
+			}
 		}
 
 		#region Task Functions
@@ -69,6 +88,10 @@ namespace Prism.Build
 			try
 			{
 				Engine.Logger.BuildStart(rebuild);
+
+				// Reset the item enumerator to the beginning
+				_itemEnumerator = Project.Items.GetEnumerator();
+				_itemIndex = 0;
 
 				// Ensure that the intermediate and output directories exist
 				if (!Directory.Exists(Project.Paths.IntermediateRoot))

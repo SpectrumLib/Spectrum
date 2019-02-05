@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using Prism.Content;
 
@@ -53,13 +54,24 @@ namespace Prism.Build
 		// The function that runs on the thread
 		private void _thread_func(bool rebuild)
 		{
-			// For testing
-			Thread.Sleep(500);
+			Stopwatch _timer = new Stopwatch();
 
 			// Iterate over the tasks
-			while (!Manager.ShouldStop && Manager.GetTaskItem(out ContentItem currentItem))
+			while (!Manager.ShouldStop && Manager.GetTaskItem(out ContentItem currentItem, out uint currentIdx))
 			{
+				// TODO: Check that the source file exists
+				// TODO: Check for skipping
 
+				_timer.Restart();
+
+				// Report start
+				Engine.Logger.ItemStart(currentItem, currentIdx);
+
+				// Testing only
+				Thread.Sleep(500);
+
+				// Report end
+				Engine.Logger.ItemFinished(currentItem, currentIdx, _timer.Elapsed);
 			}
 		}
 	}
