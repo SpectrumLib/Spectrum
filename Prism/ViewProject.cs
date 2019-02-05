@@ -47,13 +47,12 @@ namespace Prism
 				{
 					Console.WriteLine($"      Full Path:   {item.Paths.SourcePath}");
 					Console.WriteLine($"      Importer:    {item.ImporterName}");
-					Console.WriteLine($"                     {String.Join(";", item.ImporterArgs.Select(pair => $"{pair.Key}={pair.Value}"))}");
-					Console.WriteLine($"      Processor:   {item.ProcessorName}");
+					Console.WriteLine($"      Processor:   {item.ProcessorName} ({item.ProcessorArgs.Count})");
 					Console.WriteLine($"                     {String.Join(";", item.ProcessorArgs.Select(pair => $"{pair.Key}={pair.Value}"))}");
 				}
 				else
 				{
-					Console.WriteLine($"      Importer:    {item.ImporterName} ({item.ImporterArgs.Count})");
+					Console.WriteLine($"      Importer:    {item.ImporterName}");
 					Console.WriteLine($"      Processor:   {item.ProcessorName} ({item.ProcessorArgs.Count})");
 				}
 			}

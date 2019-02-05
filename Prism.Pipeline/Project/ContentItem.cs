@@ -18,8 +18,6 @@ namespace Prism.Content
 		public string ImporterName;
 		// The name of the processor type for this item
 		public string ProcessorName;
-		// The arguments for the importer
-		public List<(string Key, string Value)> ImporterArgs;
 		// The arguments for the processor
 		public List<(string Key, string Value)> ProcessorArgs;
 
@@ -27,12 +25,11 @@ namespace Prism.Content
 		public string ItemPath => Paths.ItemPath;
 		#endregion // Fields
 
-		private ContentItem(in ItemPaths paths, string iName, string pName, List<(string, string)> iArgs, List<(string, string)> pArgs)
+		private ContentItem(in ItemPaths paths, string iName, string pName, List<(string, string)> pArgs)
 		{
 			Paths = paths;
 			ImporterName = iName;
 			ProcessorName = pName;
-			ImporterArgs = iArgs;
 			ProcessorArgs = pArgs;
 		}
 
@@ -61,25 +58,8 @@ namespace Prism.Content
 				IntermediatePath = IOUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile)
 			};
 
-			// Parse the type paramters
-			List<(string, string)> iArgs = new List<(string, string)>();
+			// Parse the processor paramters
 			List<(string, string)> pArgs = new List<(string, string)>();
-			if (obj.TryGetValue("iargs", out var iaObj))
-			{
-				if (iaObj.JsonType == JsonType.String)
-				{
-					var argList = ((string)iaObj).Split(PAIR_SPLIT, StringSplitOptions.RemoveEmptyEntries);
-					foreach (var argPair in argList)
-					{
-						var keyVal = argPair.Split(KEYVALUE_SPLIT, 2);
-						if (keyVal.Length != 2)
-							throw new Exception($"The item '{path}' specified an invalid importer key/value pair ('{argPair}')");
-						iArgs.Add((keyVal[0], keyVal[1]));
-					}
-				}
-				else
-					throw new Exception($"The item '{path}' did not specify the importer arguments as a string");
-			}
 			if (obj.TryGetValue("pargs", out var paObj))
 			{
 				if (paObj.JsonType == JsonType.String)
@@ -98,7 +78,7 @@ namespace Prism.Content
 			}
 
 			// Return the item
-			return new ContentItem(paths, impName, proName, iArgs, pArgs);
+			return new ContentItem(paths, impName, proName, pArgs);
 		}
 	}
 }
