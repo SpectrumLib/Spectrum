@@ -20,9 +20,10 @@ namespace Prism
 		/// Writes the processed content data out to the content file to be consumed by a Spectrum application.
 		/// </summary>
 		/// <param name="input">The processed content data to write.</param>
-		public abstract void Write(Tin input);
+		/// <param name="writer">The stream used to write the content data to a content file.</param>
+		public abstract void Write(Tin input, ContentStream writer);
 
 		// The pipeline will ensure that input is of type Tin before this is called, so null will never be passed accidentally
-		void IContentWriter.Write(object input) => Write(input as Tin);
+		void IContentWriter.Write(object input, ContentStream writer) => Write(input as Tin, writer);
 	}
 }

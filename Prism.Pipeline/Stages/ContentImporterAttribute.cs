@@ -24,7 +24,7 @@ namespace Prism
 
 		private readonly string[] _extensions;
 		/// <summary>
-		/// The file extensions that this importer supports, prefixed with a '.'.
+		/// The file extensions that this importer is the default for, prefixed with a '.'.
 		/// </summary>
 		public IEnumerable<string> Extensions => _extensions;
 		#endregion // Fields
@@ -34,7 +34,7 @@ namespace Prism
 		/// </summary>
 		/// <param name="name">The display name of the content importer.</param>
 		/// <param name="defaultProcessor">The type of the default processor to use with this importer.</param>
-		/// <param name="extensions">A list of the extensions that this importer supports.</param>
+		/// <param name="extensions">A list of the extensions that this importer is the default for.</param>
 		public ContentImporterAttribute(string name, Type defaultProcessor, params string[] extensions)
 		{
 			DisplayName = name;
