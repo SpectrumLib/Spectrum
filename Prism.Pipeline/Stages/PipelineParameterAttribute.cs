@@ -4,9 +4,11 @@ namespace Prism
 {
 	/// <summary>
 	/// Decorates fields in <see cref="ContentProcessor{Tin, Tout, Twriter}"/> types that can have their values set
-	/// as parameters given in a content project file.
+	/// as parameters given in a content project file. If a <code>readonly</code> field is decorated with this
+	/// attribute, it is ignored and cannot be used. This field can only decorate values types and strings, any
+	/// other type is ignored and cannot be used.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
 	public sealed class PipelineParameterAttribute : Attribute
 	{
 		#region Fields
