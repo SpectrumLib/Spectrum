@@ -54,6 +54,11 @@ namespace Prism.Build
 				engine.Logger.EngineError($"The type '{type.FullName}' is a ContentProcessor but is missing the required attribute.");
 				return null;
 			}
+			if (!attrib.Enabled)
+			{
+				engine.Logger.EngineInfo($"Skipping ContentProcessor type '{type.FullName}' - it is marked as disabled.");
+				return null;
+			}
 
 			// Validate the attribute information
 			if (attrib.DisplayName == null)

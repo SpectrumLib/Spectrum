@@ -27,6 +27,12 @@ namespace Prism
 		/// The file extensions that this importer is the default for, prefixed with a '.'.
 		/// </summary>
 		public IEnumerable<string> Extensions => _extensions;
+
+		/// <summary>
+		/// Sets if the decorated importer is currently usable by the pipeline. Set this to false to prevent the 
+		/// pipeline from using the importer when it is auto-detected.
+		/// </summary>
+		public bool Enabled = true;
 		#endregion // Fields
 
 		/// <summary>

@@ -43,6 +43,11 @@ namespace Prism.Build
 				engine.Logger.EngineError($"The type '{type.FullName}' is a ContentImporter but is missing the required attribute.");
 				return null;
 			}
+			if (!attrib.Enabled)
+			{
+				engine.Logger.EngineInfo($"Skipping ContentImporter type '{type.FullName}' - it is marked as disabled.");
+				return null;
+			}
 
 			// Validate the attribute information
 			if (attrib.DefaultProcessor.GetInterface(ProcessorType.INTERFACE_NAME) == null)

@@ -15,6 +15,11 @@ namespace Prism
 		/// is just for use in the Prism tool.
 		/// </summary>
 		public readonly string DisplayName;
+		/// <summary>
+		/// Sets if the decorated processor is currently usable by the pipeline. Set this to false to prevent the 
+		/// pipeline from using the processor when it is auto-detected.
+		/// </summary>
+		public bool Enabled = true;
 		#endregion // Fields
 
 		/// <summary>
