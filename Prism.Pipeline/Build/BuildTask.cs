@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using Prism.Content;
 
@@ -24,6 +26,13 @@ namespace Prism.Build
 			private set { lock (_runLock) { _running = value; } }
 		}
 
+		// Holds the importer and processors instances used by this task
+		private readonly Dictionary<string, ImporterInstance> _importers;
+		private readonly Dictionary<string, ProcessorInstance> _processors;
+
+		// The output stream for the content
+		private ContentStream _contentStream;
+
 		// The thread instance
 		private Thread _thread = null;
 		#endregion // Fields
@@ -31,6 +40,9 @@ namespace Prism.Build
 		public BuildTask(BuildTaskManager manager)
 		{
 			Manager = manager;
+
+			_importers = new Dictionary<string, ImporterInstance>();
+			_processors = new Dictionary<string, ProcessorInstance>();
 		}
 
 		// Starts the thread and begins processing the content items
@@ -56,23 +68,159 @@ namespace Prism.Build
 		{
 			Stopwatch _timer = new Stopwatch();
 
-			// Iterate over the tasks
-			while (!Manager.ShouldStop && Manager.GetTaskItem(out ContentItem currentItem, out uint currentIdx))
-			{
-				// TODO: Check that the source file exists
-				// TODO: Check for skipping
+			// Create the content stream
+			if (_contentStream == null)
+				_contentStream = new ContentStream();
 
+			// Iterate over the tasks
+			while (!Manager.ShouldStop && Manager.GetTaskItem(out ContentItem currItem, out uint currIdx))
+			{
+				// Report start
+				Engine.Logger.ItemStart(currItem, currIdx);
 				_timer.Restart();
 
-				// Report start
-				Engine.Logger.ItemStart(currentItem, currentIdx);
+				// Check for the requested importer and processor
+				if (!_importers.ContainsKey(currItem.ImporterName))
+				{
+					if (Engine.StageCache.Importers.ContainsKey(currItem.ImporterName))
+						_importers.Add(currItem.ImporterName, new ImporterInstance(Engine.StageCache.Importers[currItem.ImporterName]));
+					else
+					{
+						Engine.Logger.ItemFailed(currItem, currIdx, "The item requested an importer type that does not exist");
+						continue;
+					}
+				}
+				if (!_processors.ContainsKey(currItem.ProcessorName))
+				{
+					if (Engine.StageCache.Processors.ContainsKey(currItem.ProcessorName))
+						_processors.Add(currItem.ProcessorName, new ProcessorInstance(Engine.StageCache.Processors[currItem.ProcessorName]));
+					else
+					{
+						Engine.Logger.ItemFailed(currItem, currIdx, "The item requested an processor type that does not exist");
+						continue;
+					}
+				}
+				var importer = _importers[currItem.ImporterName];
+				var processor = _processors[currItem.ProcessorName];
 
-				// Testing only
-				Thread.Sleep(500);
+				// Validate stage compatibility
+				if (importer.Type.OutputType != processor.Type.InputType)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "The item specified incompatible stages");
+					continue;
+				}
+
+				// Make sure the source file exists
+				if (!File.Exists(currItem.Paths.SourcePath))
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "Could not find the source file for the item");
+					continue;
+				}
+
+				// Delete the intermediate file
+				try
+				{
+					if (File.Exists(currItem.Paths.IntermediatePath))
+						File.Delete(currItem.Paths.IntermediatePath);
+				}
+				catch
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "Could not delete the output file to rebuild the item");
+					continue;
+				}
+
+				// Early stop check
+				if (Manager.ShouldStop)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "The build process was stopped while the item was being built");
+					break;
+				}
+
+				// Run the importer
+				FileStream importStream = null;
+				FileInfo importInfo = null;
+				try
+				{
+					importInfo = new FileInfo(currItem.Paths.SourcePath);
+					importStream = importInfo.Open(FileMode.Open, FileAccess.Read, FileShare.None);
+				}
+				catch (Exception e)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, $"The item source file could not be opened, {e.Message}");
+					continue;
+				}
+				object importedData = null;
+				try
+				{
+					ImporterContext ctx = new ImporterContext(importInfo);
+					importedData = importer.Instance.Import(importStream, ctx);
+					if (importedData == null)
+					{
+						Engine.Logger.ItemFailed(currItem, currIdx, "The importer for the item did not produce any data");
+						continue;
+					}
+				}
+				catch (Exception e)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, $"Unhandled exception in importer, {e.Message} ({e.GetType().Name})");
+					continue;
+				}
+				finally
+				{
+					importStream.Dispose();
+				}
+
+				// Early stop check
+				if (Manager.ShouldStop)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "The build process was stopped while the item was being built");
+					break;
+				}
+
+				// Run the processor
+				object processedData = null;
+				try
+				{
+					ProcessorContext ctx = new ProcessorContext();
+					processedData = processor.Instance.Process(importedData, ctx);
+					if (processedData == null)
+					{
+						Engine.Logger.ItemFailed(currItem, currIdx, "The processor for the item did not produce any data");
+						continue;
+					}
+				}
+				catch (Exception e)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, $"Unhandled exception in processor, {e.Message} ({e.GetType().Name})");
+					continue;
+				}
+
+				// Early stop check
+				if (Manager.ShouldStop)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "The build process was stopped while the item was being built");
+					break;
+				}
+
+				// Run the writer
+				try
+				{
+					_contentStream.Reset(currItem.Paths.IntermediatePath);
+					processor.WriterInstance.Write(processedData, _contentStream);
+					_contentStream.Flush();
+				}
+				catch (Exception e)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, $"Unhandled exception in writer, {e.Message} ({e.GetType().Name})");
+					continue;
+				}
 
 				// Report end
-				Engine.Logger.ItemFinished(currentItem, currentIdx, _timer.Elapsed);
+				Engine.Logger.ItemFinished(currItem, currIdx, _timer.Elapsed);
 			}
+
+			// Wait for the final output to be complete
+			_contentStream.Reset(null);
 		}
 	}
 }
