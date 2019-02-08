@@ -32,6 +32,7 @@ namespace Prism.Build
 		}
 
 		// Resets all settable fields back to default, and sets the ones that are included in the item args
+		//  If the parse from the content project string fails, then the field takes on its default value
 		public void UpdateFields(BuildEngine engine, ContentItem item, uint id, List<(string Key, string Value)> args)
 		{
 			foreach (var field in Type.Fields)
@@ -50,6 +51,7 @@ namespace Prism.Build
 					{
 						engine.Logger.EngineError($"The content item '{item.ItemPath}' specified an invalid value for the parameter" +
 							$" '{field.ParamName}'.");
+						field.Info.SetValue(Instance, field.DefaultValue);
 					}
 				}
 			}

@@ -14,6 +14,11 @@ namespace Prism
 	///		<item><c>string</c>s.</item>
 	/// </list>
 	/// </para>
+	/// <para>
+	/// For every content item, each parameter will be set back to its default value, which is the value it is
+	/// assigned in a new unaltered instance of the processor. Other fields, not decorated with this attribute,
+	/// will not have their values changed by the build engine.
+	/// </para>
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
 	public sealed class PipelineParameterAttribute : Attribute
@@ -25,30 +30,27 @@ namespace Prism
 
 		#region Fields
 		/// <summary>
-		/// The default value assigned to the parameter.
-		/// </summary>
-		public readonly object DefaultValue;
-		/// <summary>
 		/// The optional name of the parameter as it is specified in content projects. If null, the name of the field
 		/// that the attribute decorates will be used.
 		/// </summary>
-		public string Name = null;
+		public readonly string Name;
 		/// <summary>
 		/// An optional description of what the parameter affects in the processor.
 		/// </summary>
-		public string Description = "";
+		public readonly string Description;
+
+		internal object DefaultValue; // The default value for the attribute, assigned by the build engine
 		#endregion // Fields
 
 		/// <summary>
 		/// Creates a new pipeline parameter attribute.
 		/// </summary>
-		/// <param name="defaultValue">
-		/// The default value to assign to the parameter if a custom one is not provided. Must be of the same type
-		/// as the decorated parameter, or a type convertable to the same type.
-		/// </param>
-		public PipelineParameterAttribute(object defaultValue)
+		/// <param name="name">The value for the <see cref="Name"/> field.</param>
+		/// <param name="description">The value for the <see cref="Description"/> field.</param>
+		public PipelineParameterAttribute(string name = null, string description = "")
 		{
-			DefaultValue = defaultValue;
+			Name = name;
+			Description = description;
 		}
 	}
 }

@@ -6,8 +6,8 @@ namespace Prism.Builtin
 	[ContentProcessor("Passthrough Processor")]
 	internal sealed class PassthroughProcessor : ContentProcessor<byte[], byte[], PassthroughWriter>
 	{
-		[PipelineParameter(4)]
-		public int Test;
+		[PipelineParameter]
+		public int Test = 4;
 
 		public override byte[] Process(byte[] input, ProcessorContext ctx)
 		{

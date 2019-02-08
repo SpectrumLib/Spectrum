@@ -134,9 +134,10 @@ namespace Prism.Build
 			Converter = TypeDescriptor.GetConverter(FieldType);
 		}
 
-		// This is guarenteed to already by a valid ContentProcessor type
+		// This is guarenteed to already a valid ContentProcessor type
 		public static ProcessorField[] LoadFromType(BuildEngine engine, Type type)
 		{
+			var valInst = Activator.CreateInstance(type); // Used to get the default values for all of the fields
 			return type
 				.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
 				.Select(f => (field: f, attrib: (PipelineParameterAttribute)f.GetCustomAttribute(ATTRIBUTE_TYPE, false)))
@@ -152,16 +153,7 @@ namespace Prism.Build
 						engine.Logger.EngineWarn($"The ContentProcessor type '{type.Name}' declared the pipeline parameter '{f.field.Name}' with an invalid type.");
 						return false;
 					}
-					try
-					{
-						var converter = TypeDescriptor.GetConverter(f.field.FieldType);
-						var defVal = converter.ConvertFrom(f.attrib.DefaultValue);
-					}
-					catch
-					{
-						engine.Logger.EngineWarn($"The ContentProcessor type '{type.Name}' provided an invalid default value for the pipeline parameter '{f.field.Name}'.");
-						return false;
-					}
+					f.attrib.DefaultValue = f.field.GetValue(valInst);
 					return true;
 				})
 				.Select(f => new ProcessorField(f.field, f.attrib))

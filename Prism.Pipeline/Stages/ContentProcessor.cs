@@ -3,7 +3,9 @@
 namespace Prism
 {
 	/// <summary>
-	/// Base class for implementing content file processing logic, the second step in the content pipeline.
+	/// Base class for implementing content file processing logic, the second step in the content pipeline. Derived
+	/// types should be as lightweight as possible, as the build engine will create at least two instances of each
+	/// type, if not more.
 	/// </summary>
 	/// <typeparam name="Tin">The type containing the data created by a <see cref="ContentImporter{Tout}"/> instance.</typeparam>
 	/// <typeparam name="Tout">The type containing the data passed to a <see cref="ContentWriter{Tin}"/> instance.</typeparam>
