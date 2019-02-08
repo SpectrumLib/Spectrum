@@ -8,7 +8,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectrum.Native", "Spectrum
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Prism.Pipeline", "Prism.Pipeline\Prism.Pipeline.csproj", "{F8B27D5B-9F48-4B25-9729-BEE73EBAAEC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Prism", "Prism\Prism.csproj", "{27D3D0FD-39E0-4524-9680-9C6BDE0BB6A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Prism", "Prism\Prism.csproj", "{27D3D0FD-39E0-4524-9680-9C6BDE0BB6A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

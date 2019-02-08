@@ -25,6 +25,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <PlatformTarget>x64</PlatformTarget>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,22 +42,22 @@
     </Reference>
   </ItemGroup>
 
+  <PropertyGroup>
+    <IsTravisCI>true</IsTravisCI>
+    <IsTravisCI Condition="'$(OS)' != 'Unix' or !Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">false</IsTravisCI>
+  </PropertyGroup>
+
   <!-- See https://www.meziantou.net/2018/08/28/merging-assemblies-using-ilrepack -->
-  <!-- Don't run this on TravisCI, as the change to using mono instead of .NET Core breaks ILRepack -->
-  <Target Name="Repack" AfterTargets="Build" Condition="'$(OS)' != 'Unix' or !Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">
+  <Target Name="Repack" AfterTargets="Build" Condition="'$(Configuration)'=='Release' and !$(IsTravisCI)">
     <PropertyGroup>
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:exe /internalize /parallel /log:ILRepack.log</RepackFlags>
-      <IgnoreExit>false</IgnoreExit>
-      <IgnoreExit Condition="'$(OS)'=='Unix' and Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">true</IgnoreExit>
+      <RepackInput>Prism.tmp.exe Prism.Pipeline.dll</RepackInput>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Prism.exe" DestinationFiles="$(OUTDIR)/Prism.tmp.exe" />
-    <Exec
-      WorkingDirectory="$(OUTDIR)"
-      IgnoreExitCode="$(IgnoreExit)"
-      Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) Prism.tmp.exe Prism.Pipeline.dll /out:Prism.exe" />
+    <Exec WorkingDirectory="$(OUTDIR)" Command="$(RepackPrefix) $(RepackExe) $(RepackFlags) $(RepackInput) /out:Prism.exe" />
     <Delete Files="$(OUTDIR)/Prism.tmp.exe" />
   </Target>
 </Project>
