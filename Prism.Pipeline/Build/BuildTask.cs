@@ -178,6 +178,7 @@ namespace Prism.Build
 				}
 
 				// Run the processor
+				Engine.Logger.ItemContinue(currItem, currIdx, BuildLogger.ContinueStage.Processing);
 				object processedData = null;
 				try
 				{
@@ -203,6 +204,7 @@ namespace Prism.Build
 				}
 
 				// Run the writer
+				Engine.Logger.ItemContinue(currItem, currIdx, BuildLogger.ContinueStage.Writing);
 				try
 				{
 					_contentStream.Reset(currItem.Paths.IntermediatePath);

@@ -59,6 +59,9 @@ namespace Prism.Build
 		internal void ItemStart(ContentItem item, uint id) =>
 			_messages.Enqueue(new Message(MessageType.ItemStarted, _startTime + _timer.Elapsed, item, id));
 
+		internal void ItemContinue(ContentItem item, uint id, ContinueStage stage) =>
+			_messages.Enqueue(new Message(MessageType.ItemContinued, _startTime + _timer.Elapsed, item, id, stage));
+
 		internal void ItemFinished(ContentItem item, uint id, TimeSpan elapsed) =>
 			_messages.Enqueue(new Message(MessageType.ItemFinished, _startTime + _timer.Elapsed, item, id, elapsed));
 
@@ -86,6 +89,7 @@ namespace Prism.Build
 					case MessageType.CleanStart: onCleanStart(MessageTime); break;
 					case MessageType.CleanEnd: onCleanEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1], (bool)msg.Args[2]); break;
 					case MessageType.ItemStarted: onItemStarted((ContentItem)msg.Args[0], (uint)msg.Args[1]); break;
+					case MessageType.ItemContinued: onItemContinued((ContentItem)msg.Args[0], (uint)msg.Args[1], (ContinueStage)msg.Args[2]); break;
 					case MessageType.ItemFinished: onItemFinished((ContentItem)msg.Args[0], (uint)msg.Args[1], (TimeSpan)msg.Args[2]); break;
 					case MessageType.ItemFailed: onItemFailed((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemSkipped: onItemSkipped((ContentItem)msg.Args[0]); break;
@@ -113,6 +117,8 @@ namespace Prism.Build
 
 		// Called when processing on a content item starts
 		protected abstract void onItemStarted(ContentItem item, uint id);
+		// Called when a content item is advanced through the pipeline stages
+		protected abstract void onItemContinued(ContentItem item, uint id, ContinueStage stage);
 		// Called when a content item is finished processing
 		protected abstract void onItemFinished(ContentItem item, uint id, TimeSpan elapsed);
 		// Called when the build process for a content item fails
@@ -146,10 +152,18 @@ namespace Prism.Build
 			CleanStart,
 			CleanEnd,
 			ItemStarted,
+			ItemContinued,
 			ItemFinished,
 			ItemFailed,
 			ItemSkipped
 		}
 		#endregion // Message Impl
+
+		// Represents the pipeline stage for ItemContinue messages
+		public enum ContinueStage
+		{
+			Processing,
+			Writing
+		}
 	}
 }

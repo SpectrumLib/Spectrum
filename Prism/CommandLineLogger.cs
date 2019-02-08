@@ -81,16 +81,19 @@ namespace Prism
 				Info($"Started building content item '{item.ItemPath}' at {MessageTime.ToLongTimeString()}.");
 		}
 
+		protected override void onItemContinued(ContentItem item, uint id, ContinueStage stage)
+		{
+			if (Verbose)
+				Info($"Content item '{item.ItemPath}' is now in the {stage.ToString().ToLower()} stage.");
+		}
+
 		protected override void onItemFinished(ContentItem item, uint id, TimeSpan elapsed) =>
 			Info($"Finished building content item '{item.ItemPath}' ({elapsed.TotalSeconds:0.000} seconds).");
 
 		protected override void onItemFailed(ContentItem item, uint idx, string message) =>
 			Error($"Failed to build content item '{item.ItemPath}', reason: {message}.");
 
-		protected override void onItemSkipped(ContentItem item)
-		{
-			if (Verbose)
-				Info($"Skipped content item '{item.ItemPath}'.");
-		}
+		protected override void onItemSkipped(ContentItem item) =>
+			Info($"Skipped content item '{item.ItemPath}'.");
 	}
 }
