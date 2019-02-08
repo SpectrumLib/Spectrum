@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
@@ -112,7 +113,6 @@ namespace Prism.Build
 	internal class ProcessorField
 	{
 		public static readonly Type ATTRIBUTE_TYPE = typeof(PipelineParameterAttribute);
-		public static readonly Type STRING_TYPE = typeof(String);
 
 		#region Fields
 		public readonly FieldInfo Info;
@@ -122,6 +122,8 @@ namespace Prism.Build
 		public readonly PipelineParameterAttribute Attribute;
 		public string ParamName => Attribute.Name ?? Info.Name; // The name as it appears in the content project file
 		public readonly object DefaultValue;
+
+		public readonly TypeConverter Converter; // The converter used to make a value from a string
 		#endregion // Fields
 
 		private ProcessorField(FieldInfo info, PipelineParameterAttribute attrib)
@@ -129,6 +131,7 @@ namespace Prism.Build
 			Info = info;
 			Attribute = attrib;
 			DefaultValue = Attribute.DefaultValue ?? (FieldType.IsValueType ? Activator.CreateInstance(FieldType) : "");
+			Converter = TypeDescriptor.GetConverter(FieldType);
 		}
 
 		// This is guarenteed to already by a valid ContentProcessor type
@@ -136,9 +139,32 @@ namespace Prism.Build
 		{
 			return type
 				.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-				.Select(f => (field: f, attrib: f.GetCustomAttribute(ATTRIBUTE_TYPE, false)))
-				.Where(f => f.attrib != null && !f.field.IsInitOnly && (f.field.FieldType.IsValueType || (f.field.FieldType == STRING_TYPE)))
-				.Select(f => new ProcessorField(f.field, (PipelineParameterAttribute)f.attrib))
+				.Select(f => (field: f, attrib: (PipelineParameterAttribute)f.GetCustomAttribute(ATTRIBUTE_TYPE, false)))
+				.Where(f => f.attrib != null)
+				.Where(f => {
+					if (f.field.IsInitOnly)
+					{
+						engine.Logger.EngineWarn($"The ContentProcessor type '{type.Name}' cannot have a readonly pipeline parameter ({f.field.Name}).");
+						return false;
+					}
+					if (!PipelineParameterAttribute.VALID_TYPES.Contains(f.field.FieldType))
+					{
+						engine.Logger.EngineWarn($"The ContentProcessor type '{type.Name}' declared the pipeline parameter '{f.field.Name}' with an invalid type.");
+						return false;
+					}
+					try
+					{
+						var converter = TypeDescriptor.GetConverter(f.field.FieldType);
+						var defVal = converter.ConvertFrom(f.attrib.DefaultValue);
+					}
+					catch
+					{
+						engine.Logger.EngineWarn($"The ContentProcessor type '{type.Name}' provided an invalid default value for the pipeline parameter '{f.field.Name}'.");
+						return false;
+					}
+					return true;
+				})
+				.Select(f => new ProcessorField(f.field, f.attrib))
 				.ToArray();
 		}
 	}

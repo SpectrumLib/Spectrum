@@ -48,7 +48,7 @@ namespace Prism
 					Console.WriteLine($"      Full Path:   {item.Paths.SourcePath}");
 					Console.WriteLine($"      Importer:    {item.ImporterName}");
 					Console.WriteLine($"      Processor:   {item.ProcessorName} ({item.ProcessorArgs.Count})");
-					Console.WriteLine($"                     {String.Join(";", item.ProcessorArgs.Select(pair => $"{pair.Key}={pair.Value}"))}");
+					Console.WriteLine($"                     {(item.ProcessorArgs.Count > 0 ? String.Join(";", item.ProcessorArgs.Select(pair => $"{pair.Key}={pair.Value}")) : "No Args")}");
 				}
 				else
 				{
