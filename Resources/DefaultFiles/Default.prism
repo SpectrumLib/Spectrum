@@ -6,9 +6,9 @@
 	},
 	"items": {
 		"example_file.txt": {
-			"itype": "DefaultImporter",
-			"ptype": "DefaultProcessor",
-			"pargs": "arg1=value1;arg2=value2"
+			"itype": "PassthroughImporter",
+			"ptype": "PassthroughProcessor",
+			"pargs": ""
 		}
 	}
 }

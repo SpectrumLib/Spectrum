@@ -59,6 +59,7 @@ namespace Prism
 					Console.WriteLine($"EXCEPTION: ({e.GetType().Name})");
 					Console.WriteLine(e.StackTrace);
 				}
+				return -1;
 			}
 
 			// Start the action task and logging

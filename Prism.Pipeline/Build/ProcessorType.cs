@@ -48,7 +48,7 @@ namespace Prism.Build
 
 			// Must have the correct attribute
 			ContentProcessorAttribute attrib =
-				(ContentProcessorAttribute)type.GetCustomAttributes(ATTRIBUTE_TYPE, false).FirstOrDefault();
+				(ContentProcessorAttribute)type.GetCustomAttributes(ATTRIBUTE_TYPE, false)?.FirstOrDefault();
 			if (attrib == null)
 			{
 				engine.Logger.EngineError($"The type '{type.FullName}' is a ContentProcessor but is missing the required attribute.");
@@ -80,7 +80,7 @@ namespace Prism.Build
 			}
 
 			// Validate the specified content writer
-			Type writerType = type.GetGenericArguments()[2];
+			Type writerType = type.BaseType.GetGenericArguments()[2];
 			if (writerType.IsAbstract)
 			{
 				WriterError(engine, writerType, "is abstract and cannot be instantiated.");

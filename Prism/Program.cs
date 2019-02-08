@@ -35,8 +35,7 @@ namespace Prism
 			bool verbose = ArgParser.Verbose(args);
 
 			// Check for a valid action
-			string action;
-			if (!GetAction(args, out action))
+			if (!GetAction(args, out string action))
 			{
 				Console.WriteLine($"ERROR: The action '{action}' is not valid. Please use one of: {String.Join(", ", VALID_ACTIONS)}.");
 				return -1;

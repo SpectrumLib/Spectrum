@@ -37,7 +37,7 @@ namespace Prism.Build
 
 			// Must have the correct attribute
 			ContentImporterAttribute attrib = 
-				(ContentImporterAttribute)type.GetCustomAttributes(ATTRIBUTE_TYPE, false).FirstOrDefault();
+				(ContentImporterAttribute)type.GetCustomAttributes(ATTRIBUTE_TYPE, false)?.FirstOrDefault();
 			if (attrib == null)
 			{
 				engine.Logger.EngineError($"The type '{type.FullName}' is a ContentImporter but is missing the required attribute.");
@@ -50,9 +50,9 @@ namespace Prism.Build
 			}
 
 			// Validate the attribute information
-			if (attrib.DefaultProcessor.GetInterface(ProcessorType.INTERFACE_NAME) == null)
+			if (attrib.DefaultProcessor?.GetInterface(ProcessorType.INTERFACE_NAME) == null)
 			{
-				TypeError(engine, type, $"has an invalid default ContentProcessor type '{attrib.DefaultProcessor.FullName}'");
+				TypeError(engine, type, $"has an invalid default ContentProcessor type '{attrib.DefaultProcessor?.FullName}'");
 				return null;
 			}
 			if (attrib.DisplayName == null)

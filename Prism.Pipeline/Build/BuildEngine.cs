@@ -12,6 +12,8 @@ namespace Prism.Build
 		public readonly ContentProject Project; // The loaded content project
 		public readonly BuildLogger Logger; // The logger for this engine
 
+		public readonly StageCache StageCache; // Hold the importer & processor types available to this engine
+
 		private readonly BuildTaskManager _manager;
 		public bool Busy => _manager.Busy; // If there is a currently a build/clean process happening
 
@@ -24,6 +26,8 @@ namespace Prism.Build
 			Project = project ?? throw new ArgumentNullException(nameof(project));
 			Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			Logger.Engine = this;
+
+			StageCache = new StageCache(this);
 
 			_manager = new BuildTaskManager(this, threads);
 		}

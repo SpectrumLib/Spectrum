@@ -4,7 +4,7 @@ using System.IO;
 namespace Prism.Builtin
 {
 	// Loads the file's contents into memory unaltered
-	[ContentImporter("Passthrough Importer", null, ".txt")]
+	[ContentImporter("Passthrough Importer", typeof(PassthroughProcessor), ".txt")]
 	internal sealed class PassthroughImporter : ContentImporter<byte[]>
 	{
 		public override byte[] Import(FileStream stream, ImporterContext ctx)
