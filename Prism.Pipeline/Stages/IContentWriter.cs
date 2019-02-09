@@ -7,6 +7,6 @@ namespace Prism
 	{
 		Type InputType { get; }
 
-		void Write(object input, ContentStream writer);
+		void Write(object input, ContentStream writer, WriterContext ctx);
 	}
 }

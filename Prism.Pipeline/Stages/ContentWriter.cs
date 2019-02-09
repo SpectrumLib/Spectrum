@@ -21,9 +21,10 @@ namespace Prism
 		/// </summary>
 		/// <param name="input">The processed content data to write.</param>
 		/// <param name="writer">The stream used to write the content data to a content file.</param>
-		public abstract void Write(Tin input, ContentStream writer);
+		/// <param name="ctx">The context information about the current processing step.</param>
+		public abstract void Write(Tin input, ContentStream writer, WriterContext ctx);
 
 		// The pipeline will ensure that input is of type Tin before this is called, so null will never be passed accidentally
-		void IContentWriter.Write(object input, ContentStream writer) => Write(input as Tin, writer);
+		void IContentWriter.Write(object input, ContentStream writer, WriterContext ctx) => Write(input as Tin, writer, ctx);
 	}
 }

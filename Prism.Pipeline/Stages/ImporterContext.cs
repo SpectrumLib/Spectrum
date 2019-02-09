@@ -7,7 +7,7 @@ namespace Prism
 	/// Contains information and objects related to the content importing logic of a <see cref="ContentImporter{Tout}"/>
 	/// instance.
 	/// </summary>
-	public class ImporterContext
+	public sealed class ImporterContext
 	{
 		#region Fields
 		private readonly FileInfo _fileInfo;
@@ -27,11 +27,17 @@ namespace Prism
 		/// The date and time that the current content file was last changed.
 		/// </summary>
 		public DateTime LastWriteTime => _fileInfo.LastWriteTime;
+
+		/// <summary>
+		/// The logger to use to report messages inside of ContentImporter instances.
+		/// </summary>
+		public readonly PipelineLogger Logger;
 		#endregion // Fields
 
-		internal ImporterContext(FileInfo finfo)
+		internal ImporterContext(FileInfo finfo, PipelineLogger logger)
 		{
 			_fileInfo = finfo;
+			Logger = logger;
 		}
 	}
 }

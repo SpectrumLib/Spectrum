@@ -155,7 +155,7 @@ namespace Prism.Build
 				try
 				{
 					_logger.UpdateStageName(currItem.ImporterName);
-					ImporterContext ctx = new ImporterContext(importInfo);
+					ImporterContext ctx = new ImporterContext(importInfo, _logger);
 					importedData = importer.Instance.Import(importStream, ctx);
 					if (importedData == null)
 					{
@@ -186,7 +186,7 @@ namespace Prism.Build
 				try
 				{
 					_logger.UpdateStageName(currItem.ProcessorName);
-					ProcessorContext ctx = new ProcessorContext();
+					ProcessorContext ctx = new ProcessorContext(_logger);
 					processedData = processor.Instance.Process(importedData, ctx);
 					if (processedData == null)
 					{
@@ -213,7 +213,8 @@ namespace Prism.Build
 				{
 					_logger.UpdateStageName(processor.Type.WriterType.Name);
 					_contentStream.Reset(currItem.Paths.IntermediatePath);
-					processor.WriterInstance.Write(processedData, _contentStream);
+					WriterContext ctx = new WriterContext(_logger);
+					processor.WriterInstance.Write(processedData, _contentStream, ctx);
 					_contentStream.Flush();
 				}
 				catch (Exception e)
