@@ -67,6 +67,7 @@ namespace Prism.Build
 		private void _thread_func(bool rebuild)
 		{
 			Stopwatch _timer = new Stopwatch();
+			PipelineLogger _logger = new PipelineLogger(Engine);
 
 			// Create the content stream
 			if (_contentStream == null)
@@ -78,6 +79,7 @@ namespace Prism.Build
 				// Report start
 				Engine.Logger.ItemStart(currItem, currIdx);
 				_timer.Restart();
+				_logger.UpdateItem(currItem, currIdx);
 
 				// Check for the requested importer and processor
 				if (!_importers.ContainsKey(currItem.ImporterName))
@@ -152,6 +154,7 @@ namespace Prism.Build
 				object importedData = null;
 				try
 				{
+					_logger.UpdateStageName(currItem.ImporterName);
 					ImporterContext ctx = new ImporterContext(importInfo);
 					importedData = importer.Instance.Import(importStream, ctx);
 					if (importedData == null)
@@ -182,6 +185,7 @@ namespace Prism.Build
 				object processedData = null;
 				try
 				{
+					_logger.UpdateStageName(currItem.ProcessorName);
 					ProcessorContext ctx = new ProcessorContext();
 					processedData = processor.Instance.Process(importedData, ctx);
 					if (processedData == null)
@@ -207,6 +211,7 @@ namespace Prism.Build
 				Engine.Logger.ItemContinue(currItem, currIdx, BuildLogger.ContinueStage.Writing);
 				try
 				{
+					_logger.UpdateStageName(processor.Type.WriterType.Name);
 					_contentStream.Reset(currItem.Paths.IntermediatePath);
 					processor.WriterInstance.Write(processedData, _contentStream);
 					_contentStream.Flush();

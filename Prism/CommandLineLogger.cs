@@ -95,5 +95,17 @@ namespace Prism
 
 		protected override void onItemSkipped(ContentItem item) =>
 			Info($"Skipped content item '{item.ItemPath}'.");
+
+		protected override void onItemInfo(ContentItem item, uint id, string message)
+		{
+			if (Verbose)
+				Info($"Content item '{item.ItemPath}' info: {message}");
+		}
+
+		protected override void onItemWarn(ContentItem item, uint id, string message) =>
+			Warn($"Content item '{item.ItemPath}' warning: {message}");
+
+		protected override void onItemError(ContentItem item, uint id, string message) =>
+			Error($"Content item '{item.ItemPath}' error: {message}");
 	}
 }

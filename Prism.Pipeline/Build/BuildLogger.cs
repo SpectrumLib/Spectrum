@@ -70,13 +70,21 @@ namespace Prism.Build
 
 		internal void ItemSkipped(ContentItem item) =>
 			_messages.Enqueue(new Message(MessageType.ItemSkipped, _startTime + _timer.Elapsed, item));
+
+		internal void ItemInfo(ContentItem item, uint id, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemInfo, _startTime + _timer.Elapsed, item, id, message));
+
+		internal void ItemWarn(ContentItem item, uint id, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemWarning, _startTime + _timer.Elapsed, item, id, message));
+
+		internal void ItemError(ContentItem item, uint id, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemError, _startTime + _timer.Elapsed, item, id, message));
 		#endregion // Internal Logging
 
 		// Called on the main thread in the Prism tool to process all queued messages
 		public void Poll()
 		{
-			Message msg;
-			while (_messages.TryDequeue(out msg))
+			while (_messages.TryDequeue(out Message msg))
 			{
 				MessageTime = msg.Time;
 				switch (msg.Type)
@@ -93,6 +101,9 @@ namespace Prism.Build
 					case MessageType.ItemFinished: onItemFinished((ContentItem)msg.Args[0], (uint)msg.Args[1], (TimeSpan)msg.Args[2]); break;
 					case MessageType.ItemFailed: onItemFailed((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemSkipped: onItemSkipped((ContentItem)msg.Args[0]); break;
+					case MessageType.ItemInfo: onItemInfo((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
+					case MessageType.ItemWarning: onItemWarn((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
+					case MessageType.ItemError: onItemError((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 				}
 			}
 		}
@@ -125,6 +136,13 @@ namespace Prism.Build
 		protected abstract void onItemFailed(ContentItem item, uint idx, string message);
 		// Called when a content item is skipped by the build engine
 		protected abstract void onItemSkipped(ContentItem item);
+
+		// Called from a pipeline stage to relay normal-level information about a content item build process
+		protected abstract void onItemInfo(ContentItem item, uint id, string message);
+		// Called from a pipeline stage to relay warning-level information about a content item build process
+		protected abstract void onItemWarn(ContentItem item, uint id, string message);
+		// Called from a pipeline stage to relay error-level information about a content item build process
+		protected abstract void onItemError(ContentItem item, uint id, string message);
 		#endregion // Message Handlers
 
 		#region Message Impl
@@ -155,7 +173,10 @@ namespace Prism.Build
 			ItemContinued,
 			ItemFinished,
 			ItemFailed,
-			ItemSkipped
+			ItemSkipped,
+			ItemInfo,
+			ItemWarning,
+			ItemError
 		}
 		#endregion // Message Impl
 
