@@ -42,12 +42,9 @@ namespace Prism.Build
 					field.Info.SetValue(Instance, field.DefaultValue);
 				else
 				{
-					try
-					{
-						var val = field.Converter.ConvertFromString(args[idx].Value);
-						field.Info.SetValue(Instance, val);
-					}
-					catch
+					if (ConverterCache.Convert(field.FieldType, args[idx].Value, out object parsed))
+						field.Info.SetValue(Instance, parsed);
+					else
 					{
 						engine.Logger.EngineError($"The content item '{item.ItemPath}' specified an invalid value for the parameter" +
 							$" '{field.ParamName}'.");

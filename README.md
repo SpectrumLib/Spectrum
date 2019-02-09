@@ -9,6 +9,9 @@ While Vulkan works on iOS and Android devices, this library is currently designe
 
 The library and associated tools are licensed under the GNU LGPL v3 license. In short, this license forces modified and derivative versions of this library to be released open source with the same license, but allows private and commercial applications to interface with this library without having to be open source themselves. Please see [LICENSE](LICENSE) for the full text. The libraries and projects used by Spectrum belong to their respecive authors, and are used (and rehosted, when applicable), under their original licenses.
 
+## Prism
+Prism is the content building tool used to pre-process and package content files for faster runtime loading and easier application distribution. It is very similar to the content pipeline for Monogame, in that it has a staged pipeline architecture that can be modified to include additional content processing, and can be used in either command line or through a UI. However, it packages the content into large cache files (similar to Unity) so applications can be distributed with a minimal number of files. Its project file format is also written in simple Json, making it easier to understand and manage the project files by hand, if needed/wanted.
+
 ## Building from Source
 **TODO**
 

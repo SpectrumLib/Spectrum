@@ -12,6 +12,7 @@ namespace Prism
 	///		<item>All standard signed and unsigned integer types (i.e. <c>sbyte</c> to <c>ulong</c>).</item>
 	///		<item>All standard floating point types (i.e. <c>float</c>, <c>double</c>, and <c>decimal</c>).</item>
 	///		<item><c>string</c>s.</item>
+	///		<item><c>bool</c>s.</item>
 	/// </list>
 	/// </para>
 	/// <para>
@@ -23,11 +24,6 @@ namespace Prism
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
 	public sealed class PipelineParameterAttribute : Attribute
 	{
-		internal static readonly Type[] VALID_TYPES = {
-			typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long),
-			typeof(ulong), typeof(float), typeof(double), typeof(decimal), typeof(string)
-		};
-
 		#region Fields
 		/// <summary>
 		/// The optional name of the parameter as it is specified in content projects. If null, the name of the field
@@ -38,8 +34,6 @@ namespace Prism
 		/// An optional description of what the parameter affects in the processor.
 		/// </summary>
 		public readonly string Description;
-
-		internal object DefaultValue; // The default value for the attribute, assigned by the build engine
 		#endregion // Fields
 
 		/// <summary>

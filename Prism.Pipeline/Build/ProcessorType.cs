@@ -126,11 +126,11 @@ namespace Prism.Build
 		public readonly TypeConverter Converter; // The converter used to make a value from a string
 		#endregion // Fields
 
-		private ProcessorField(FieldInfo info, PipelineParameterAttribute attrib)
+		private ProcessorField(FieldInfo info, PipelineParameterAttribute attrib, object defaultValue)
 		{
 			Info = info;
 			Attribute = attrib;
-			DefaultValue = Attribute.DefaultValue ?? (FieldType.IsValueType ? Activator.CreateInstance(FieldType) : "");
+			DefaultValue = defaultValue;
 			Converter = TypeDescriptor.GetConverter(FieldType);
 		}
 
@@ -148,15 +148,14 @@ namespace Prism.Build
 						engine.Logger.EngineWarn($"The ContentProcessor type '{type.Name}' cannot have a readonly pipeline parameter ({f.field.Name}).");
 						return false;
 					}
-					if (!PipelineParameterAttribute.VALID_TYPES.Contains(f.field.FieldType))
+					if (!ConverterCache.CanConvert(f.field.FieldType))
 					{
 						engine.Logger.EngineWarn($"The ContentProcessor type '{type.Name}' declared the pipeline parameter '{f.field.Name}' with an invalid type.");
 						return false;
 					}
-					f.attrib.DefaultValue = f.field.GetValue(valInst);
 					return true;
 				})
-				.Select(f => new ProcessorField(f.field, f.attrib))
+				.Select(f => new ProcessorField(f.field, f.attrib, f.field.GetValue(valInst)))
 				.ToArray();
 		}
 	}

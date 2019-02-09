@@ -99,13 +99,13 @@ namespace Prism
 		protected override void onItemInfo(ContentItem item, uint id, string message)
 		{
 			if (Verbose)
-				Info($"Content item '{item.ItemPath}' info: {message}");
+				Info($"'{item.ItemPath}' {message}");
 		}
 
 		protected override void onItemWarn(ContentItem item, uint id, string message) =>
-			Warn($"Content item '{item.ItemPath}' warning: {message}");
+			Warn($"'{item.ItemPath}' {message}");
 
 		protected override void onItemError(ContentItem item, uint id, string message) =>
-			Error($"Content item '{item.ItemPath}' error: {message}");
+			Error($"'{item.ItemPath}' {message}");
 	}
 }

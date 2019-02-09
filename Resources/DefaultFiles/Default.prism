@@ -1,14 +1,14 @@
 {
-	"project": {
-		"rootDir": ".",
-		"intermediateDir": "obj",
-		"outputDir": "bin"
-	},
-	"items": {
-		"example_file.txt": {
-			"itype": "PassthroughImporter",
-			"ptype": "PassthroughProcessor",
-			"pargs": ""
-		}
+"project": {
+	"rootDir": ".",
+	"intermediateDir": "obj",
+	"outputDir": "bin"
+},
+"items": {
+	"example_file.txt": {
+		"itype": "PassthroughImporter",
+		"ptype": "PassthroughProcessor",
+		"pargs": ""
 	}
+}
 }
