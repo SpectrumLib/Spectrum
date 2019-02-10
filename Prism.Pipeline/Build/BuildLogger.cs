@@ -68,8 +68,8 @@ namespace Prism.Build
 		internal void ItemFailed(ContentItem item, uint id, string message) =>
 			_messages.Enqueue(new Message(MessageType.ItemFailed, _startTime + _timer.Elapsed, item, id, message));
 
-		internal void ItemSkipped(ContentItem item) =>
-			_messages.Enqueue(new Message(MessageType.ItemSkipped, _startTime + _timer.Elapsed, item));
+		internal void ItemSkipped(ContentItem item, uint id) =>
+			_messages.Enqueue(new Message(MessageType.ItemSkipped, _startTime + _timer.Elapsed, item, id));
 
 		internal void ItemInfo(ContentItem item, uint id, string message) =>
 			_messages.Enqueue(new Message(MessageType.ItemInfo, _startTime + _timer.Elapsed, item, id, message));
@@ -100,7 +100,7 @@ namespace Prism.Build
 					case MessageType.ItemContinued: onItemContinued((ContentItem)msg.Args[0], (uint)msg.Args[1], (ContinueStage)msg.Args[2]); break;
 					case MessageType.ItemFinished: onItemFinished((ContentItem)msg.Args[0], (uint)msg.Args[1], (TimeSpan)msg.Args[2]); break;
 					case MessageType.ItemFailed: onItemFailed((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
-					case MessageType.ItemSkipped: onItemSkipped((ContentItem)msg.Args[0]); break;
+					case MessageType.ItemSkipped: onItemSkipped((ContentItem)msg.Args[0], (uint)msg.Args[1]); break;
 					case MessageType.ItemInfo: onItemInfo((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemWarning: onItemWarn((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemError: onItemError((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
@@ -135,7 +135,7 @@ namespace Prism.Build
 		// Called when the build process for a content item fails
 		protected abstract void onItemFailed(ContentItem item, uint idx, string message);
 		// Called when a content item is skipped by the build engine
-		protected abstract void onItemSkipped(ContentItem item);
+		protected abstract void onItemSkipped(ContentItem item, uint idx);
 
 		// Called from a pipeline stage to relay normal-level information about a content item build process
 		protected abstract void onItemInfo(ContentItem item, uint id, string message);

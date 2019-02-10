@@ -93,7 +93,7 @@ namespace Prism
 		protected override void onItemFailed(ContentItem item, uint idx, string message) =>
 			Error($"Failed to build content item '{item.ItemPath}', reason: {message}.");
 
-		protected override void onItemSkipped(ContentItem item) =>
+		protected override void onItemSkipped(ContentItem item, uint idx) =>
 			Info($"Skipped content item '{item.ItemPath}'.");
 
 		protected override void onItemInfo(ContentItem item, uint id, string message)

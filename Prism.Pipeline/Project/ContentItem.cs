@@ -34,7 +34,7 @@ namespace Prism.Content
 		}
 
 		public static string ToIntermedateFile(string path) =>
-			Path.GetFileNameWithoutExtension(path.Replace(Path.DirectorySeparatorChar, '.').Replace(Path.AltDirectorySeparatorChar, '.')) + ".pcf";
+			Path.GetFileNameWithoutExtension(path.Replace(Path.DirectorySeparatorChar, '.').Replace(Path.AltDirectorySeparatorChar, '.'));
 
 		public static ContentItem LoadJson(string path, JsonObject obj, in ProjectPaths ppaths)
 		{
@@ -55,7 +55,8 @@ namespace Prism.Content
 				ItemPath = path,
 				SourcePath = srcPath,
 				OutputFile = intFile,
-				OutputPath = PathUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile)
+				OutputPath = PathUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile) + ".pcf",
+				CachePath = PathUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile) + ".bcache"
 			};
 
 			// Parse the processor paramters

@@ -74,12 +74,19 @@ namespace Prism.Build
 				_contentStream = new ContentStream();
 
 			// Iterate over the tasks
-			while (!Manager.ShouldStop && Manager.GetTaskItem(out ContentItem currItem, out uint currIdx))
+			while (!Manager.ShouldStop && Manager.GetTaskItem(out BuildEvent currItem, out uint currIdx))
 			{
 				// Report start
 				Engine.Logger.ItemStart(currItem, currIdx);
 				_timer.Restart();
 				_logger.UpdateItem(currItem, currIdx);
+
+				// Check the source file exists
+				if (currItem.InputTime == BuildEvent.ERROR_TIME)
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "Could not find the source file for the item");
+					continue;
+				}
 
 				// Check for the requested importer and processor
 				if (!_importers.ContainsKey(currItem.ImporterName))
@@ -112,23 +119,16 @@ namespace Prism.Build
 					continue;
 				}
 
-				// Make sure the source file exists
-				if (!File.Exists(currItem.Paths.SourcePath))
+				// Compare the current and cached build events to see if we can skip the build
+				//   If we are forcing a rebuild, or if the output file does not exist, we have to build so we can skip the check
+				if (!rebuild && (currItem.OutputTime != BuildEvent.ERROR_TIME))
 				{
-					Engine.Logger.ItemFailed(currItem, currIdx, "Could not find the source file for the item");
-					continue;
-				}
-
-				// Delete the intermediate file
-				try
-				{
-					if (File.Exists(currItem.Paths.OutputPath))
-						File.Delete(currItem.Paths.OutputPath);
-				}
-				catch
-				{
-					Engine.Logger.ItemFailed(currItem, currIdx, "Could not delete the output file to rebuild the item");
-					continue;
+					var cached = BuildEvent.FromCacheFile(Engine, currItem);
+					if (!currItem.NeedsBuild(cached))
+					{
+						Engine.Logger.ItemSkipped(currItem, currIdx);
+						continue;
+					}
 				}
 
 				// Early stop check
@@ -206,6 +206,18 @@ namespace Prism.Build
 				{
 					Engine.Logger.ItemFailed(currItem, currIdx, "The build process was stopped while the item was being built");
 					break;
+				}
+
+				// Delete the output file
+				try
+				{
+					if (File.Exists(currItem.Paths.OutputPath))
+						File.Delete(currItem.Paths.OutputPath);
+				}
+				catch
+				{
+					Engine.Logger.ItemFailed(currItem, currIdx, "Could not delete the output file to rebuild the item");
+					continue;
 				}
 
 				// Run the writer
