@@ -33,16 +33,16 @@ namespace Prism.Build
 
 		// Resets all settable fields back to default, and sets the ones that are included in the item args
 		//  If the parse from the content project string fails, then the field takes on its default value
-		public void UpdateFields(BuildEngine engine, ContentItem item, uint id, List<(string Key, string Value)> args)
+		public void UpdateFields(BuildEngine engine, ContentItem item, uint id)
 		{
 			foreach (var field in Type.Fields)
 			{
-				var idx = args.FindIndex(arg => arg.Key == field.ParamName);
+				var idx = item.ProcessorArgs.FindIndex(arg => arg.Key == field.ParamName);
 				if (idx == -1)
 					field.Info.SetValue(Instance, field.DefaultValue);
 				else
 				{
-					if (ConverterCache.Convert(field.FieldType, args[idx].Value, out object parsed))
+					if (ConverterCache.Convert(field.FieldType, item.ProcessorArgs[idx].Value, out object parsed))
 						field.Info.SetValue(Instance, parsed);
 					else
 					{

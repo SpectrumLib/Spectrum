@@ -37,25 +37,40 @@ namespace Prism.Build
 			return s_toFunctions[t](value);
 		}
 
-		// "Meta" function for converting the standard integer types
-		private static bool ConvertInteger(string str, out object value, bool signed, long minVal, ulong maxVal)
+		// "Meta" function for converting the standard signed integer types
+		//   ENSURE THAT THE TYPEPARAM IS ALWAYS AN INTEGER TYPE
+		private unsafe static bool ConvertInteger(string str, out object value, bool signed, uint size)
 		{
 			long _clampS(long v, long min, long max) => (v < min) ? min : (v > max) ? max : v;
-			ulong _clampU(ulong v, ulong min, ulong max) => (v < min) ? min : (v > max) ? max : v;
-
+			ulong _clampU(ulong v, ulong max) => (v > max) ? max : v;
+			
 			value = null;
 			if (signed)
 			{
 				if (!Int64.TryParse(str, out long parsed))
 					return false;
-				value = _clampS(parsed, minVal, (long)maxVal);
+				switch (size)
+				{
+					case 0: value = (sbyte)_clampS(parsed, SByte.MinValue, SByte.MaxValue); break;
+					case 1: value = (short)_clampS(parsed, Int16.MinValue, Int16.MaxValue); break;
+					case 2: value = (int)_clampS(parsed, Int32.MinValue, Int32.MaxValue); break;
+					case 3: value = _clampS(parsed, Int64.MinValue, Int64.MaxValue); break;
+					default: return false;
+				}
 				return true;
 			}
 			else
 			{
 				if (!UInt64.TryParse(str, out ulong parsed))
 					return false;
-				value = _clampU(parsed, (ulong)minVal, maxVal);
+				switch (size)
+				{
+					case 0: value = (byte)_clampU(parsed, Byte.MaxValue); break;
+					case 1: value = (ushort)_clampU(parsed, UInt16.MaxValue); break;
+					case 2: value = (uint)_clampU(parsed, UInt32.MaxValue); break;
+					case 3: value = _clampU(parsed, UInt64.MaxValue); break;
+					default: return false;
+				}
 				return true;
 			}
 		}
@@ -89,15 +104,15 @@ namespace Prism.Build
 			s_toFunctions = new Dictionary<Type, ToStringFunction>();
 
 			// From string functions
-			s_fromFunctions.Add(typeof(sbyte), (string str, out object value) => ConvertInteger(str, out value, true, (long)SByte.MinValue, (ulong)SByte.MaxValue));
-			s_fromFunctions.Add(typeof(byte), (string str, out object value) => ConvertInteger(str, out value, false, (long)Byte.MinValue, (ulong)Byte.MaxValue));
-			s_fromFunctions.Add(typeof(short), (string str, out object value) => ConvertInteger(str, out value, true, (long)Int16.MinValue, (ulong)Int16.MaxValue));
-			s_fromFunctions.Add(typeof(ushort), (string str, out object value) => ConvertInteger(str, out value, false, (long)UInt16.MinValue, (ulong)UInt16.MaxValue));
-			s_fromFunctions.Add(typeof(int), (string str, out object value) => ConvertInteger(str, out value, true, (long)Int32.MinValue, (ulong)Int32.MaxValue));
-			s_fromFunctions.Add(typeof(uint), (string str, out object value) => ConvertInteger(str, out value, false, (long)UInt32.MinValue, (ulong)UInt32.MaxValue));
-			s_fromFunctions.Add(typeof(long), (string str, out object value) => ConvertInteger(str, out value, true, (long)Int64.MinValue, (ulong)Int64.MaxValue));
-			s_fromFunctions.Add(typeof(ulong), (string str, out object value) => ConvertInteger(str, out value, false, (long)UInt64.MinValue, (ulong)UInt64.MaxValue));
-			s_fromFunctions.Add(typeof(float), (string str, out object value) => ConvertFloatingPoint(str, out value, 0));
+			s_fromFunctions.Add(typeof(sbyte), (string str, out object value) =>  ConvertInteger(str, out value, true, 0));
+			s_fromFunctions.Add(typeof(byte), (string str, out object value) =>   ConvertInteger(str, out value, false, 0));
+			s_fromFunctions.Add(typeof(short), (string str, out object value) =>  ConvertInteger(str, out value, true, 1));
+			s_fromFunctions.Add(typeof(ushort), (string str, out object value) => ConvertInteger(str, out value, false, 1));
+			s_fromFunctions.Add(typeof(int), (string str, out object value) =>    ConvertInteger(str, out value, true, 2));
+			s_fromFunctions.Add(typeof(uint), (string str, out object value) =>   ConvertInteger(str, out value, false, 2));
+			s_fromFunctions.Add(typeof(long), (string str, out object value) =>   ConvertInteger(str, out value, true, 3));
+			s_fromFunctions.Add(typeof(ulong), (string str, out object value) =>  ConvertInteger(str, out value, false, 3));
+			s_fromFunctions.Add(typeof(float), (string str, out object value) =>  ConvertFloatingPoint(str, out value, 0));
 			s_fromFunctions.Add(typeof(double), (string str, out object value) => ConvertFloatingPoint(str, out value, 1));
 			s_fromFunctions.Add(typeof(decimal), (string str, out object value) => ConvertFloatingPoint(str, out value, 2));
 			s_fromFunctions.Add(typeof(string), (string str, out object value) => { value = str; return true; });

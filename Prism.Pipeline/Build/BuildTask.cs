@@ -187,6 +187,7 @@ namespace Prism.Build
 				{
 					_logger.UpdateStageName(currItem.ProcessorName);
 					ProcessorContext ctx = new ProcessorContext(_logger);
+					processor.UpdateFields(Engine, currItem, currIdx);
 					processedData = processor.Instance.Process(importedData, ctx);
 					if (processedData == null)
 					{
