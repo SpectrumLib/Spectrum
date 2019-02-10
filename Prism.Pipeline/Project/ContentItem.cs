@@ -54,8 +54,8 @@ namespace Prism.Content
 			ItemPaths paths = new ItemPaths {
 				ItemPath = path,
 				SourcePath = srcPath,
-				IntermediateFile = intFile,
-				IntermediatePath = PathUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile)
+				OutputFile = intFile,
+				OutputPath = PathUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile)
 			};
 
 			// Parse the processor paramters

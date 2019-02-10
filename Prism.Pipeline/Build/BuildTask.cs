@@ -122,8 +122,8 @@ namespace Prism.Build
 				// Delete the intermediate file
 				try
 				{
-					if (File.Exists(currItem.Paths.IntermediatePath))
-						File.Delete(currItem.Paths.IntermediatePath);
+					if (File.Exists(currItem.Paths.OutputPath))
+						File.Delete(currItem.Paths.OutputPath);
 				}
 				catch
 				{
@@ -213,7 +213,7 @@ namespace Prism.Build
 				try
 				{
 					_logger.UpdateStageName(processor.Type.WriterType.Name);
-					_contentStream.Reset(currItem.Paths.IntermediatePath);
+					_contentStream.Reset(currItem.Paths.OutputPath);
 					WriterContext ctx = new WriterContext(_logger);
 					processor.WriterInstance.Write(processedData, _contentStream, ctx);
 					_contentStream.Flush();
