@@ -32,7 +32,7 @@ namespace Prism.Content
 		#region Load/Save
 		public static ContentProject LoadFromFile(string path)
 		{
-			if (!IOUtils.TryGetFullPath(path, out path))
+			if (!PathUtils.TryGetFullPath(path, out path))
 				throw new Exception($"The path '{path}' is not a valid filesystem path");
 			if (!File.Exists(path))
 				throw new Exception($"The content file '{path}' does not exist");
@@ -68,11 +68,11 @@ namespace Prism.Content
 
 			// Convert the paths to absolute and perform some validations
 			var pDir = Path.GetDirectoryName(path);
-			if (!IOUtils.TryGetFullPath(pp.RootDir, out var rPath, pDir))
+			if (!PathUtils.TryGetFullPath(pp.RootDir, out var rPath, pDir))
 				throw new Exception($"The root content directory '{rPath}' is not a valid filesystem path");
-			if (!IOUtils.TryGetFullPath(pp.IntermediateDir, out var iPath, pDir))
+			if (!PathUtils.TryGetFullPath(pp.IntermediateDir, out var iPath, pDir))
 				throw new Exception($"The intermediate directory '{iPath}' is not a valid filesystem path");
-			if (!IOUtils.TryGetFullPath(pp.OutputDir, out var oPath, pDir))
+			if (!PathUtils.TryGetFullPath(pp.OutputDir, out var oPath, pDir))
 				throw new Exception($"The output directory '{oPath}' is not a valid filesystem path");
 			if (rPath == iPath || rPath == oPath || iPath == oPath)
 				throw new Exception($"The content root, intermediate, and output paths must all be different");

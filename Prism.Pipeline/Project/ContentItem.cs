@@ -38,7 +38,7 @@ namespace Prism.Content
 
 		public static ContentItem LoadJson(string path, JsonObject obj, in ProjectPaths ppaths)
 		{
-			if (!IOUtils.IsValidPath(path))
+			if (!PathUtils.IsValidPath(path))
 				throw new Exception($"The item path '{path}' is not valid");
 
 			// Get the importer/processor names
@@ -48,14 +48,14 @@ namespace Prism.Content
 				throw new Exception($"The item '{path}' did not specify a valid processor string");
 
 			// Make the paths
-			if (!IOUtils.TryGetFullPath(path, out string srcPath, ppaths.ContentRoot))
+			if (!PathUtils.TryGetFullPath(path, out string srcPath, ppaths.ContentRoot))
 				throw new Exception($"The item path '{path}' does not map to a valid filesystem path");
 			var intFile = ToIntermedateFile(path);
 			ItemPaths paths = new ItemPaths {
 				ItemPath = path,
 				SourcePath = srcPath,
 				IntermediateFile = intFile,
-				IntermediatePath = IOUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile)
+				IntermediatePath = PathUtils.CombineToAbsolute(ppaths.IntermediateRoot, intFile)
 			};
 
 			// Parse the processor paramters

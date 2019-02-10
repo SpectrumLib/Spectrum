@@ -106,7 +106,7 @@ namespace Prism.Build
 				var processor = _processors[currItem.ProcessorName];
 
 				// Validate stage compatibility
-				if (importer.Type.OutputType != processor.Type.InputType)
+				if (!processor.Type.InputType.IsAssignableFrom(importer.Type.OutputType))
 				{
 					Engine.Logger.ItemFailed(currItem, currIdx, "The item specified incompatible stages");
 					continue;

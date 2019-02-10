@@ -4,7 +4,7 @@ using System.IO;
 namespace Prism
 {
 	// Various utilities for filesystem IO
-	internal static class IOUtils
+	internal static class PathUtils
 	{
 		// Checks if the given path is a valid filesystem URI
 		public static bool IsValidPath(string path)
