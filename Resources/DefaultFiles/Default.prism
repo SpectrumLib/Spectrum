@@ -2,7 +2,9 @@
 "project": {
 	"rootDir": ".",
 	"intermediateDir": "obj",
-	"outputDir": "bin"
+	"outputDir": "bin",
+	"pack": true,
+	"compression": "none"
 },
 "items": {
 	"example_file.txt": {

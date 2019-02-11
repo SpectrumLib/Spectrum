@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Json;
@@ -63,8 +63,8 @@ namespace Prism.Content
 			// Get and load the properties
 			if (!fileObj.TryGetValue("project", out var propObj) || (propObj.JsonType != JsonType.Object))
 				throw new Exception("The content file does not contain the section for project properties");
-			if (!ProjectProperties.LoadJson(propObj as JsonObject, out var pp, out var missing))
-				throw new Exception($"The project properties section does not contain the required entry '{missing}', or it is not a valid string");
+			if (!ProjectProperties.LoadJson(propObj as JsonObject, out var pp, out var error))
+				throw new Exception($"Could not load the project properties, reason: {error}");
 
 			// Convert the paths to absolute and perform some validations
 			var pDir = Path.GetDirectoryName(path);

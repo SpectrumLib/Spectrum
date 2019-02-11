@@ -18,7 +18,6 @@ namespace Prism
 			try
 			{
 				project = ContentProject.LoadFromFile(filePath);
-				Console.WriteLine($"INFO: Loaded project file at '{project.FilePath}'.");
 			}
 			catch (Exception e)
 			{

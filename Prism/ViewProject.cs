@@ -16,7 +16,6 @@ namespace Prism
 			try
 			{
 				project = ContentProject.LoadFromFile(filePath);
-				Console.WriteLine($"INFO: Loaded project file at '{project.FilePath}'.");
 			}
 			catch (Exception e)
 			{
@@ -36,7 +35,8 @@ namespace Prism
 			Console.WriteLine($"  Content Root:        {project.Paths.ContentRoot}");
 			Console.WriteLine($"  Intermediate Path:   {project.Paths.IntermediateRoot}");
 			Console.WriteLine($"  Output Path:         {project.Paths.OutputRoot}");
-			Console.WriteLine($"  Item Count:          {project.Items.Count}");
+			Console.WriteLine($"  Pack:                {project.Properties.Pack}");
+			Console.WriteLine($"  Compression:         {project.Properties.Compression}");
 			Console.WriteLine();
 
 			// Function for printing an item
@@ -59,6 +59,7 @@ namespace Prism
 
 			// Items info
 			Console.WriteLine($"=========== ITEMS SUMMARY ===========");
+			Console.WriteLine($"  Total Item Count:    {project.Items.Count}");
 			foreach (var item in project.Items)
 				__printItem(item.Value);
 			Console.WriteLine($"");
