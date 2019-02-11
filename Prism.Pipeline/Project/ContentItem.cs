@@ -60,18 +60,18 @@ namespace Prism.Content
 			};
 
 			// Parse the processor paramters
-			List<(string, string)> pArgs = new List<(string, string)>();
+			List<(string, string)> pArgs = null;
 			if (obj.TryGetValue("pargs", out var paObj))
 			{
 				if (paObj.JsonType == JsonType.String)
 				{
-					var argList = ((string)paObj).Split(PAIR_SPLIT, StringSplitOptions.RemoveEmptyEntries);
-					foreach (var argPair in argList)
+					try
 					{
-						var keyVal = argPair.Split(KEYVALUE_SPLIT, 2);
-						if (keyVal.Length != 2)
-							throw new Exception($"The item '{path}' specified an invalid processor key/value pair ('{argPair}')");
-						pArgs.Add((keyVal[0], keyVal[1]));
+						pArgs = ParseArgs((string)paObj);
+					}
+					catch (Exception e)
+					{
+						throw new Exception($"The item '{path}' specified an invalid processor key/value pair ('{e.Message}')");
 					}
 				}
 				else
@@ -80,6 +80,20 @@ namespace Prism.Content
 
 			// Return the item
 			return new ContentItem(paths, impName, proName, pArgs);
+		}
+
+		public static List<(string, string)> ParseArgs(string args)
+		{
+			List<(string, string)> pRet = new List<(string, string)>();
+			var argList = args.Split(PAIR_SPLIT, StringSplitOptions.RemoveEmptyEntries);
+			foreach (var argPair in argList)
+			{
+				var keyVal = argPair.Split(KEYVALUE_SPLIT, 2);
+				if (keyVal.Length != 2)
+					throw new Exception(argPair);
+				pRet.Add((keyVal[0], keyVal[1]));
+			}
+			return pRet;
 		}
 	}
 }

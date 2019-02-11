@@ -56,29 +56,29 @@ namespace Prism.Build
 		internal void CleanEnd(bool success, TimeSpan elapsed, bool cancelled) =>
 			_messages.Enqueue(new Message(MessageType.CleanEnd, _startTime + _timer.Elapsed, success, elapsed, cancelled));
 
-		internal void ItemStart(ContentItem item, uint id) =>
-			_messages.Enqueue(new Message(MessageType.ItemStarted, _startTime + _timer.Elapsed, item, id));
+		internal void ItemStart(BuildEvent evt) =>
+			_messages.Enqueue(new Message(MessageType.ItemStarted, _startTime + _timer.Elapsed, evt.Item, evt.Index));
 
-		internal void ItemContinue(ContentItem item, uint id, ContinueStage stage) =>
-			_messages.Enqueue(new Message(MessageType.ItemContinued, _startTime + _timer.Elapsed, item, id, stage));
+		internal void ItemContinue(BuildEvent evt, ContinueStage stage) =>
+			_messages.Enqueue(new Message(MessageType.ItemContinued, _startTime + _timer.Elapsed, evt.Item, evt.Index, stage));
 
-		internal void ItemFinished(ContentItem item, uint id, TimeSpan elapsed) =>
-			_messages.Enqueue(new Message(MessageType.ItemFinished, _startTime + _timer.Elapsed, item, id, elapsed));
+		internal void ItemFinished(BuildEvent evt, TimeSpan elapsed) =>
+			_messages.Enqueue(new Message(MessageType.ItemFinished, _startTime + _timer.Elapsed, evt.Item, evt.Index, elapsed));
 
-		internal void ItemFailed(ContentItem item, uint id, string message) =>
-			_messages.Enqueue(new Message(MessageType.ItemFailed, _startTime + _timer.Elapsed, item, id, message));
+		internal void ItemFailed(BuildEvent evt, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemFailed, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
 
-		internal void ItemSkipped(ContentItem item, uint id) =>
-			_messages.Enqueue(new Message(MessageType.ItemSkipped, _startTime + _timer.Elapsed, item, id));
+		internal void ItemSkipped(BuildEvent evt) =>
+			_messages.Enqueue(new Message(MessageType.ItemSkipped, _startTime + _timer.Elapsed, evt.Item, evt.Index));
 
-		internal void ItemInfo(ContentItem item, uint id, string message) =>
-			_messages.Enqueue(new Message(MessageType.ItemInfo, _startTime + _timer.Elapsed, item, id, message));
+		internal void ItemInfo(BuildEvent evt, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemInfo, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
 
-		internal void ItemWarn(ContentItem item, uint id, string message) =>
-			_messages.Enqueue(new Message(MessageType.ItemWarning, _startTime + _timer.Elapsed, item, id, message));
+		internal void ItemWarn(BuildEvent evt, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemWarning, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
 
-		internal void ItemError(ContentItem item, uint id, string message) =>
-			_messages.Enqueue(new Message(MessageType.ItemError, _startTime + _timer.Elapsed, item, id, message));
+		internal void ItemError(BuildEvent evt, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemError, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
 		#endregion // Internal Logging
 
 		// Called on the main thread in the Prism tool to process all queued messages

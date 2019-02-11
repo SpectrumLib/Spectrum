@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using Prism.Content;
 
 namespace Prism.Build
@@ -9,11 +12,13 @@ namespace Prism.Build
 	internal class BuildEvent
 	{
 		public static readonly DateTime ERROR_TIME = new DateTime(0);
+		private static readonly byte[] BUILD_CACHE_HEADER = Encoding.ASCII.GetBytes("PBC");
 
 		#region Fields
 		// If not cached, the item in the content project
-		public readonly ContentItem Item;
+		public readonly ContentItem Item = null;
 		public ItemPaths Paths => Item?.Paths ?? default;
+		public readonly uint Index = UInt32.MaxValue; // The index of the current item
 
 		// Path to the build cache file that this event represents/would represent
 		private readonly string _cachePath = null;
@@ -35,16 +40,31 @@ namespace Prism.Build
 		private readonly string _cachedProcessor = null;
 		public string ProcessorName => Item?.ProcessorName ?? _cachedProcessor;
 
+		// Processor parameters
+		private readonly List<(string, string)> _cachedArgs;
+		public List<(string Key, string Value)> ProcessorArgs => Item?.ProcessorArgs ?? _cachedArgs;
+
 		// Modify times for the input and output files (ERROR_TIME = associated file does not exist)
-		public readonly DateTime InputTime;
-		public readonly DateTime OutputTime;
+		public readonly DateTime InputTime = ERROR_TIME;
+		public readonly DateTime OutputTime = ERROR_TIME;
 		#endregion // Fields
 
-		private BuildEvent(ContentItem item, DateTime iTime, DateTime oTime)
+		private BuildEvent(ContentItem item, uint idx, DateTime iTime, DateTime oTime)
 		{
 			Item = item;
+			Index = idx;
 			InputTime = iTime;
 			OutputTime = oTime;
+		}
+
+		private BuildEvent(string c, string s, string o, string i, string p, string args)
+		{
+			_cachePath = c;
+			_cachedSource = s;
+			_cachedOutput = o;
+			_cachedImporter = i;
+			_cachedProcessor = p;
+			_cachedArgs = ContentItem.ParseArgs(args);
 		}
 
 		// Compares this event with the potential cached event to see if a rebuild is needed
@@ -53,21 +73,59 @@ namespace Prism.Build
 			return true;
 		}
 
+		// Saves the event info into a cache file
+		public void SaveCache(BuildEngine engine)
+		{
+			try
+			{
+				using (var writer = new BinaryWriter(File.Open(CachePath, FileMode.Create, FileAccess.Write, FileShare.None)))
+				{
+					writer.Write(BUILD_CACHE_HEADER);
+					writer.Write(ImporterName);
+					writer.Write(ProcessorName);
+					var argStr = String.Join(";", ProcessorArgs.Select(arg => $"{arg.Key}={arg.Value}"));
+					writer.Write(argStr);
+				}
+			}
+			catch (Exception e)
+			{
+				engine.Logger.ItemWarn(this, $"Could not create build cache file, reason: {e.Message}");
+			}
+		}
+
 		#region Creation
-		public static BuildEvent FromItem(ContentItem item)
+		public static BuildEvent FromItem(ContentItem item, uint idx)
 		{
 			var iInfo = new FileInfo(item.Paths.SourcePath);
 			var oInfo = new FileInfo(item.Paths.OutputPath);
-			return new BuildEvent(item, iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME);
+			return new BuildEvent(item, idx, iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME);
 		}
 
-		public static BuildEvent FromCacheFile(BuildEngine engine, ContentItem item)
+		public unsafe static BuildEvent FromCacheFile(BuildEngine engine, ContentItem item)
 		{
-			return null;
+			if (!File.Exists(item.Paths.CachePath))
+				return null;
+
+			try
+			{
+				using (var reader = new BinaryReader(File.Open(item.Paths.CachePath, FileMode.Open, FileAccess.Read, FileShare.None)))
+				{
+					var header = reader.ReadBytes(3);
+					if (header[0] != BUILD_CACHE_HEADER[0] || header[1] != BUILD_CACHE_HEADER[1] || header[2] != BUILD_CACHE_HEADER[2])
+						return null;
+
+					return new BuildEvent(
+						item.Paths.CachePath,
+						item.Paths.SourcePath,
+						item.Paths.OutputPath,
+						reader.ReadString(),
+						reader.ReadString(),
+						reader.ReadString()
+					);
+				}
+			}
+			catch { return null; }
 		}
 		#endregion // Creation
-
-		// Prevents writing 'evt.Item' a million times in BuildTask
-		public static implicit operator ContentItem (BuildEvent evt) => evt.Item;
 	}
 }

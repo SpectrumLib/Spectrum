@@ -56,21 +56,19 @@ namespace Prism.Build
 
 		// Called by BuildTask instances to get the next available content item to start building
 		//   Returns false when no items are left
-		internal bool GetTaskItem(out BuildEvent item, out uint id)
+		internal bool GetTaskItem(out BuildEvent item)
 		{
 			lock (_taskLock)
 			{
 				if (_itemEnumerator.MoveNext())
 				{
 					var ci = _itemEnumerator.Current.Value;
-					item = BuildEvent.FromItem(ci);
-					id = _itemIndex++;
+					item = BuildEvent.FromItem(ci, _itemIndex++);
 					return true;
 				}
 				else
 				{
 					item = null;
-					id = UInt32.MaxValue;
 					return false;
 				}
 			}

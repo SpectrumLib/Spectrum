@@ -1,6 +1,5 @@
 ﻿using System;
 using Prism.Build;
-using Prism.Content;
 
 namespace Prism
 {
@@ -13,8 +12,7 @@ namespace Prism
 		internal readonly BuildEngine Engine;
 		internal BuildLogger Logger => Engine.Logger;
 
-		private ContentItem _currItem;
-		private uint _currId;
+		private BuildEvent _currEvent;
 		private string _currStageName;
 		#endregion // Fields
 
@@ -23,10 +21,9 @@ namespace Prism
 			Engine = engine;
 		}
 
-		internal void UpdateItem(ContentItem item, uint id)
+		internal void UseEvent(BuildEvent evt)
 		{
-			_currItem = item;
-			_currId = id;
+			_currEvent = evt;
 		}
 
 		internal void UpdateStageName(string name)
@@ -39,7 +36,7 @@ namespace Prism
 		/// </summary>
 		/// <param name="str">The message to log.</param>
 		public void Info(string str) =>
-			Logger.ItemInfo(_currItem, _currId, $"({_currStageName}) {str}");
+			Logger.ItemInfo(_currEvent, $"({_currStageName}) {str}");
 
 		/// <summary>
 		/// Logs a non-standard error message to the pipeline logging system that represents an unexpected state
@@ -47,7 +44,7 @@ namespace Prism
 		/// </summary>
 		/// <param name="str">The message to log.</param>
 		public void Warn(string str) =>
-			Logger.ItemWarn(_currItem, _currId, $"({_currStageName}) {str}");
+			Logger.ItemWarn(_currEvent, $"({_currStageName}) {str}");
 
 		/// <summary>
 		/// Logs a severe error message to the pipeline logging system that represents an unrecoverable error. The
@@ -55,6 +52,6 @@ namespace Prism
 		/// </summary>
 		/// <param name="str">The message to log.</param>
 		public void Error(string str) =>
-			Logger.ItemError(_currItem, _currId, $"({_currStageName}) {str}");
+			Logger.ItemError(_currEvent, $"({_currStageName}) {str}");
 	}
 }

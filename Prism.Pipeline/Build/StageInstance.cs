@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Prism.Content;
 
 namespace Prism.Build
 {
@@ -33,20 +31,20 @@ namespace Prism.Build
 
 		// Resets all settable fields back to default, and sets the ones that are included in the item args
 		//  If the parse from the content project string fails, then the field takes on its default value
-		public void UpdateFields(BuildEngine engine, ContentItem item, uint id)
+		public void UpdateFields(BuildEngine engine, BuildEvent evt)
 		{
 			foreach (var field in Type.Fields)
 			{
-				var idx = item.ProcessorArgs.FindIndex(arg => arg.Key == field.ParamName);
+				var idx = evt.Item.ProcessorArgs.FindIndex(arg => arg.Key == field.ParamName);
 				if (idx == -1)
 					field.Info.SetValue(Instance, field.DefaultValue);
 				else
 				{
-					if (ConverterCache.Convert(field.FieldType, item.ProcessorArgs[idx].Value, out object parsed))
+					if (ConverterCache.Convert(field.FieldType, evt.Item.ProcessorArgs[idx].Value, out object parsed))
 						field.Info.SetValue(Instance, parsed);
 					else
 					{
-						engine.Logger.EngineError($"The content item '{item.ItemPath}' specified an invalid value for the parameter" +
+						engine.Logger.EngineError($"The content item '{evt.Item.ItemPath}' specified an invalid value for the parameter" +
 							$" '{field.ParamName}'.");
 						field.Info.SetValue(Instance, field.DefaultValue);
 					}
