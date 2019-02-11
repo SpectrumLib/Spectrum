@@ -120,8 +120,8 @@ namespace Prism.Build
 				}
 
 				// Compare the current and cached build events to see if we can skip the build
-				//   If we are forcing a rebuild, or if the output file does not exist, we have to build so we can skip the check
-				if (!rebuild && (current.OutputTime != BuildEvent.ERROR_TIME))
+				//   If we are forcing a rebuild we have to build so we can skip the check
+				if (!rebuild)
 				{
 					var cached = BuildEvent.FromCacheFile(Engine, current.Item);
 					if (!current.NeedsBuild(cached))

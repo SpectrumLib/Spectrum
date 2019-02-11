@@ -70,6 +70,50 @@ namespace Prism.Build
 		// Compares this event with the potential cached event to see if a rebuild is needed
 		public bool NeedsBuild(BuildEvent cached)
 		{
+			// There is no exising build for this file
+			if (cached == null || OutputTime == ERROR_TIME)
+				return true;
+
+			// The source file has been modified since the last build
+			if (InputTime >= OutputTime)
+				return true;
+
+			// The importer and/or processor have changed since the last build
+			if (ImporterName != cached.ImporterName || ProcessorName != cached.ProcessorName)
+				return true;
+
+			// The parameters have changed since the last build
+			if (!ParametersEqual(ProcessorArgs, cached.ProcessorArgs))
+				return true;
+
+			// We dont have to rebuild
+			return false;
+		}
+
+		// Checks if the parameter set keys are equal, and their values are equal
+		//   TODO: In the future, we will want to also compare against the default values, as if a parameter was added
+		//   or removed, but its value is/was the default value, then they are the same and we dont have to rebuild
+		private static bool ParametersEqual(List<(string, string)> p1, List<(string, string)> p2)
+		{
+			// Both are empty
+			if (p1.Count == 0 && p2.Count == 0)
+				return true;
+
+			// Different number of parameters (wont work when we start to compare against default)
+			if (p1.Count != p2.Count)
+				return false;
+
+			// We know they are the same length, so if we get through this loop without issues then they are the same
+			foreach (var pair in p1)
+			{
+				int idx = p2.FindIndex(arg => arg.Item1 == pair.Item1);
+				if (idx == -1)
+					return false;
+				if (p2[idx].Item2 != pair.Item2)
+					return false;
+			}
+
+			// All are the same
 			return true;
 		}
 
@@ -101,7 +145,7 @@ namespace Prism.Build
 			return new BuildEvent(item, idx, iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME);
 		}
 
-		public unsafe static BuildEvent FromCacheFile(BuildEngine engine, ContentItem item)
+		public static BuildEvent FromCacheFile(BuildEngine engine, ContentItem item)
 		{
 			if (!File.Exists(item.Paths.CachePath))
 				return null;

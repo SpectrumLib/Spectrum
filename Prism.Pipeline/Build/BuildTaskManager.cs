@@ -138,8 +138,18 @@ namespace Prism.Build
 					iInfo[i].Delete();
 				}
 
+				// Clean all .bcache files out of the intermediate path
+				iInfo = (new DirectoryInfo(Project.Paths.IntermediateRoot)).GetFiles("*.bcache", SearchOption.TopDirectoryOnly);
+				for (int i = 0; i < iInfo.Length; ++i)
+				{
+					// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
+					if (((i % 5) == 0) && ShouldStop)
+						return;
+					iInfo[i].Delete();
+				}
+
 				// TODO: Clean output path
-				
+
 				success = true;
 			}
 			finally
