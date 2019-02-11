@@ -10,7 +10,7 @@ namespace Prism.Content
 		public string IntermediateDir;
 		public string OutputDir;
 		public bool Pack;
-		public CompressionLevel Compression; // 0 = none, 1 = speed, 2 = size
+		public bool Compress;
 		#endregion // Fields
 
 		// Returns the missing token, or null if everything was present
@@ -28,9 +28,8 @@ namespace Prism.Content
 				error = "missing or invalid property 'outputDir'";
 			if (!obj.TryGetValue("pack", out var pack) || (pack.JsonType != JsonType.Boolean))
 				error = "missing or invalid property 'pack'";
-			if (!obj.TryGetValue("compression", out var compress) || (compress.JsonType != JsonType.String))
-				error = "missing or invalid property 'compression'";
-			var compStr = ((string)compress).ToLower();
+			if (!obj.TryGetValue("compress", out var compress) || (compress.JsonType != JsonType.Boolean))
+				error = "missing or invalid property 'compress'";
 
 			if (error != null)
 				return false;
@@ -40,18 +39,7 @@ namespace Prism.Content
 			pp.IntermediateDir = (string)iDir;
 			pp.OutputDir = (string)oDir;
 			pp.Pack = (bool)pack;
-			pp.Compression =
-				(compStr == "none") ? CompressionLevel.None :
-				(compStr == "speed") ? CompressionLevel.Speed :
-				(compStr == "size") ? CompressionLevel.Size : 
-				(CompressionLevel)Byte.MaxValue;
-
-			// Validate the other settings
-			if ((byte)pp.Compression == Byte.MaxValue)
-			{
-				error = $"invalid value for compression ({compStr})";
-				return false;
-			}
+			pp.Compress = (bool)compress;
 
 			// No error
 			return true;

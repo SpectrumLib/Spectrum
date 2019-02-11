@@ -71,7 +71,7 @@ namespace Prism.Build
 
 			// Create the content stream
 			if (_contentStream == null)
-				_contentStream = new ContentStream();
+				_contentStream = new ContentStream(Engine.Project.Properties.Compress);
 
 			// Iterate over the tasks
 			while (!Manager.ShouldStop && Manager.GetTaskItem(out BuildEvent current))

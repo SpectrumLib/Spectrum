@@ -36,7 +36,7 @@ namespace Prism
 			Console.WriteLine($"  Intermediate Path:   {project.Paths.IntermediateRoot}");
 			Console.WriteLine($"  Output Path:         {project.Paths.OutputRoot}");
 			Console.WriteLine($"  Pack:                {project.Properties.Pack}");
-			Console.WriteLine($"  Compression:         {project.Properties.Compression}");
+			Console.WriteLine($"  Compress:            {project.Properties.Compress}");
 			Console.WriteLine();
 
 			// Function for printing an item

@@ -4,7 +4,7 @@
 	"intermediateDir": "obj",
 	"outputDir": "bin",
 	"pack": true,
-	"compression": "none"
+	"compress": true
 },
 "items": {
 	"example_file.txt": {

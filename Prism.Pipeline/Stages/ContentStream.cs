@@ -2,6 +2,9 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using K4os.Compression.LZ4;
+using K4os.Compression.LZ4.Streams;
+using Prism.Content;
 
 namespace Prism
 {
@@ -33,19 +36,23 @@ namespace Prism
 		private readonly Encoding _encoding;
 		private readonly Encoder _encoder;
 
+		// The compression level to use
+		internal readonly bool Compress;
+
 		// The current async write task, if any
 		private Task _writeTask = null;
 		// The absolute path to the current output file
 		private string _currentFile = null;
 		#endregion // Fields
 
-		internal ContentStream()
+		internal ContentStream(bool compress)
 		{
 			_memBuffer = new byte[BUFFER_SIZE];
 			_encoding = new UTF8Encoding(
 				encoderShouldEmitUTF8Identifier: false,
 				throwOnInvalidBytes: true
 			);
+			Compress = compress;
 			_encoder = _encoding.GetEncoder();
 		}
 
@@ -66,8 +73,19 @@ namespace Prism
 			_writeTask = new Task(() => {
 				using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
 				{
-					file.Write(_memBuffer, 0, (int)_bufferPos);
-					file.Flush();
+					if (Compress)
+					{
+						using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
+						{
+							writer.Write(_memBuffer, 0, (int)_bufferPos);
+							writer.Flush();
+						}
+					}
+					else
+					{
+						file.Write(_memBuffer, 0, (int)_bufferPos);
+						file.Flush();
+					}
 				}
 			});
 			_writeTask.Start();
@@ -81,8 +99,19 @@ namespace Prism
 			// Synchronously write
 			using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
 			{
-				file.Write(_memBuffer, 0, (int)_bufferPos);
-				file.Flush();
+				if (Compress)
+				{
+					using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
+					{
+						writer.Write(_memBuffer, 0, (int)_bufferPos);
+						writer.Flush();
+					}
+				}
+				else
+				{
+					file.Write(_memBuffer, 0, (int)_bufferPos);
+					file.Flush();
+				}
 			}
 
 			// Reset
@@ -96,11 +125,22 @@ namespace Prism
 			OutputSize += length;
 
 			// Synchronously write
-			using (var buffer = new UnmanagedMemoryStream(data, length))
 			using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+			using (var buffer = new UnmanagedMemoryStream(data, length))
 			{
-				buffer.CopyTo(file);
-				file.Flush();
+				if (Compress)
+				{
+					using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
+					{
+						buffer.CopyTo(writer);
+						writer.Flush();
+					}
+				}
+				else
+				{
+					buffer.CopyTo(file);
+					file.Flush();
+				}
 			}
 
 			// Reset
