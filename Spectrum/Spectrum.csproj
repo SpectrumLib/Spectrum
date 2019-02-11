@@ -36,6 +36,15 @@
     <Reference Include="VulkanCore">
       <HintPath>..\Dependencies\Vulkan\VulkanCore.dll</HintPath>
     </Reference>
+	<Reference Include="K4os.Compression.LZ4">
+      <HintPath>..\Dependencies\LZ4\K4os.Compression.LZ4.dll</HintPath>
+    </Reference>
+	<Reference Include="K4os.Compression.LZ4.Streams">
+      <HintPath>..\Dependencies\LZ4\K4os.Compression.LZ4.Streams.dll</HintPath>
+    </Reference>
+	<Reference Include="K4os.Hash.xxHash">
+      <HintPath>..\Dependencies\LZ4\K4os.Hash.xxHash.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <PropertyGroup>
@@ -49,7 +58,7 @@
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:library /internalize /parallel /log:ILRepack.log</RepackFlags>
-      <RepackInput>Spectrum.tmp.dll VulkanCore.dll</RepackInput>
+      <RepackInput>Spectrum.tmp.dll VulkanCore.dll K4os.Compression.LZ4.dll K4os.Compression.LZ4.Streams.dll K4os.Hash.xxHash.dll</RepackInput>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Spectrum.dll" DestinationFiles="$(OUTDIR)/Spectrum.tmp.dll" />
