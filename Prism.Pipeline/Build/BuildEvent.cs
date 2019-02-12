@@ -50,15 +50,19 @@ namespace Prism.Build
 		// Modify times for the input and output files (ERROR_TIME = associated file does not exist)
 		public readonly DateTime InputTime = ERROR_TIME;
 		public readonly DateTime OutputTime = ERROR_TIME;
+
+		// The size of the output file
+		public readonly uint OutputSize = 0;
 		#endregion // Fields
 
-		private BuildEvent(ContentItem item, uint idx, bool compress, DateTime iTime, DateTime oTime)
+		private BuildEvent(ContentItem item, uint idx, bool compress, DateTime iTime, DateTime oTime, uint outSize)
 		{
 			Item = item;
 			Index = idx;
 			Compress = compress;
 			InputTime = iTime;
 			OutputTime = oTime;
+			OutputSize = outSize;
 		}
 
 		private BuildEvent(string c, string s, string o, bool compress, string i, string p, string args)
@@ -152,7 +156,14 @@ namespace Prism.Build
 		{
 			var iInfo = new FileInfo(item.Paths.SourcePath);
 			var oInfo = new FileInfo(item.Paths.OutputPath);
-			return new BuildEvent(item, idx, project.Properties.Compress, iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME);
+			return new BuildEvent(
+				item, 
+				idx, 
+				project.Properties.Compress, 
+				iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, 
+				oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME,
+				oInfo.Exists ? (uint)oInfo.Length : 0u
+			);
 		}
 
 		public static BuildEvent FromCacheFile(BuildEngine engine, ContentItem item)

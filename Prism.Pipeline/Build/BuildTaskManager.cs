@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Prism.Content;
 
@@ -105,6 +106,20 @@ namespace Prism.Build
 				// Wait for the tasks to complete
 				foreach (var task in _tasks)
 					task.Join();
+
+				// Check for exit request before moving on
+				if (ShouldStop)
+					return;
+
+				// Clean up, lots of temp items probably hanging around at this point
+				GC.Collect();
+
+				// Fail out if any items failed
+				if (_tasks.Any(task => task.Results.FailCount > 0))
+				{
+					Engine.Logger.EngineError("One or more items failed to build, skipping content output step.");
+					return;
+				}
 
 				success = true;
 			}

@@ -33,6 +33,9 @@ namespace Prism.Build
 		// The output stream for the content
 		private ContentStream _contentStream;
 
+		// The results of the last build
+		public readonly TaskResults Results;
+
 		// The thread instance
 		private Thread _thread = null;
 		#endregion // Fields
@@ -43,6 +46,8 @@ namespace Prism.Build
 
 			_importers = new Dictionary<string, ImporterInstance>();
 			_processors = new Dictionary<string, ProcessorInstance>();
+
+			Results = new TaskResults();
 		}
 
 		// Starts the thread and begins processing the content items
@@ -68,6 +73,7 @@ namespace Prism.Build
 		{
 			Stopwatch _timer = new Stopwatch();
 			PipelineLogger _logger = new PipelineLogger(Engine);
+			Results.Reset();
 
 			// Create the content stream
 			if (_contentStream == null)
@@ -80,6 +86,7 @@ namespace Prism.Build
 				Engine.Logger.ItemStart(current);
 				_timer.Restart();
 				_logger.UseEvent(current);
+				Results.UseItem(current.Item.ItemPath);
 
 				// Check the source file exists
 				if (current.InputTime == BuildEvent.ERROR_TIME)
@@ -127,6 +134,7 @@ namespace Prism.Build
 					if (!current.NeedsBuild(cached, processor.Instance))
 					{
 						Engine.Logger.ItemSkipped(current);
+						Results.PassItem(current.OutputSize);
 						continue;
 					}
 				}
@@ -243,10 +251,12 @@ namespace Prism.Build
 
 				// Report end
 				Engine.Logger.ItemFinished(current, _timer.Elapsed);
+				Results.PassItem(_contentStream.OutputSize);
 			}
 
 			// Wait for the final output to be complete
 			_contentStream.Reset(null, false);
+			Results.UseItem(null); // In the case that the last item fails
 		}
 	}
 }
