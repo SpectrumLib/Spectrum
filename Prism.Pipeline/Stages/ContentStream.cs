@@ -38,6 +38,7 @@ namespace Prism
 
 		// The compression level to use
 		internal readonly bool Compress;
+		internal bool SkipCompress = false;
 
 		// The current async write task, if any
 		private Task _writeTask = null;
@@ -57,12 +58,13 @@ namespace Prism
 		}
 
 		// Waits on the old write task, then resets the type to start recoding at the beginning of the buffer
-		internal void Reset(string path)
+		internal void Reset(string path, bool skipCompression)
 		{
 			_writeTask?.Wait();
 			_bufferPos = 0;
 			OutputSize = 0;
 			_currentFile = path;
+			SkipCompress = skipCompression;
 		}
 
 		// Called by the task when it is done with this writer, launches the async write
@@ -73,7 +75,7 @@ namespace Prism
 			_writeTask = new Task(() => {
 				using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
 				{
-					if (Compress)
+					if (Compress && !SkipCompress)
 					{
 						using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
 						{
@@ -99,7 +101,7 @@ namespace Prism
 			// Synchronously write
 			using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
 			{
-				if (Compress)
+				if (Compress && !SkipCompress)
 				{
 					using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
 					{
@@ -128,7 +130,7 @@ namespace Prism
 			using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
 			using (var buffer = new UnmanagedMemoryStream(data, length))
 			{
-				if (Compress)
+				if (Compress && !SkipCompress)
 				{
 					using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
 					{

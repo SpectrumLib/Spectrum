@@ -8,6 +8,7 @@ namespace Prism
 		Type InputType { get; }
 		Type OutputType { get; }
 		Type WriterType { get; }
+		bool SkipCompression { get; }
 
 		object Process(object input, ProcessorContext ctx);
 	}

@@ -32,6 +32,9 @@ namespace Prism.Build
 		private readonly string _cachedOutput = null;
 		public string OutputPath => Item?.Paths.OutputPath ?? _cachedOutput;
 
+		// If this build was created with compression
+		public readonly bool Compress;
+
 		// Importer name
 		private readonly string _cachedImporter = null;
 		public string ImporterName => Item?.ImporterName ?? _cachedImporter;
@@ -49,26 +52,28 @@ namespace Prism.Build
 		public readonly DateTime OutputTime = ERROR_TIME;
 		#endregion // Fields
 
-		private BuildEvent(ContentItem item, uint idx, DateTime iTime, DateTime oTime)
+		private BuildEvent(ContentItem item, uint idx, bool compress, DateTime iTime, DateTime oTime)
 		{
 			Item = item;
 			Index = idx;
+			Compress = compress;
 			InputTime = iTime;
 			OutputTime = oTime;
 		}
 
-		private BuildEvent(string c, string s, string o, string i, string p, string args)
+		private BuildEvent(string c, string s, string o, bool compress, string i, string p, string args)
 		{
 			_cachePath = c;
 			_cachedSource = s;
 			_cachedOutput = o;
+			Compress = compress;
 			_cachedImporter = i;
 			_cachedProcessor = p;
 			_cachedArgs = ContentItem.ParseArgs(args);
 		}
 
 		// Compares this event with the potential cached event to see if a rebuild is needed
-		public bool NeedsBuild(BuildEvent cached)
+		public bool NeedsBuild(BuildEvent cached, IContentProcessor processor)
 		{
 			// There is no exising build for this file
 			if (cached == null || OutputTime == ERROR_TIME)
@@ -80,6 +85,10 @@ namespace Prism.Build
 
 			// The importer and/or processor have changed since the last build
 			if (ImporterName != cached.ImporterName || ProcessorName != cached.ProcessorName)
+				return true;
+
+			// If the last build was with a different compression (unless compression is skipped, then it doesnt matter)
+			if (!processor.SkipCompression && (Compress != cached.Compress))
 				return true;
 
 			// The parameters have changed since the last build
@@ -125,6 +134,7 @@ namespace Prism.Build
 				using (var writer = new BinaryWriter(File.Open(CachePath, FileMode.Create, FileAccess.Write, FileShare.None)))
 				{
 					writer.Write(BUILD_CACHE_HEADER);
+					writer.Write(Compress);
 					writer.Write(ImporterName);
 					writer.Write(ProcessorName);
 					var argStr = String.Join(";", ProcessorArgs.Select(arg => $"{arg.Key}={arg.Value}"));
@@ -138,11 +148,11 @@ namespace Prism.Build
 		}
 
 		#region Creation
-		public static BuildEvent FromItem(ContentItem item, uint idx)
+		public static BuildEvent FromItem(ContentProject project, ContentItem item, uint idx)
 		{
 			var iInfo = new FileInfo(item.Paths.SourcePath);
 			var oInfo = new FileInfo(item.Paths.OutputPath);
-			return new BuildEvent(item, idx, iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME);
+			return new BuildEvent(item, idx, project.Properties.Compress, iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME);
 		}
 
 		public static BuildEvent FromCacheFile(BuildEngine engine, ContentItem item)
@@ -162,6 +172,7 @@ namespace Prism.Build
 						item.Paths.CachePath,
 						item.Paths.SourcePath,
 						item.Paths.OutputPath,
+						reader.ReadBoolean(),
 						reader.ReadString(),
 						reader.ReadString(),
 						reader.ReadString()

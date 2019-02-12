@@ -63,7 +63,7 @@ namespace Prism.Build
 				if (_itemEnumerator.MoveNext())
 				{
 					var ci = _itemEnumerator.Current.Value;
-					item = BuildEvent.FromItem(ci, _itemIndex++);
+					item = BuildEvent.FromItem(Project, ci, _itemIndex++);
 					return true;
 				}
 				else

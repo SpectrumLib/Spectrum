@@ -124,7 +124,7 @@ namespace Prism.Build
 				if (!rebuild)
 				{
 					var cached = BuildEvent.FromCacheFile(Engine, current.Item);
-					if (!current.NeedsBuild(cached))
+					if (!current.NeedsBuild(cached, processor.Instance))
 					{
 						Engine.Logger.ItemSkipped(current);
 						continue;
@@ -227,7 +227,7 @@ namespace Prism.Build
 				try
 				{
 					_logger.UpdateStageName(processor.Type.WriterType.Name);
-					_contentStream.Reset(current.Paths.OutputPath);
+					_contentStream.Reset(current.Paths.OutputPath, processor.Instance.SkipCompression);
 					WriterContext ctx = new WriterContext(_logger);
 					processor.WriterInstance.Write(processedData, _contentStream, ctx);
 					_contentStream.Flush();
@@ -246,7 +246,7 @@ namespace Prism.Build
 			}
 
 			// Wait for the final output to be complete
-			_contentStream.Reset(null);
+			_contentStream.Reset(null, false);
 		}
 	}
 }

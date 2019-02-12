@@ -45,12 +45,4 @@ namespace Prism.Content
 			return true;
 		}
 	}
-
-	// The amount of compression to perform on the content
-	internal enum CompressionLevel : byte
-	{
-		None = 0,
-		Speed = 1,
-		Size = 2
-	}
 }
