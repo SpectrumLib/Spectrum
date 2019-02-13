@@ -43,14 +43,20 @@ namespace Prism
 			Console.ForegroundColor = old;
 		}
 
-		protected override void onEngineInfo(string msg) => Info($"Build Engine: {msg}");
+		protected override void onEngineInfo(string msg, bool important) => Info($"Build Engine: {msg}");
 
 		protected override void onEngineWarning(string msg) => Warn($"Build Engine: {msg}");
 
 		protected override void onEngineError(string msg) => Error($"Build Engine: {msg}");
 
-		protected override void onBuildStart(DateTime start, bool rebuild) =>
+		protected override void onBuildStart(DateTime start, bool rebuild)
+		{
 			Info($"{(rebuild ? "Rebuild" : "Build")} started on {start.ToShortDateString()} at {start.ToLongTimeString()}.");
+			Info($"Build Settings: Pack={Project.Properties.Pack} Compress={Project.Properties.Compress}");
+		}
+
+		protected override void onBuildContinue(TimeSpan itemBuildTime) =>
+			Info($"Items built in {itemBuildTime.TotalSeconds:0.000} seconds, starting content output process.");
 
 		protected override void onBuildEnd(bool success, TimeSpan elapsed, bool cancelled)
 		{
@@ -96,9 +102,9 @@ namespace Prism
 		protected override void onItemSkipped(ContentItem item, uint idx) =>
 			Info($"Skipped content item '{item.ItemPath}'.");
 
-		protected override void onItemInfo(ContentItem item, uint id, string message)
+		protected override void onItemInfo(ContentItem item, uint id, string message, bool important)
 		{
-			if (Verbose)
+			if (Verbose || important)
 				Info($"'{item.ItemPath}' {message}");
 		}
 

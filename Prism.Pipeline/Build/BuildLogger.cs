@@ -28,7 +28,8 @@ namespace Prism.Build
 		}
 
 		#region Internal Logging
-		internal void EngineInfo(string msg) => _messages.Enqueue(new Message(MessageType.EngineInfo, DateTime.Now, msg));
+		internal void EngineInfo(string msg, bool important = false) => 
+			_messages.Enqueue(new Message(MessageType.EngineInfo, DateTime.Now, msg, important));
 
 		internal void EngineWarn(string msg) => _messages.Enqueue(new Message(MessageType.EngineWarn, DateTime.Now, msg));
 
@@ -41,6 +42,9 @@ namespace Prism.Build
 
 			_messages.Enqueue(new Message(MessageType.BuildStart, _startTime, rebuild));
 		}
+
+		internal void BuildContinue(TimeSpan itemBuildTime) =>
+			_messages.Enqueue(new Message(MessageType.BuildContinue, _startTime + _timer.Elapsed, _timer.Elapsed));
 
 		internal void BuildEnd(bool success, TimeSpan elapsed, bool cancelled) =>
 			_messages.Enqueue(new Message(MessageType.BuildEnd, _startTime + _timer.Elapsed, success, elapsed, cancelled));
@@ -71,8 +75,8 @@ namespace Prism.Build
 		internal void ItemSkipped(BuildEvent evt) =>
 			_messages.Enqueue(new Message(MessageType.ItemSkipped, _startTime + _timer.Elapsed, evt.Item, evt.Index));
 
-		internal void ItemInfo(BuildEvent evt, string message) =>
-			_messages.Enqueue(new Message(MessageType.ItemInfo, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
+		internal void ItemInfo(BuildEvent evt, string message, bool important = false) =>
+			_messages.Enqueue(new Message(MessageType.ItemInfo, _startTime + _timer.Elapsed, evt.Item, evt.Index, message, important));
 
 		internal void ItemWarn(BuildEvent evt, string message) =>
 			_messages.Enqueue(new Message(MessageType.ItemWarning, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
@@ -89,10 +93,11 @@ namespace Prism.Build
 				MessageTime = msg.Time;
 				switch (msg.Type)
 				{
-					case MessageType.EngineInfo: onEngineInfo((string)msg.Args[0]); break;
+					case MessageType.EngineInfo: onEngineInfo((string)msg.Args[0], (bool)msg.Args[1]); break;
 					case MessageType.EngineWarn: onEngineWarning((string)msg.Args[0]); break;
 					case MessageType.EngineError: onEngineError((string)msg.Args[0]); break;
 					case MessageType.BuildStart: onBuildStart(MessageTime, (bool)msg.Args[0]); break;
+					case MessageType.BuildContinue: onBuildContinue((TimeSpan)msg.Args[0]); break;
 					case MessageType.BuildEnd: onBuildEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1], (bool)msg.Args[2]); break;
 					case MessageType.CleanStart: onCleanStart(MessageTime); break;
 					case MessageType.CleanEnd: onCleanEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1], (bool)msg.Args[2]); break;
@@ -101,7 +106,7 @@ namespace Prism.Build
 					case MessageType.ItemFinished: onItemFinished((ContentItem)msg.Args[0], (uint)msg.Args[1], (TimeSpan)msg.Args[2]); break;
 					case MessageType.ItemFailed: onItemFailed((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemSkipped: onItemSkipped((ContentItem)msg.Args[0], (uint)msg.Args[1]); break;
-					case MessageType.ItemInfo: onItemInfo((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
+					case MessageType.ItemInfo: onItemInfo((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2], (bool)msg.Args[3]); break;
 					case MessageType.ItemWarning: onItemWarn((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemError: onItemError((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 				}
@@ -110,7 +115,7 @@ namespace Prism.Build
 
 		#region Message Handlers
 		// Called when the build engine produces a general info message
-		protected abstract void onEngineInfo(string msg);
+		protected abstract void onEngineInfo(string msg, bool important);
 		// Called when the build engine produces a general warning message
 		protected abstract void onEngineWarning(string msg);
 		// Called when the build engine produces a general error message
@@ -118,6 +123,8 @@ namespace Prism.Build
 
 		// Called when a new build or rebuild action starts
 		protected abstract void onBuildStart(DateTime start, bool rebuild);
+		// Called when the build process moves from building content items to preparing them for output
+		protected abstract void onBuildContinue(TimeSpan itemBuildTime);
 		// Called when a build or rebuild action ends, either through success, early failure, or if it was cancelled
 		protected abstract void onBuildEnd(bool success, TimeSpan elapsed, bool cancelled);
 
@@ -138,7 +145,7 @@ namespace Prism.Build
 		protected abstract void onItemSkipped(ContentItem item, uint idx);
 
 		// Called from a pipeline stage to relay normal-level information about a content item build process
-		protected abstract void onItemInfo(ContentItem item, uint id, string message);
+		protected abstract void onItemInfo(ContentItem item, uint id, string message, bool important);
 		// Called from a pipeline stage to relay warning-level information about a content item build process
 		protected abstract void onItemWarn(ContentItem item, uint id, string message);
 		// Called from a pipeline stage to relay error-level information about a content item build process
@@ -166,6 +173,7 @@ namespace Prism.Build
 			EngineWarn,
 			EngineError,
 			BuildStart,
+			BuildContinue,
 			BuildEnd,
 			CleanStart,
 			CleanEnd,

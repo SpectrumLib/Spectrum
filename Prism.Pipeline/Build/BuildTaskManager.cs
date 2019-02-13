@@ -121,6 +121,23 @@ namespace Prism.Build
 					return;
 				}
 
+				// Test if we can skip output, otherwise report
+				if (_tasks.All(task => task.Results.PassCount == 0))
+				{
+					Engine.Logger.EngineInfo($"Skipping content output step, no items were rebuilt.", true);
+					success = true;
+					return;
+				}
+				Engine.Logger.BuildContinue(timer.Elapsed);
+
+				// Create the output process and build the metadata
+				var outProc = new OutputProcess(Engine);
+				outProc.BuildMetadata();
+
+				// One last exit check before starting the output process
+				if (ShouldStop)
+					return;
+
 				success = true;
 			}
 			finally

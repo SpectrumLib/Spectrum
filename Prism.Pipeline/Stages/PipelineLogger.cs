@@ -35,8 +35,9 @@ namespace Prism
 		/// Logs an information (standard-level no error) message to the pipeline logging system.
 		/// </summary>
 		/// <param name="str">The message to log.</param>
-		public void Info(string str) =>
-			Logger.ItemInfo(_currEvent, $"({_currStageName}) {str}");
+		/// <param name="important">If the message should be shown, even if the Prism tool is not running verbose.</param>
+		public void Info(string str, bool important = false) =>
+			Logger.ItemInfo(_currEvent, $"({_currStageName}) {str}", important);
 
 		/// <summary>
 		/// Logs a non-standard error message to the pipeline logging system that represents an unexpected state
