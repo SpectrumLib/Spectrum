@@ -6,6 +6,7 @@ namespace Prism
 	internal interface IContentWriter
 	{
 		Type InputType { get; }
+		string LoaderName { get; }
 
 		void Write(object input, ContentStream writer, WriterContext ctx);
 	}

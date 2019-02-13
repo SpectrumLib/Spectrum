@@ -134,7 +134,7 @@ namespace Prism.Build
 					if (!current.NeedsBuild(cached, processor.Instance))
 					{
 						Engine.Logger.ItemSkipped(current);
-						Results.PassItem(current.OutputSize);
+						Results.PassItem(current.OutputSize, true);
 						continue;
 					}
 				}
@@ -251,7 +251,7 @@ namespace Prism.Build
 
 				// Report end
 				Engine.Logger.ItemFinished(current, _timer.Elapsed);
-				Results.PassItem(_contentStream.OutputSize);
+				Results.PassItem(_contentStream.OutputSize, false);
 			}
 
 			// Wait for the final output to be complete
