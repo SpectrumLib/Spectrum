@@ -132,7 +132,7 @@ namespace Prism.Build
 
 				// Create the output process and build the metadata
 				var outProc = new PackingProcess(Engine);
-				if (!outProc.BuildContentPack())
+				if (!outProc.BuildContentPack(_tasks))
 					return;
 
 				// One last exit check before starting the output process

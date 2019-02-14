@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Prism.Content;
 
@@ -29,6 +30,8 @@ namespace Prism.Build
 		// Holds the importer and processors instances used by this task
 		private readonly Dictionary<string, ImporterInstance> _importers;
 		private readonly Dictionary<string, ProcessorInstance> _processors;
+		public IReadOnlyDictionary<string, ImporterInstance> Importers => _importers;
+		public IReadOnlyDictionary<string, ProcessorInstance> Processors => _processors;
 
 		// The output stream for the content
 		private ContentStream _contentStream;

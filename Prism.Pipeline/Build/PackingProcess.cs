@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Prism.Content;
 
@@ -24,8 +26,16 @@ namespace Prism.Build
 			PackPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, CPACK_NAME);
 		}
 
-		public bool BuildContentPack()
+		public bool BuildContentPack(BuildTask[] tasks)
 		{
+			// Generate a list of unique used content loader names and their hashes
+			List<(string Name, uint Hash)> loaders = tasks
+				.SelectMany(task => task.Processors)
+				.Select(pair => (pair.Value.LoaderName, pair.Value.LoaderHash))
+				.Distinct()
+				.ToList();
+
+			// Try to write out the new content pack
 			try
 			{
 				// Remove the old content pack file
@@ -44,6 +54,10 @@ namespace Prism.Build
 						(Project.Properties.Pack     ? 0x01 : 0x00) |
 						(Project.Properties.Compress ? 0x02 : 0x00));
 					writer.Write(buildFlags);
+
+					// Write the number of loaders, then all of the loader names and hashes as pairs
+					writer.Write((uint)loaders.Count);
+					loaders.ForEach(pair => { writer.Write(pair.Name); writer.Write(pair.Hash); });
 				}
 			}
 			catch (Exception e)
