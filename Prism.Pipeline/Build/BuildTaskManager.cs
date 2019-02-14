@@ -122,7 +122,7 @@ namespace Prism.Build
 				}
 
 				// Test if we can skip output, otherwise report
-				if (_tasks.All(task => task.Results.PassCount == 0))
+				if (_tasks.All(task => task.Results.PassCount == task.Results.SkipCount))
 				{
 					Engine.Logger.EngineInfo($"Skipping content output step, no items were rebuilt.", true);
 					success = true;
@@ -131,8 +131,9 @@ namespace Prism.Build
 				Engine.Logger.BuildContinue(timer.Elapsed);
 
 				// Create the output process and build the metadata
-				var outProc = new OutputProcess(Engine);
-				outProc.BuildMetadata();
+				var outProc = new PackingProcess(Engine);
+				if (!outProc.BuildContentPack())
+					return;
 
 				// One last exit check before starting the output process
 				if (ShouldStop)
@@ -180,7 +181,10 @@ namespace Prism.Build
 					iInfo[i].Delete();
 				}
 
-				// TODO: Clean output path
+				// Clean the metadata file from the output
+				string metaPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, PackingProcess.CPACK_NAME);
+				if (File.Exists(metaPath))
+					File.Delete(metaPath);
 
 				success = true;
 			}
