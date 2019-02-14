@@ -131,15 +131,16 @@ namespace Prism.Build
 				Engine.Logger.BuildContinue(timer.Elapsed);
 
 				// Create the output process and build the metadata
-				var outProc = new PackingProcess(Engine);
-				if (!outProc.BuildContentPack(_tasks))
+				var outProc = new PackingProcess(this, _tasks);
+				if (!outProc.BuildContentPack())
 					return;
 
 				// One last exit check before starting the output process
 				if (ShouldStop)
 					return;
 
-				success = true;
+				// Perform the final output steps (will check for cancellation)
+				success = outProc.ProcessOutput(Project.Properties.Pack);
 			}
 			finally
 			{

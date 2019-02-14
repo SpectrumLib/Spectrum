@@ -15,21 +15,28 @@ namespace Prism.Build
 		private static readonly byte CPACK_VERSION = 1;
 
 		#region Fields
-		public readonly BuildEngine Engine;
-		public ContentProject Project => Engine.Project;
+		public readonly BuildTaskManager Manager;
+		public BuildEngine Engine => Manager.Engine;
+		public ContentProject Project => Manager.Engine.Project;
 		public readonly string PackPath;
+
+		private readonly BuildTask[] _tasks;
+
+		private List<(string Name, uint Hash)> _loaders = null;
 		#endregion // Fields
 
-		public PackingProcess(BuildEngine engine)
+		public PackingProcess(BuildTaskManager manager, BuildTask[] tasks)
 		{
-			Engine = engine;
+			Manager = manager;
 			PackPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, CPACK_NAME);
+			_tasks = tasks;
 		}
 
-		public bool BuildContentPack(BuildTask[] tasks)
+		// Builds the .cpack metadata file that describes a pack of processed content
+		public bool BuildContentPack()
 		{
 			// Generate a list of unique used content loader names and their hashes
-			List<(string Name, uint Hash)> loaders = tasks
+			_loaders = _tasks
 				.SelectMany(task => task.Processors)
 				.Select(pair => (pair.Value.LoaderName, pair.Value.LoaderHash))
 				.Distinct()
@@ -56,8 +63,8 @@ namespace Prism.Build
 					writer.Write(buildFlags);
 
 					// Write the number of loaders, then all of the loader names and hashes as pairs
-					writer.Write((uint)loaders.Count);
-					loaders.ForEach(pair => { writer.Write(pair.Name); writer.Write(pair.Hash); });
+					writer.Write((uint)_loaders.Count);
+					_loaders.ForEach(pair => { writer.Write(pair.Name); writer.Write(pair.Hash); });
 				}
 			}
 			catch (Exception e)
@@ -69,6 +76,26 @@ namespace Prism.Build
 			// Good to go
 			Engine.Logger.EngineInfo($"Created content pack file.");
 			return true;
+		}
+
+		// Performs the final processing and moving to the output, potentially packing the content
+		public bool ProcessOutput(bool pack)
+		{
+			if (pack) return packOutput();
+			else return noPackOutput();
+		}
+
+		// Implements content output with no packing
+		private bool noPackOutput()
+		{
+			return true;
+		}
+
+		// Implements content output with packing
+		private bool packOutput()
+		{
+			Engine.Logger.EngineError("Packing content is not yet implemented.");
+			return false;
 		}
 	}
 }

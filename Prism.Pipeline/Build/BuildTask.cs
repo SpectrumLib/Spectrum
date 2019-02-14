@@ -89,7 +89,7 @@ namespace Prism.Build
 				Engine.Logger.ItemStart(current);
 				_timer.Restart();
 				_logger.UseEvent(current);
-				Results.UseItem(current.Item.ItemPath);
+				Results.UseItem(current);
 
 				// Check the source file exists
 				if (current.InputTime == BuildEvent.ERROR_TIME)
@@ -225,7 +225,7 @@ namespace Prism.Build
 					if (File.Exists(current.Paths.OutputPath))
 						File.Delete(current.Paths.OutputPath);
 					if (File.Exists(current.CachePath))
-						File.Decrypt(current.CachePath);
+						File.Delete(current.CachePath);
 				}
 				catch
 				{

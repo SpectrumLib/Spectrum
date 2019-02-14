@@ -83,6 +83,9 @@ namespace Prism.Build
 
 		internal void ItemError(BuildEvent evt, string message) =>
 			_messages.Enqueue(new Message(MessageType.ItemError, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
+
+		internal void ItemPack(ContentItem item, uint packNum) =>
+			_messages.Enqueue(new Message(MessageType.ItemPack, _startTime + _timer.Elapsed, item, Project.Properties.Pack, packNum));
 		#endregion // Internal Logging
 
 		// Called on the main thread in the Prism tool to process all queued messages
@@ -109,6 +112,7 @@ namespace Prism.Build
 					case MessageType.ItemInfo: onItemInfo((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2], (bool)msg.Args[3]); break;
 					case MessageType.ItemWarning: onItemWarn((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemError: onItemError((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
+					case MessageType.ItemPack: onItemPack((ContentItem)msg.Args[0], (bool)msg.Args[1], (uint)msg.Args[2]); break;
 				}
 			}
 		}
@@ -150,6 +154,9 @@ namespace Prism.Build
 		protected abstract void onItemWarn(ContentItem item, uint id, string message);
 		// Called from a pipeline stage to relay error-level information about a content item build process
 		protected abstract void onItemError(ContentItem item, uint id, string message);
+
+		// Called from the packing process when an item is moved to the output, potentially packed
+		protected abstract void onItemPack(ContentItem item, bool pack, uint packNum);
 		#endregion // Message Handlers
 
 		#region Message Impl
@@ -184,7 +191,8 @@ namespace Prism.Build
 			ItemSkipped,
 			ItemInfo,
 			ItemWarning,
-			ItemError
+			ItemError,
+			ItemPack
 		}
 		#endregion // Message Impl
 

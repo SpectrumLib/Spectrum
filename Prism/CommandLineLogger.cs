@@ -113,5 +113,13 @@ namespace Prism
 
 		protected override void onItemError(ContentItem item, uint id, string message) =>
 			Error($"'{item.ItemPath}' {message}");
+
+		protected override void onItemPack(ContentItem item, bool pack, uint packNum)
+		{
+			if (pack)
+				Info($"Content item '{item.ItemPath}' packed in content pack {packNum}.");
+			else
+				Info($"Content item '{item.ItemPath}' processed to output.");
+		}
 	}
 }
