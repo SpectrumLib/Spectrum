@@ -162,30 +162,48 @@ namespace Prism.Build
 			{
 				Engine.Logger.CleanStart();
 
-				// Clean all .pcf files out of the intermediate path
-				var iInfo = (new DirectoryInfo(Project.Paths.IntermediateRoot)).GetFiles("*.pcf", SearchOption.TopDirectoryOnly);
-				for (int i = 0; i < iInfo.Length; ++i)
+				// Intermediate files
+				if (Directory.Exists(Project.Paths.IntermediateRoot))
 				{
-					// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
-					if (((i % 5) == 0) && ShouldStop)
-						return;
-					iInfo[i].Delete();
+					// Clean all .pcf files out of the intermediate path
+					var iInfo = (new DirectoryInfo(Project.Paths.IntermediateRoot)).GetFiles("*.pcf", SearchOption.TopDirectoryOnly);
+					for (int i = 0; i < iInfo.Length; ++i)
+					{
+						// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
+						if (((i % 5) == 0) && ShouldStop)
+							return;
+						iInfo[i].Delete();
+					}
+
+					// Clean all .bcache files out of the intermediate path
+					iInfo = (new DirectoryInfo(Project.Paths.IntermediateRoot)).GetFiles("*.bcache", SearchOption.TopDirectoryOnly);
+					for (int i = 0; i < iInfo.Length; ++i)
+					{
+						// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
+						if (((i % 5) == 0) && ShouldStop)
+							return;
+						iInfo[i].Delete();
+					}
 				}
 
-				// Clean all .bcache files out of the intermediate path
-				iInfo = (new DirectoryInfo(Project.Paths.IntermediateRoot)).GetFiles("*.bcache", SearchOption.TopDirectoryOnly);
-				for (int i = 0; i < iInfo.Length; ++i)
+				// Output files
+				if (Directory.Exists(Project.Paths.OutputRoot))
 				{
-					// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
-					if (((i % 5) == 0) && ShouldStop)
-						return;
-					iInfo[i].Delete();
-				}
+					// Clean the content pack file from the output
+					string packPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, PackingProcess.CPACK_NAME);
+					if (File.Exists(packPath))
+						File.Delete(packPath);
 
-				// Clean the metadata file from the output
-				string metaPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, PackingProcess.CPACK_NAME);
-				if (File.Exists(metaPath))
-					File.Delete(metaPath);
+					// Clean the individual items out (no packing)
+					var oInfo = (new DirectoryInfo(Project.Paths.OutputRoot)).GetFiles("*.pci", SearchOption.TopDirectoryOnly);
+					for (int i = 0; i < oInfo.Length; ++i)
+					{
+						// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
+						if (((i % 5) == 0) && ShouldStop)
+							return;
+						oInfo[i].Delete();
+					}
+				}
 
 				success = true;
 			}

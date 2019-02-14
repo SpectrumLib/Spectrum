@@ -9,8 +9,8 @@ namespace Prism.Build
 	{
 		#region Fields
 		// Includes successful and skipped items, with their file sizes
-		private readonly Dictionary<ContentItem, (uint, bool)> _passItems;
-		public IReadOnlyDictionary<ContentItem, (uint Size, bool Skipped)> PassItems => _passItems;
+		private readonly List<(ContentItem, uint, bool)> _passItems;
+		public IReadOnlyList<(ContentItem Item, uint Size, bool Skipped)> PassItems => _passItems;
 
 		// Failed items
 		private readonly List<ContentItem> _failItems;
@@ -27,7 +27,7 @@ namespace Prism.Build
 
 		public TaskResults()
 		{
-			_passItems = new Dictionary<ContentItem, (uint, bool)>();
+			_passItems = new List<(ContentItem, uint, bool)>();
 			_failItems = new List<ContentItem>();
 		}
 
@@ -48,7 +48,7 @@ namespace Prism.Build
 
 		public void PassItem(uint size, bool skipped)
 		{
-			_passItems.Add(_currentEvent.Item, (size, skipped));
+			_passItems.Add((_currentEvent.Item, size, skipped));
 			_currentEvent = null;
 			if (skipped)
 				SkipCount += 1;
