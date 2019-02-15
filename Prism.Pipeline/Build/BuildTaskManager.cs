@@ -75,6 +75,30 @@ namespace Prism.Build
 			}
 		}
 
+		// Attempts to load the settings used in the last build to see if the output settings have changed
+		//   Returns true if the settings have changed (need to redo the packing process)
+		//   This checks for things like if the output directory or packing settings have changed
+		//   Also check if the compression changed but might not be caught by the content items, which can
+		//   happen when switching around intermediate and output roots in a specific way
+		private bool CheckOutputChanged()
+		{
+			var packPath = PackingProcess.GetPackPath(Project.Paths.OutputRoot);
+			if (!File.Exists(packPath))
+				return true;
+
+			try
+			{
+				using (var reader = new BinaryReader(File.Open(packPath, FileMode.Open, FileAccess.Read, FileShare.None)))
+				{
+					byte flags = reader.ReadBytes(5)[4]; // 4-byte header, 5th byte is build flags
+					bool pack = (flags & 0x01) > 0;
+					bool compress = (flags & 0x02) > 0;
+					return pack != Project.Properties.Pack || compress != Project.Properties.Compress;
+				}
+			}
+			catch { return true; }
+		}
+
 		#region Task Functions
 		// The pipeline control function for build tasks that runs on the separate build thread
 		public void Build(bool rebuild)
@@ -121,12 +145,20 @@ namespace Prism.Build
 					return;
 				}
 
+				// Check if the output settings have changed
+				bool outChanged = CheckOutputChanged();
+
 				// Test if we can skip output, otherwise report
 				if (_tasks.All(task => task.Results.PassCount == task.Results.SkipCount))
 				{
-					Engine.Logger.EngineInfo($"Skipping content output step, no items were rebuilt.", true);
-					success = true;
-					return;
+					if (!outChanged)
+					{
+						Engine.Logger.EngineInfo($"Skipping content output step, no items were rebuilt.", true);
+						success = true;
+						return;
+					}
+					else
+						Engine.Logger.EngineInfo($"No items were rebuilt, but the output settings have changed.", true);
 				}
 				Engine.Logger.BuildContinue(timer.Elapsed);
 
@@ -140,7 +172,7 @@ namespace Prism.Build
 					return;
 
 				// Perform the final output steps (will check for cancellation)
-				success = outProc.ProcessOutput(Project.Properties.Pack);
+				success = outProc.ProcessOutput(Project.Properties.Pack, outChanged);
 			}
 			finally
 			{

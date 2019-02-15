@@ -29,9 +29,11 @@ namespace Prism.Build
 		public PackingProcess(BuildTaskManager manager, BuildTask[] tasks)
 		{
 			Manager = manager;
-			PackPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, CPACK_NAME);
+			PackPath = GetPackPath(Project.Paths.OutputRoot);
 			_tasks = tasks;
 		}
+
+		public static string GetPackPath(string outRoot) => PathUtils.CombineToAbsolute(outRoot, CPACK_NAME);
 
 		// Builds the .cpack metadata file that describes a pack of processed content
 		public bool BuildContentPack()
@@ -80,19 +82,19 @@ namespace Prism.Build
 		}
 
 		// Performs the final processing and moving to the output, potentially packing the content
-		public bool ProcessOutput(bool pack)
+		public bool ProcessOutput(bool pack, bool force)
 		{
-			if (pack) return packOutput();
-			else return noPackOutput();
+			if (pack) return packOutput(force);
+			else return noPackOutput(force);
 		}
 
 		// Implements content output with no packing
-		private bool noPackOutput()
+		private bool noPackOutput(bool force)
 		{
 			var results = _tasks.Select(t => t.Results);
 			foreach (var result in results)
 			{
-				var items = result.PassItems.Where(item => !item.Skipped);
+				var items = force ? result.PassItems : result.PassItems.Where(item => !item.Skipped);
 				foreach (var item in items)
 				{
 					// Check for cancel
@@ -141,7 +143,7 @@ namespace Prism.Build
 		}
 
 		// Implements content output with packing
-		private bool packOutput()
+		private bool packOutput(bool force)
 		{
 			Engine.Logger.EngineError("Packing content is not yet implemented.");
 			return false;
