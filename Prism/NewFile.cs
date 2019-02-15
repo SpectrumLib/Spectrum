@@ -14,8 +14,8 @@ namespace Prism
 			// Validate args length
 			if (args.Length < 3)
 			{
-				Console.WriteLine("ERROR: Invalid argument count.");
-				Console.WriteLine("Usage: Prism.exe new <type> <file> [args]");
+				CConsole.Error("Invalid argument count.");
+				CConsole.Error("Usage: Prism.exe new <type> <file> [args]");
 				return -1;
 			}
 
@@ -23,8 +23,8 @@ namespace Prism
 			string newType = args[1];
 			if (!VALID_NEW_TYPES.Contains(newType))
 			{
-				Console.WriteLine($"ERROR: Invalid type '{newType}' specified.");
-				Console.WriteLine($"Please use one of the following types: {String.Join(", ", VALID_NEW_TYPES)}.");
+				CConsole.Error($"Invalid type '{newType}' specified.");
+				CConsole.Error($"Please use one of the following types: {String.Join(", ", VALID_NEW_TYPES)}.");
 				return -1;
 			}
 
@@ -38,20 +38,20 @@ namespace Prism
 						{
 							newPath = NewFileGenerator.NewProjectFile(args[2]);
 							if (!newPath.EndsWith(".prism"))
-								Console.WriteLine("WARNING: The project file does not end with the standard '.prism' extension.");
+								CConsole.Warn("The project file does not end with the standard '.prism' extension.");
 							break;
 						}
-					default: Console.WriteLine($"ERROR: The new file type '{newType}' is not yet implemented."); return -1;
+					default: CConsole.Error($"The new file type '{newType}' is not yet implemented."); return -1;
 				}
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine($"ERROR: Could not create new file, reason: {e.Message}.");
+				CConsole.Error($"Could not create new file, reason: {e.Message}.");
 				return -1;
 			}
 
 			// Report
-			Console.WriteLine($"INFO: Created a new {newType} file at '{newPath}'.");
+			CConsole.Info($"Created a new {newType} file at '{newPath}'.");
 
 			return 0;
 		}

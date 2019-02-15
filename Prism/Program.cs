@@ -12,17 +12,13 @@ namespace Prism
 			// No arguments = open gui with no project (or just exit for now)
 			if (args.Length == 0)
 			{
-				Console.WriteLine("ERROR: The GUI for Prism is not yet complete. Please use the command line interface for now.");
-				Console.WriteLine("       Usage: Prism.exe <action> <file> [args]");
+				CConsole.Error("The GUI for Prism is not yet complete. Please use the command line interface for now.");
+				CConsole.Error("    Usage: Prism.exe <action> <file> [args]");
 				return -1;
 			}
 
 			// Convert all of the flags to lower case and normalizes the first character
-			args = args.Select(arg => {
-				bool isFlag = arg.StartsWith("/") || arg.StartsWith("-");
-				if (isFlag) return '/' + arg.Substring(arg.StartsWith("--") ? 2 : 1).ToLower();
-				return arg;
-			}).ToArray();
+			args = ArgParser.Sanitize(args);
 
 			// Check for the help flag
 			if (ArgParser.Help(args))
@@ -37,14 +33,14 @@ namespace Prism
 			// Check for a valid action
 			if (!GetAction(args, out string action))
 			{
-				Console.WriteLine($"ERROR: The action '{action}' is not valid. Please use one of: {String.Join(", ", VALID_ACTIONS)}.");
+				CConsole.Error($"The action '{action}' is not valid. Please use one of: {String.Join(", ", VALID_ACTIONS)}.");
 				return -1;
 			}
 
 			// Make sure there are enough arguments
 			if (args.Length < 2)
 			{
-				Console.WriteLine("ERROR: Not enough command line arguments specified.");
+				CConsole.Error("Not enough command line arguments specified.");
 				return -1;
 			}
 
@@ -56,7 +52,7 @@ namespace Prism
 				case "rebuild":
 				case "clean": return CommandLineAction.RunAction(action, args, verbose);
 				case "view": return ViewProject.Summarize(args, verbose);
-				default: Console.WriteLine($"ERROR: The action '{action}' is not yet implemented."); return -1;
+				default: CConsole.Error($"The action '{action}' is not yet implemented."); return -1;
 			}
 		}
 
@@ -81,13 +77,17 @@ namespace Prism
 							  "action.");
 
 			Console.WriteLine("\nThe command line flags are:");
-			Console.WriteLine("    > /help;/?                - Prints this help message, and then quits.");
+			Console.WriteLine("    > /help;/h;/?             - Prints this help message, and then quits.");
 			Console.WriteLine("    > /verbose;/v             - Prints out more information while running. Valid for all commands.");
-			Console.WriteLine("    > (/parallel;/p)[:<num>]  - Sets the number of threads to use in build or rebuild tasks. If");
-			Console.WriteLine("                                '0' or no number is specified, then the number of threads will be");
+			Console.WriteLine("    > /parallel[:<num>]       - Sets the number of threads to use in build or rebuild tasks. If");
+			Console.WriteLine("      /p[:<num>]                '0' or no number is specified, then the number of threads will be");
 			Console.WriteLine("                                set to the numer of cores. If not specified, only a single thread");
 			Console.WriteLine("                                will be used. The thread count will be clamped to the number of");
 			Console.WriteLine("                                available cores.");
+			Console.WriteLine("    > /ipath:<value>          - Sets the root path for the intermediate content files.");
+			Console.WriteLine("    > /opath:<value>          - Sets the root path for the final output content files.");
+			Console.WriteLine("    > /pack:<value>           - Sets if the content files are packed.");
+			Console.WriteLine("    > /compress:<value>       - Sets if the content files are compressed.");
 			Console.WriteLine("For compatibility, all flags can be specified with '/', '-', or '--'.\n");
 		}
 	}

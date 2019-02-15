@@ -1,6 +1,7 @@
 ﻿using System;
 using Prism.Build;
 using Prism.Content;
+using static Prism.CConsole;
 
 namespace Prism
 {
@@ -15,32 +16,6 @@ namespace Prism
 			base()
 		{
 			Verbose = verbose;
-		}
-
-		public void Info(string msg) => Console.WriteLine($"INFO: {msg}");
-
-		public void Warn(string msg)
-		{
-			var old = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.Yellow;
-			Console.WriteLine($"WARN: {msg}");
-			Console.ForegroundColor = old;
-		}
-
-		public void Error(string msg)
-		{
-			var old = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.Red;
-			Console.WriteLine($"ERROR: {msg}");
-			Console.ForegroundColor = old;
-		}
-
-		public void Fatal(string msg)
-		{
-			var old = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.Magenta;
-			Console.WriteLine($"FATAL: {msg}");
-			Console.ForegroundColor = old;
 		}
 
 		protected override void onEngineInfo(string msg, bool important) => Info($"Build Engine: {msg}");

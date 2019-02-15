@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Prism
@@ -7,6 +8,7 @@ namespace Prism
 	public static class ArgParser
 	{
 		private static readonly char[] COLON_SPLIT = { ':' };
+		private static readonly char[] PARAM_SPLIT = { ':', '=' };
 
 		// Raw check for an argument in the list
 		public static bool ContainsArgument(string[] args, string arg) => args.Contains('/' + arg);
@@ -26,8 +28,23 @@ namespace Prism
 			return true;
 		}
 
+		// Santizes the flag beginnings and makes the flags lowercase
+		public static string[] Sanitize(string[] args)
+		{
+			return args.Select(arg => {
+				bool isFlag = arg.StartsWith("/") || arg.StartsWith("-");
+				if (isFlag)
+				{
+					var comps = arg.Split(COLON_SPLIT, 2);
+					var end = (comps.Length > 1) ? $":{comps[1]}" : "";
+					return '/' + comps[0].Substring(comps[0].StartsWith("--") ? 2 : 1).ToLower() + end;
+				}
+				return arg;
+			}).ToArray();
+		}
+
 		// If there is a help flag
-		public static bool Help(string[] args) => ContainsArgument(args, "help") || ContainsArgument(args, "?");
+		public static bool Help(string[] args) => ContainsArgument(args, "help") || ContainsArgument(args, "?") || ContainsArgument(args, "h");
 
 		// If there is a verbose flag
 		public static bool Verbose(string[] args) => ContainsArgument(args, "verbose") || ContainsArgument(args, "v");
@@ -53,7 +70,7 @@ namespace Prism
 				// Try to parse it
 				if (!Int32.TryParse(rawValue, out int pValue))
 				{
-					Console.WriteLine($"WARN: The parallel count '{rawValue}' is not a valid integer, using one thread.");
+					CConsole.Warn($"The parallel count '{rawValue}' is not a valid integer, using one thread.");
 					return 1;
 				}
 
@@ -62,12 +79,12 @@ namespace Prism
 					return cpuCount;
 				else if (pValue < 0)
 				{
-					Console.WriteLine("WARN: The parallel count cannot be negative, using one thread.");
+					CConsole.Warn("The parallel count cannot be negative, using one thread.");
 					return 1;
 				}
 				else if (pValue > cpuCount)
 				{
-					Console.WriteLine($"WARN: The parallel count {pValue} is greater than the number of cpu cores, clamping.");
+					CConsole.Warn($"The parallel count {pValue} is greater than the number of cpu cores, clamping.");
 					return cpuCount;
 				}
 
@@ -76,6 +93,43 @@ namespace Prism
 
 			// No flag specified, only use a single thread
 			return 1;
+		}
+
+		// Attempts to parse all of the /param arguments and their values
+		public static Dictionary<string, object> Params(string[] args)
+		{
+			Dictionary<string, object> plist = new Dictionary<string, object>();
+
+			if (ContainsValueArgument(args, "ipath", out string rawarg))
+			{
+				if (Uri.IsWellFormedUriString(rawarg, UriKind.RelativeOrAbsolute))
+					plist.Add("ipath", rawarg);
+				else
+					CConsole.Error("Invalid path value for 'ipath' parameter.");
+			}
+			if (ContainsValueArgument(args, "opath", out rawarg))
+			{
+				if (Uri.IsWellFormedUriString(rawarg, UriKind.RelativeOrAbsolute))
+					plist.Add("opath", rawarg);
+				else
+					CConsole.Error("Invalid path value for 'opath' parameter.");
+			}
+			if (ContainsValueArgument(args, "pack", out rawarg))
+			{
+				if (Boolean.TryParse(rawarg, out var pack))
+					plist.Add("pack", pack);
+				else
+					CConsole.Error("Invalid boolean value for 'pack' parameter.");
+			}
+			if (ContainsValueArgument(args, "compress", out rawarg))
+			{
+				if (Boolean.TryParse(rawarg, out var compress))
+					plist.Add("compress", compress);
+				else
+					CConsole.Error("Invalid boolean value for 'compress' parameter.");
+			}
+
+			return plist;
 		}
 	}
 }

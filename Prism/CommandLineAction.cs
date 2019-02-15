@@ -17,15 +17,18 @@ namespace Prism
 			ContentProject project = null;
 			try
 			{
-				project = ContentProject.LoadFromFile(filePath);
+				// Check for any parameter override cmd line args
+				var oargs = ArgParser.Params(args);
+
+				project = ContentProject.LoadFromFile(filePath, oargs);
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine($"ERROR: Could not load content project file, reason: {e.Message}.");
+				CConsole.Error($"Could not load content project file, reason: {e.Message}.");
 				if (verbose && (e.InnerException != null))
 				{
-					Console.WriteLine($"EXCEPTION: ({e.InnerException.GetType().Name})");
-					Console.WriteLine(e.InnerException.StackTrace);
+					CConsole.Error($"{e.InnerException.GetType().Name}");
+					CConsole.Error(e.InnerException.StackTrace);
 				}
 				return -1;
 			}
@@ -33,16 +36,16 @@ namespace Prism
 			// Report project information
 			if (verbose)
 			{
-				Console.WriteLine($"INFO: --- Project Info ---\n" +
-								  $"      Content Root:       {project.Paths.ContentRoot}\n" +
-								  $"      Intermediate Root:  {project.Paths.IntermediateRoot}\n" +
-								  $"      Output Root:        {project.Paths.OutputRoot}");
+				CConsole.Info($" ------ Project Info ------ ");
+				CConsole.Info($"     Content Root:       {project.Paths.ContentRoot}");
+				CConsole.Info($"     Intermediate Root:  {project.Paths.IntermediateRoot}");
+				CConsole.Info($"     Output Root:        {project.Paths.OutputRoot}");
 			}
 
 			// Get the parallelization info
 			uint threadCount = (action == "clean") ? 1 : ArgParser.Parallel(args);
 			if (threadCount > 1)
-				Console.WriteLine($"INFO: Using {threadCount} threads for {action} process.");
+				CConsole.Info($"Using {threadCount} threads for {action} process.");
 
 			// Create the build engine to manage this action
 			BuildEngine engine = null;
@@ -52,11 +55,11 @@ namespace Prism
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine($"ERROR: Unable to create build engine, reason: {e.Message}.");
+				CConsole.Error($"Unable to create build engine, reason: {e.Message}.");
 				if (verbose)
 				{
-					Console.WriteLine($"EXCEPTION: ({e.GetType().Name})");
-					Console.WriteLine(e.StackTrace);
+					CConsole.Error($"{e.GetType().Name}");
+					CConsole.Error(e.StackTrace);
 				}
 				return -1;
 			}
@@ -73,7 +76,7 @@ namespace Prism
 						case "build": task = engine.Build(false); break;
 						case "rebuild": task = engine.Build(true); break;
 						case "clean": task = engine.Clean(); break;
-						default: Console.WriteLine($"ERROR: The action '{action}' was not understood."); return -1; // Should never be reached
+						default: CConsole.Error($"The action '{action}' was not understood."); return -1; // Should never be reached
 					}
 					task.Start();
 
@@ -88,22 +91,22 @@ namespace Prism
 					if (task.IsFaulted)
 					{
 						var te = task.Exception.InnerException;
-						Console.WriteLine($"ERROR: Action '{action}' encountered an exception, message: {te?.Message}.");
+						CConsole.Error($"Action '{action}' encountered an exception, message: {te?.Message}.");
 						if (verbose)
 						{
-							Console.WriteLine($"EXCEPTION: ({te?.GetType().Name})");
-							Console.WriteLine(te?.StackTrace);
+							CConsole.Error($"{te?.GetType().Name}");
+							CConsole.Error(te?.StackTrace);
 						}
 						return -1;
 					}
 				}
 				catch (Exception e)
 				{
-					Console.WriteLine($"ERROR: Unhandled exception during action '{action}', message: {e.Message}.");
+					CConsole.Error($"Unhandled exception during action '{action}', message: {e.Message}.");
 					if (verbose)
 					{
-						Console.WriteLine($"EXCEPTION: ({e.GetType().Name})");
-						Console.WriteLine(e.StackTrace);
+						CConsole.Error($"{e.GetType().Name}");
+						CConsole.Error(e.StackTrace);
 					}
 					return -1;
 				}

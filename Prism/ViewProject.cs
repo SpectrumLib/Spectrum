@@ -19,11 +19,11 @@ namespace Prism
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine($"ERROR: Could not load content project file, reason: {e.Message}.");
+				CConsole.Error($"Could not load content project file, reason: {e.Message}.");
 				if (verbose && (e.InnerException != null))
 				{
-					Console.WriteLine($"EXCEPTION: ({e.InnerException.GetType().Name})");
-					Console.WriteLine(e.InnerException.StackTrace);
+					CConsole.Error($"{e.InnerException.GetType().Name}");
+					CConsole.Error(e.InnerException.StackTrace);
 				}
 				return -1;
 			}
