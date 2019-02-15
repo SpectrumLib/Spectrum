@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Json;
 
 namespace Prism.Content
@@ -43,6 +44,32 @@ namespace Prism.Content
 
 			// No error
 			return true;
+		}
+
+		// Derives a new set of properties from an existing set, potential overrides
+		public static void LoadOverrides(in ProjectProperties pp, Dictionary<string, object> os, out ProjectProperties? opp)
+		{
+			if (os == null)
+			{
+				opp = null;
+				return;
+			}
+
+			var copy = pp;
+			bool changed = false;
+
+			if (os.ContainsKey("pack"))
+			{
+				copy.Pack = (bool)os["pack"];
+				changed = pp.Pack != copy.Pack;
+			}
+			if (os.ContainsKey("compress"))
+			{
+				copy.Compress = (bool)os["compress"];
+				changed = changed || (pp.Compress != copy.Compress);
+			}
+
+			opp = changed ? copy : (ProjectProperties?)null;
 		}
 	}
 }
