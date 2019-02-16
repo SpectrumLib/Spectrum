@@ -35,12 +35,12 @@ namespace Prism.Build
 
 		internal void EngineError(string msg) => _messages.Enqueue(new Message(MessageType.EngineError, DateTime.Now, msg));
 
-		internal void BuildStart(bool rebuild)
+		internal void BuildStart(bool rebuild, bool release)
 		{
 			_startTime = DateTime.Now;
 			_timer.Restart();
 
-			_messages.Enqueue(new Message(MessageType.BuildStart, _startTime, rebuild));
+			_messages.Enqueue(new Message(MessageType.BuildStart, _startTime, rebuild, release));
 		}
 
 		internal void BuildContinue(TimeSpan itemBuildTime) =>
@@ -85,7 +85,7 @@ namespace Prism.Build
 			_messages.Enqueue(new Message(MessageType.ItemError, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
 
 		internal void ItemPack(ContentItem item, uint packNum) =>
-			_messages.Enqueue(new Message(MessageType.ItemPack, _startTime + _timer.Elapsed, item, Project.Properties.Pack, packNum));
+			_messages.Enqueue(new Message(MessageType.ItemPack, _startTime + _timer.Elapsed, item, packNum));
 		#endregion // Internal Logging
 
 		// Called on the main thread in the Prism tool to process all queued messages
@@ -99,7 +99,7 @@ namespace Prism.Build
 					case MessageType.EngineInfo: onEngineInfo((string)msg.Args[0], (bool)msg.Args[1]); break;
 					case MessageType.EngineWarn: onEngineWarning((string)msg.Args[0]); break;
 					case MessageType.EngineError: onEngineError((string)msg.Args[0]); break;
-					case MessageType.BuildStart: onBuildStart(MessageTime, (bool)msg.Args[0]); break;
+					case MessageType.BuildStart: onBuildStart(MessageTime, (bool)msg.Args[0], (bool)msg.Args[1]); break;
 					case MessageType.BuildContinue: onBuildContinue((TimeSpan)msg.Args[0]); break;
 					case MessageType.BuildEnd: onBuildEnd((bool)msg.Args[0], (TimeSpan)msg.Args[1], (bool)msg.Args[2]); break;
 					case MessageType.CleanStart: onCleanStart(MessageTime); break;
@@ -112,7 +112,7 @@ namespace Prism.Build
 					case MessageType.ItemInfo: onItemInfo((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2], (bool)msg.Args[3]); break;
 					case MessageType.ItemWarning: onItemWarn((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemError: onItemError((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
-					case MessageType.ItemPack: onItemPack((ContentItem)msg.Args[0], (bool)msg.Args[1], (uint)msg.Args[2]); break;
+					case MessageType.ItemPack: onItemPack((ContentItem)msg.Args[0], (uint)msg.Args[1]); break;
 				}
 			}
 		}
@@ -126,7 +126,7 @@ namespace Prism.Build
 		protected abstract void onEngineError(string msg);
 
 		// Called when a new build or rebuild action starts
-		protected abstract void onBuildStart(DateTime start, bool rebuild);
+		protected abstract void onBuildStart(DateTime start, bool rebuild, bool release);
 		// Called when the build process moves from building content items to preparing them for output
 		protected abstract void onBuildContinue(TimeSpan itemBuildTime);
 		// Called when a build or rebuild action ends, either through success, early failure, or if it was cancelled
@@ -155,8 +155,8 @@ namespace Prism.Build
 		// Called from a pipeline stage to relay error-level information about a content item build process
 		protected abstract void onItemError(ContentItem item, uint id, string message);
 
-		// Called from the packing process when an item is moved to the output, potentially packed
-		protected abstract void onItemPack(ContentItem item, bool pack, uint packNum);
+		// Called from the packing process when an item is moved to the output
+		protected abstract void onItemPack(ContentItem item, uint packNum);
 		#endregion // Message Handlers
 
 		#region Message Impl

@@ -10,7 +10,6 @@ namespace Prism.Content
 		public string RootDir;
 		public string IntermediateDir;
 		public string OutputDir;
-		public bool Pack;
 		public bool Compress;
 		#endregion // Fields
 
@@ -27,8 +26,6 @@ namespace Prism.Content
 				error = "missing or invalid property 'intermediateDir'";
 			if (!obj.TryGetValue("outputDir", out var oDir) || (oDir.JsonType != JsonType.String))
 				error = "missing or invalid property 'outputDir'";
-			if (!obj.TryGetValue("pack", out var pack) || (pack.JsonType != JsonType.Boolean))
-				error = "missing or invalid property 'pack'";
 			if (!obj.TryGetValue("compress", out var compress) || (compress.JsonType != JsonType.Boolean))
 				error = "missing or invalid property 'compress'";
 
@@ -39,7 +36,6 @@ namespace Prism.Content
 			pp.RootDir = (string)rDir;
 			pp.IntermediateDir = (string)iDir;
 			pp.OutputDir = (string)oDir;
-			pp.Pack = (bool)pack;
 			pp.Compress = (bool)compress;
 
 			// No error
@@ -58,11 +54,6 @@ namespace Prism.Content
 			var copy = pp;
 			bool changed = false;
 
-			if (os.ContainsKey("pack"))
-			{
-				copy.Pack = (bool)os["pack"];
-				changed = pp.Pack != copy.Pack;
-			}
 			if (os.ContainsKey("compress"))
 			{
 				copy.Compress = (bool)os["compress"];

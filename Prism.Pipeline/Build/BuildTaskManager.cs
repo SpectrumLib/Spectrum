@@ -80,7 +80,7 @@ namespace Prism.Build
 		//   This checks for things like if the output directory or packing settings have changed
 		//   Also check if the compression changed but might not be caught by the content items, which can
 		//   happen when switching around intermediate and output roots in a specific way
-		private bool CheckOutputChanged()
+		private bool CheckOutputChanged(bool release)
 		{
 			var packPath = PackingProcess.GetPackPath(Project.Paths.OutputRoot);
 			if (!File.Exists(packPath))
@@ -91,9 +91,9 @@ namespace Prism.Build
 				using (var reader = new BinaryReader(File.Open(packPath, FileMode.Open, FileAccess.Read, FileShare.None)))
 				{
 					byte flags = reader.ReadBytes(5)[4]; // 4-byte header, 5th byte is build flags
-					bool pack = (flags & 0x01) > 0;
+					bool rel = (flags & 0x01) > 0;
 					bool compress = (flags & 0x02) > 0;
-					return pack != Project.Properties.Pack || compress != Project.Properties.Compress;
+					return release != rel || compress != Project.Properties.Compress;
 				}
 			}
 			catch { return true; }
@@ -101,7 +101,7 @@ namespace Prism.Build
 
 		#region Task Functions
 		// The pipeline control function for build tasks that runs on the separate build thread
-		public void Build(bool rebuild)
+		public void Build(bool rebuild, bool release)
 		{
 			Busy = true;
 			ShouldStop = false;
@@ -111,7 +111,7 @@ namespace Prism.Build
 			bool success = false;
 			try
 			{
-				Engine.Logger.BuildStart(rebuild);
+				Engine.Logger.BuildStart(rebuild, release);
 
 				// Reset the item enumerator to the beginning
 				_itemEnumerator = Project.Items.GetEnumerator();
@@ -146,7 +146,7 @@ namespace Prism.Build
 				}
 
 				// Check if the output settings have changed
-				bool outChanged = CheckOutputChanged();
+				bool outChanged = CheckOutputChanged(release);
 
 				// Test if we can skip output, otherwise report
 				if (_tasks.All(task => task.Results.PassCount == task.Results.SkipCount))
@@ -164,7 +164,7 @@ namespace Prism.Build
 
 				// Create the output process and build the metadata
 				var outProc = new PackingProcess(this, _tasks);
-				if (!outProc.BuildContentPack())
+				if (!outProc.BuildContentPack(release))
 					return;
 
 				// One last exit check before starting the output process
@@ -172,7 +172,7 @@ namespace Prism.Build
 					return;
 
 				// Perform the final output steps (will check for cancellation)
-				success = outProc.ProcessOutput(Project.Properties.Pack, outChanged);
+				success = outProc.ProcessOutput(release, outChanged);
 			}
 			finally
 			{

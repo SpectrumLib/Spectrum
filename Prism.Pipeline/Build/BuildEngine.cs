@@ -38,12 +38,12 @@ namespace Prism.Build
 
 		#region Actions
 		// Starts the build task
-		public Task Build(bool rebuild)
+		public Task Build(bool rebuild, bool release)
 		{
 			if (Busy)
 				throw new InvalidOperationException("Cannot start a build task while a task is already running");
 
-			return new Task(() => _manager.Build(rebuild));
+			return new Task(() => _manager.Build(rebuild, release));
 		}
 
 		// Starts the clean task

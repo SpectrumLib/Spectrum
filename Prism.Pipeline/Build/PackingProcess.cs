@@ -35,8 +35,8 @@ namespace Prism.Build
 
 		public static string GetPackPath(string outRoot) => PathUtils.CombineToAbsolute(outRoot, CPACK_NAME);
 
-		// Builds the .cpack metadata file that describes a pack of processed content
-		public bool BuildContentPack()
+		// Builds the content pack file that describes the content build in this pipeline
+		public bool BuildContentPack(bool release)
 		{
 			// Generate a list of unique used content loader names and their hashes
 			_loaders = _tasks
@@ -61,7 +61,7 @@ namespace Prism.Build
 
 					// Build flags
 					byte buildFlags = (byte)(
-						(Project.Properties.Pack     ? 0x01 : 0x00) |
+						(release                     ? 0x01 : 0x00) |
 						(Project.Properties.Compress ? 0x02 : 0x00));
 					writer.Write(buildFlags);
 
@@ -82,14 +82,14 @@ namespace Prism.Build
 		}
 
 		// Performs the final processing and moving to the output, potentially packing the content
-		public bool ProcessOutput(bool pack, bool force)
+		public bool ProcessOutput(bool release, bool force)
 		{
-			if (pack) return packOutput(force);
-			else return noPackOutput(force);
+			if (release) return releaseOutput(force);
+			else return debugOutput(force);
 		}
 
 		// Implements content output with no packing
-		private bool noPackOutput(bool force)
+		private bool debugOutput(bool force)
 		{
 			var results = _tasks.Select(t => t.Results);
 			foreach (var result in results)
@@ -143,9 +143,9 @@ namespace Prism.Build
 		}
 
 		// Implements content output with packing
-		private bool packOutput(bool force)
+		private bool releaseOutput(bool force)
 		{
-			Engine.Logger.EngineError("Packing content is not yet implemented.");
+			Engine.Logger.EngineError("Release mode is not yet implemented.");
 			return false;
 		}
 	}

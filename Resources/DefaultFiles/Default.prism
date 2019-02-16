@@ -3,7 +3,6 @@
 	"rootDir": ".",
 	"intermediateDir": "obj",
 	"outputDir": "bin",
-	"pack": true,
 	"compress": true
 },
 "items": {
