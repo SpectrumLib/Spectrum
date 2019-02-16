@@ -152,14 +152,14 @@ namespace Prism.Build
 		}
 
 		#region Creation
-		public static BuildEvent FromItem(ContentProject project, ContentItem item, uint idx)
+		public static BuildEvent FromItem(BuildEngine engine, ContentItem item, uint idx)
 		{
 			var iInfo = new FileInfo(item.Paths.SourcePath);
 			var oInfo = new FileInfo(item.Paths.OutputPath);
 			return new BuildEvent(
 				item, 
 				idx, 
-				project.Properties.Compress, 
+				engine.Compress,
 				iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, 
 				oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME,
 				oInfo.Exists ? (uint)oInfo.Length : 0u

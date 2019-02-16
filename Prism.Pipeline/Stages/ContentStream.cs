@@ -36,7 +36,7 @@ namespace Prism
 		private readonly Encoding _encoding;
 		private readonly Encoder _encoder;
 
-		// The compression level to use
+		// The compression type to use
 		internal readonly bool Compress;
 		internal bool SkipCompress = false;
 

@@ -33,9 +33,6 @@ namespace Prism.Build
 		public IReadOnlyDictionary<string, ImporterInstance> Importers => _importers;
 		public IReadOnlyDictionary<string, ProcessorInstance> Processors => _processors;
 
-		// The output stream for the content
-		private ContentStream _contentStream;
-
 		// The results of the last build
 		public readonly TaskResults Results;
 
@@ -79,8 +76,7 @@ namespace Prism.Build
 			Results.Reset();
 
 			// Create the content stream
-			if (_contentStream == null)
-				_contentStream = new ContentStream(Engine.Project.Properties.Compress);
+			var cStream = new ContentStream(Engine.Compress);
 
 			// Iterate over the tasks
 			while (!Manager.ShouldStop && Manager.GetTaskItem(out BuildEvent current))
@@ -238,10 +234,10 @@ namespace Prism.Build
 				try
 				{
 					_logger.UpdateStageName(processor.Type.WriterType.Name);
-					_contentStream.Reset(current.Paths.OutputPath, processor.Instance.SkipCompression);
+					cStream.Reset(current.Paths.OutputPath, processor.Instance.SkipCompression);
 					WriterContext ctx = new WriterContext(_logger);
-					processor.WriterInstance.Write(processedData, _contentStream, ctx);
-					_contentStream.Flush();
+					processor.WriterInstance.Write(processedData, cStream, ctx);
+					cStream.Flush();
 				}
 				catch (Exception e)
 				{
@@ -254,11 +250,11 @@ namespace Prism.Build
 
 				// Report end
 				Engine.Logger.ItemFinished(current, _timer.Elapsed);
-				Results.PassItem(_contentStream.OutputSize, false);
+				Results.PassItem(cStream.OutputSize, false);
 			}
 
 			// Wait for the final output to be complete
-			_contentStream.Reset(null, false);
+			cStream.Reset(null, false);
 			Results.UseItem(null); // In the case that the last item fails
 		}
 	}

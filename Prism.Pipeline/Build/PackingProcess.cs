@@ -36,7 +36,7 @@ namespace Prism.Build
 		public static string GetPackPath(string outRoot) => PathUtils.CombineToAbsolute(outRoot, CPACK_NAME);
 
 		// Builds the content pack file that describes the content build in this pipeline
-		public bool BuildContentPack(bool release)
+		public bool BuildContentPack()
 		{
 			// Generate a list of unique used content loader names and their hashes
 			_loaders = _tasks
@@ -61,7 +61,7 @@ namespace Prism.Build
 
 					// Build flags
 					byte buildFlags = (byte)(
-						(release                     ? 0x01 : 0x00) |
+						(Engine.Release              ? 0x01 : 0x00) |
 						(Project.Properties.Compress ? 0x02 : 0x00));
 					writer.Write(buildFlags);
 
@@ -82,9 +82,9 @@ namespace Prism.Build
 		}
 
 		// Performs the final processing and moving to the output, potentially packing the content
-		public bool ProcessOutput(bool release, bool force)
+		public bool ProcessOutput(bool force)
 		{
-			if (release) return releaseOutput(force);
+			if (Engine.Release) return releaseOutput(force);
 			else return debugOutput(force);
 		}
 
