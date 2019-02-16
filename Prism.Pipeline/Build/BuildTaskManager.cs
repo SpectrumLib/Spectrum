@@ -90,10 +90,12 @@ namespace Prism.Build
 			{
 				using (var reader = new BinaryReader(File.Open(packPath, FileMode.Open, FileAccess.Read, FileShare.None)))
 				{
-					byte flags = reader.ReadBytes(5)[4]; // 4-byte header, 5th byte is build flags
+					byte flags = reader.ReadBytes(6)[5]; // 6-byte header, last byte is build flags
 					bool rel = (flags & 0x01) > 0;
 					bool compress = (flags & 0x02) > 0;
-					return (Engine.Release != rel) || (compress != Engine.Compress);
+					uint packSize = reader.ReadUInt32();
+					return (Engine.Release != rel) || (compress != Engine.Compress) || 
+						(Project.Properties.PackSize != packSize);
 				}
 			}
 			catch { return true; }

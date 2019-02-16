@@ -3,7 +3,8 @@
 	"rootDir": ".",
 	"intermediateDir": "obj",
 	"outputDir": "bin",
-	"compress": true
+	"compress": true,
+	"packSize": 512
 },
 "items": {
 	"example_file.txt": {

@@ -6,11 +6,15 @@ namespace Prism.Content
 {
 	internal struct ProjectProperties
 	{
+		// Constant for converting a value in MB to bytes
+		public const uint SIZE_TO_BYTES = 1024 * 1024;
+
 		#region Fields
 		public string RootDir;
 		public string IntermediateDir;
 		public string OutputDir;
 		public bool Compress;
+		public uint PackSize; // In bytes
 		#endregion // Fields
 
 		// Returns the missing token, or null if everything was present
@@ -28,6 +32,8 @@ namespace Prism.Content
 				error = "missing or invalid property 'outputDir'";
 			if (!obj.TryGetValue("compress", out var compress) || (compress.JsonType != JsonType.Boolean))
 				error = "missing or invalid property 'compress'";
+			if (!obj.TryGetValue("packSize", out var packSize) || (packSize.JsonType != JsonType.Number))
+				error = "missing or invalid property 'packSize'";
 
 			if (error != null)
 				return false;
@@ -37,6 +43,15 @@ namespace Prism.Content
 			pp.IntermediateDir = (string)iDir;
 			pp.OutputDir = (string)oDir;
 			pp.Compress = (bool)compress;
+			{
+				long raw = (long)(double)packSize;
+				if (raw <= 0 || raw > 2048)
+				{
+					error = $"the pack size ({raw}) must be between 1MB (1) and 2GB (2048)";
+					return false;
+				}
+				pp.PackSize = (uint)raw * SIZE_TO_BYTES;
+			}
 
 			// No error
 			return true;
@@ -57,7 +72,12 @@ namespace Prism.Content
 			if (os.ContainsKey("compress"))
 			{
 				copy.Compress = (bool)os["compress"];
-				changed = changed || (pp.Compress != copy.Compress);
+				changed = pp.Compress != copy.Compress;
+			}
+			if (os.ContainsKey("packSize"))
+			{
+				copy.PackSize = (uint)os["packSize"] * SIZE_TO_BYTES;
+				changed = changed || (pp.PackSize != copy.PackSize);
 			}
 
 			opp = changed ? copy : (ProjectProperties?)null;

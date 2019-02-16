@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,8 +10,8 @@ namespace Prism.Build
 	// Controls the building of the content pack file and the final cotent item processing and packing
 	internal class PackingProcess
 	{
-		public static readonly string CPACK_NAME = "Content.cpack";
-		private static readonly byte[] CPACK_HEADER = Encoding.ASCII.GetBytes("PCP");
+		public static readonly string CPACK_NAME = "Content.cpak";
+		private static readonly byte[] CPACK_HEADER = Encoding.ASCII.GetBytes("CPAK");
 		private static readonly byte[] CITEM_HEADER = Encoding.ASCII.GetBytes("PCI");
 		private static readonly byte CPACK_VERSION = 1;
 
@@ -64,6 +64,9 @@ namespace Prism.Build
 						(Engine.Release  ? 0x01 : 0x00) |
 						(Engine.Compress ? 0x02 : 0x00));
 					writer.Write(buildFlags);
+
+					// The pack size
+					writer.Write(Project.Properties.PackSize);
 
 					// Write the number of loaders, then all of the loader names and hashes as pairs
 					writer.Write((uint)_loaders.Count);
