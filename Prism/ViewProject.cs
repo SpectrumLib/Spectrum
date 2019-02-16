@@ -35,7 +35,6 @@ namespace Prism
 			Console.WriteLine($"  Content Root:        {project.Paths.ContentRoot}");
 			Console.WriteLine($"  Intermediate Path:   {project.Paths.IntermediateRoot}");
 			Console.WriteLine($"  Output Path:         {project.Paths.OutputRoot}");
-			Console.WriteLine($"  Pack:                {project.Properties.Pack}");
 			Console.WriteLine($"  Compress:            {project.Properties.Compress}");
 			Console.WriteLine();
 

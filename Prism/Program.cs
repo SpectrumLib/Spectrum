@@ -61,11 +61,14 @@ namespace Prism
 		private static void PrintHelp()
 		{
 			// ==================================================================================================================
-			Console.WriteLine("\nPrism\n-----");
+			Console.WriteLine();
+			Console.WriteLine("Prism");
+			Console.WriteLine("-----");
 			Console.WriteLine("Prism is an extensible build tool and project manager for pre-processing content files for the\n" +
 							  "Spectrum library. It can be used in both command-line and user interface mode.");
 
-			Console.WriteLine("\nUsage:             Prism.exe <action> <file> [args]");
+			Console.WriteLine();
+			Console.WriteLine("Usage:             Prism.exe <action> <file> [args]");
 			Console.WriteLine("<action> can be one of:");
 			Console.WriteLine("    > new <type>     - Creates a new content file of the given type.");
 			Console.WriteLine("    > build          - Builds the project file.");
@@ -76,7 +79,8 @@ namespace Prism
 							  "actions is not specified. The content file to operate on must always come immediately after the\n" +
 							  "action.");
 
-			Console.WriteLine("\nThe command line flags are:");
+			Console.WriteLine();
+			Console.WriteLine("The command line flags are:");
 			Console.WriteLine("    > /help;/h;/?             - Prints this help message, and then quits.");
 			Console.WriteLine("    > /verbose;/v             - Prints out more information while running. Valid for all commands.");
 			Console.WriteLine("    > /parallel[:<num>]       - Sets the number of threads to use in build or rebuild tasks. If");
@@ -84,11 +88,15 @@ namespace Prism
 			Console.WriteLine("                                set to the numer of cores. If not specified, only a single thread");
 			Console.WriteLine("                                will be used. The thread count will be clamped to the number of");
 			Console.WriteLine("                                available cores.");
+			Console.WriteLine("    > /release;/r             - Sets that the build will be in release mode, which packs and");
+			Console.WriteLine("                                potentially compresses the content items for distribution. If this");
+			Console.WriteLine("                                flag is not present, the build will be debug mode. Only valid for");
+			Console.WriteLine("                                build or rebuild actions.");
 			Console.WriteLine("    > /ipath:<value>          - Sets the root path for the intermediate content files.");
 			Console.WriteLine("    > /opath:<value>          - Sets the root path for the final output content files.");
-			Console.WriteLine("    > /pack:<value>           - Sets if the content files are packed.");
-			Console.WriteLine("    > /compress:<value>       - Sets if the content files are compressed.");
-			Console.WriteLine("For compatibility, all flags can be specified with '/', '-', or '--'.\n");
+			Console.WriteLine("    > /compress:<value>       - Sets if the content files are compressed in release builds.");
+			Console.WriteLine("For compatibility, all flags can be specified with '/', '-', or '--'.");
+			Console.WriteLine();
 		}
 	}
 }

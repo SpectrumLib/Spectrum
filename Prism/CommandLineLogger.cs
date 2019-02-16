@@ -10,6 +10,8 @@ namespace Prism
 	{
 		#region Fields
 		public readonly bool Verbose;
+
+		private bool _isReleaseBuild;
 		#endregion // Fields
 
 		public CommandLineLogger(bool verbose) :
@@ -24,10 +26,11 @@ namespace Prism
 
 		protected override void onEngineError(string msg) => Error($"Build Engine: {msg}");
 
-		protected override void onBuildStart(DateTime start, bool rebuild)
+		protected override void onBuildStart(DateTime start, bool rebuild, bool release)
 		{
 			Info($"{(rebuild ? "Rebuild" : "Build")} started on {start.ToShortDateString()} at {start.ToLongTimeString()}.");
-			Info($"Build Settings: Pack={Project.Properties.Pack} Compress={Project.Properties.Compress}");
+			Info($"Build Settings: Mode={(release ? "Release" : "Debug")} Compress={release && Project.Properties.Compress}");
+			_isReleaseBuild = release;
 		}
 
 		protected override void onBuildContinue(TimeSpan itemBuildTime) =>
@@ -89,9 +92,9 @@ namespace Prism
 		protected override void onItemError(ContentItem item, uint id, string message) =>
 			Error($"'{item.ItemPath}' {message}");
 
-		protected override void onItemPack(ContentItem item, bool pack, uint packNum)
+		protected override void onItemPack(ContentItem item, uint packNum)
 		{
-			if (pack)
+			if (_isReleaseBuild)
 				Info($"Content item '{item.ItemPath}' packed in content pack {packNum}.");
 			else
 				Info($"Content item '{item.ItemPath}' processed to output.");
