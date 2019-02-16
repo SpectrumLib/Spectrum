@@ -61,8 +61,8 @@ namespace Prism.Build
 
 					// Build flags
 					byte buildFlags = (byte)(
-						(Engine.Release              ? 0x01 : 0x00) |
-						(Project.Properties.Compress ? 0x02 : 0x00));
+						(Engine.Release  ? 0x01 : 0x00) |
+						(Engine.Compress ? 0x02 : 0x00));
 					writer.Write(buildFlags);
 
 					// Write the number of loaders, then all of the loader names and hashes as pairs

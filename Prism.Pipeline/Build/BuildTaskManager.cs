@@ -93,7 +93,7 @@ namespace Prism.Build
 					byte flags = reader.ReadBytes(5)[4]; // 4-byte header, 5th byte is build flags
 					bool rel = (flags & 0x01) > 0;
 					bool compress = (flags & 0x02) > 0;
-					return Engine.Release != rel || compress != Project.Properties.Compress;
+					return (Engine.Release != rel) || (compress != Engine.Compress);
 				}
 			}
 			catch { return true; }
