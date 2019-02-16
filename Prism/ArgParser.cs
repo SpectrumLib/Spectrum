@@ -110,6 +110,7 @@ namespace Prism
 				else
 					CConsole.Error("Invalid path value for 'ipath' parameter.");
 			}
+
 			if (ContainsValueArgument(args, "opath", out rawarg))
 			{
 				if (Uri.IsWellFormedUriString(rawarg, UriKind.RelativeOrAbsolute))
@@ -117,19 +118,30 @@ namespace Prism
 				else
 					CConsole.Error("Invalid path value for 'opath' parameter.");
 			}
-			if (ContainsValueArgument(args, "pack", out rawarg))
-			{
-				if (Boolean.TryParse(rawarg, out var pack))
-					plist.Add("pack", pack);
-				else
-					CConsole.Error("Invalid boolean value for 'pack' parameter.");
-			}
+
 			if (ContainsValueArgument(args, "compress", out rawarg))
 			{
 				if (Boolean.TryParse(rawarg, out var compress))
 					plist.Add("compress", compress);
 				else
 					CConsole.Error("Invalid boolean value for 'compress' parameter.");
+			}
+
+			if (ContainsValueArgument(args, "size", out rawarg))
+			{
+				if (UInt32.TryParse(rawarg, out var packSize))
+				{
+					if (packSize <= 0 || packSize > 2048)
+						CConsole.Error($"The pack size ({packSize}) must be between 1MB (1) and 2GB (2048).");
+					else
+						plist.Add("packSize", packSize);
+				}
+				else
+					CConsole.Error("Invalid unsigned integer value for 'size' parameter.");
+			}
+			else if (ContainsArgument(args, "size"))
+			{
+				plist.Add("packSize", 512u);
 			}
 
 			return plist;

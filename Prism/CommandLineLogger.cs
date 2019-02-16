@@ -29,7 +29,8 @@ namespace Prism
 		protected override void onBuildStart(DateTime start, bool rebuild, bool release)
 		{
 			Info($"{(rebuild ? "Rebuild" : "Build")} started on {start.ToShortDateString()} at {start.ToLongTimeString()}.");
-			Info($"Build Settings: Mode={(release ? "Release" : "Debug")} Compress={release && Project.Properties.Compress}");
+			Info($"Build Settings: Mode={(release ? "Release" : "Debug")} Compress={release && Project.Properties.Compress} " +
+				$"PackSize={Project.Properties.PackSize / ProjectProperties.SIZE_TO_BYTES}");
 			_isReleaseBuild = release;
 		}
 

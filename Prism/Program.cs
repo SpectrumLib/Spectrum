@@ -95,6 +95,9 @@ namespace Prism
 			Console.WriteLine("    > /ipath:<value>          - Sets the root path for the intermediate content files.");
 			Console.WriteLine("    > /opath:<value>          - Sets the root path for the final output content files.");
 			Console.WriteLine("    > /compress:<value>       - Sets if the content files are compressed in release builds.");
+			Console.WriteLine("    > /size[:<value>]         - Sets the maximum size of the content pack files for release mode");
+			Console.WriteLine("                                builds, in MB. If no value is specified, than it forces the pipeline");
+			Console.WriteLine("                                to use the default value of 512 MB. This has no effect in debug builds.");
 			Console.WriteLine("For compatibility, all flags can be specified with '/', '-', or '--'.");
 			Console.WriteLine();
 		}
