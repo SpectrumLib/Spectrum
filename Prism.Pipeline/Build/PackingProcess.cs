@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,7 +7,7 @@ using Prism.Content;
 
 namespace Prism.Build
 {
-	// Controls the building of the content pack file and the final cotent item processing and packing
+	// Controls the building of the content pack file and the final content item processing and packing
 	internal class PackingProcess
 	{
 		public static readonly string CPACK_NAME = "Content.cpak";
@@ -24,6 +24,7 @@ namespace Prism.Build
 		private readonly BuildTask[] _tasks;
 
 		private Dictionary<string, (string Name, uint Hash)> _loaders = null;
+		public IReadOnlyDictionary<string, (string Name, uint Hash)> Loaders => _loaders;
 		#endregion // Fields
 
 		public PackingProcess(BuildTaskManager manager, BuildTask[] tasks)
@@ -148,8 +149,62 @@ namespace Prism.Build
 		// Implements content output with packing
 		private bool releaseOutput(bool force)
 		{
-			Engine.Logger.EngineError("Release mode is not yet implemented.");
-			return false;
+			// Create and run the item binner
+			Engine.Logger.EngineInfo($"Calculating item packs and offsets.", true);
+			var binner = new ItemBinner(this, _tasks);
+			if (!binner.MakeBins())
+				return false;
+
+			// Check if we should exit
+			if (Manager.ShouldStop)
+			{
+				Engine.Logger.EngineError("The build process was cancelled during the packing process.");
+				return false;
+			}
+
+			// Update the pack file with the offsets (will open to the end of the loader hashes)
+			Engine.Logger.EngineInfo("Writing item name map to content pack file.", true);
+			try
+			{
+				using (var writer = new BinaryWriter(File.Open(PackPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)))
+				{
+					writer.Seek(0, SeekOrigin.End);
+
+					// Write the total number of pack files
+					writer.Write((uint)binner.Bins.Count);
+
+					// For each bin
+					foreach (var bin in binner.Bins)
+					{
+						// Write the number of items in the bin
+						writer.Write((uint)bin.Items.Count);
+
+						// Write the name, length, offset, and loader hash of each item
+						foreach (var item in bin.Items)
+						{
+							writer.Write(item.Item.Paths.OutputFile);
+							writer.Write(item.Size);
+							writer.Write(item.Offset);
+							var loader = _loaders[item.Item.ProcessorName];
+							writer.Write(loader.Hash);
+						}
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				Engine.Logger.EngineError($"Unable to update content pack file with name map, reason: {e.Message}");
+				return false;
+			}
+
+			// Check if we should exit
+			if (Manager.ShouldStop)
+			{
+				Engine.Logger.EngineError("The build process was cancelled during the packing process.");
+				return false;
+			}
+
+			return true;
 		}
 	}
 }
