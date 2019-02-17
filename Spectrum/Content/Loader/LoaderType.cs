@@ -16,17 +16,17 @@ namespace Spectrum.Content
 		public readonly string Name; // The [Assembly:Name] formatted name used by ContentWriters
 		#endregion // Fields
 
-		private LoaderType(Type type, string name)
+		private LoaderType(Type type, string assembly, string name)
 		{
 			Type = type;
 			ContentType = type.BaseType.GetGenericArguments()[0];
-			Name = name;
+			Name = $"{assembly}:{name}";
 		}
 
 		public IContentLoader CreateInstance() => (IContentLoader)Activator.CreateInstance(Type);
 
 		// Returns null means that it could not load, but error != null means that there was an error
-		public static LoaderType TryCreate(Type type, string name, out string error)
+		public static LoaderType TryCreate(Type type, string assembly, string name, out string error)
 		{
 			error = null;
 
@@ -63,7 +63,7 @@ namespace Spectrum.Content
 			}
 
 			// Good to go
-			return new LoaderType(type, name);
+			return new LoaderType(type, assembly, name);
 		}
 	}
 }

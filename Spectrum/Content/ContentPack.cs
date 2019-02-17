@@ -27,6 +27,10 @@ namespace Spectrum.Content
 		private readonly BinFile[] _binFiles;
 		public IReadOnlyList<BinFile> BinFiles => _binFiles;
 
+		// The map of content items names to bin files and bin indices
+		private readonly Dictionary<string, (uint BinNum, uint Index)> _itemMap;
+		public IReadOnlyDictionary<string, (uint BinNum, uint Index)> ItemMap => _itemMap;
+
 		// The path info for this file (absolute paths)
 		public readonly string FilePath;
 		public readonly string Directory;
@@ -77,13 +81,36 @@ namespace Spectrum.Content
 				_binFiles = new BinFile[bcount];
 				for (uint i = 0; i < bcount; ++i)
 					_binFiles[i] = BinFile.LoadFromStream(i, Directory, Timestamp, reader);
+
+				// Create the mapping
+				_itemMap = new Dictionary<string, (uint BinNum, uint Index)>(_binFiles.Sum(bf => bf.Items.Count));
+				for (int bi = 0; bi < _binFiles.Length; ++bi)
+				{
+					var bf = _binFiles[bi];
+					uint ii = 0;
+					foreach (var item in bf.Items)
+						_itemMap.Add(item.Name, ((uint)bi, ii++));
+				}
 			}
 			else
+			{
 				_binFiles = null;
+				_itemMap = null;
+			}
+		}
+
+		// Can only be called for release build content
+		public IContentLoader GetLoader(string item)
+		{
+			if (!_itemMap.TryGetValue(item, out var map))
+				throw new ContentException($"The content item '{item}' does not exist in the content pack.");
+
+			uint hash = _binFiles[map.BinNum].Items[(int)map.Index].LoaderHash;
+			return _loaders[hash];
 		}
 
 		// If there is a content pack loaded at the path, return the cached instance, otherwise load and cache a new one
-		public static ContentPack LoadFromFile(string path)
+		public static ContentPack GetOrLoad(string path)
 		{
 			path = Path.GetFullPath(path);
 

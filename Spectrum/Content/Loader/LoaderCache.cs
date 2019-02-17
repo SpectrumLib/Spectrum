@@ -46,7 +46,7 @@ namespace Spectrum.Content
 			{
 				foreach (var type in asm.GetExportedTypes())
 				{
-					var ltype = LoaderType.TryCreate(type, tName, out var error);
+					var ltype = LoaderType.TryCreate(type, parts[0], tName, out var error);
 					if (ltype != null)
 					{
 						s_typeCache.Add(name, ltype);
