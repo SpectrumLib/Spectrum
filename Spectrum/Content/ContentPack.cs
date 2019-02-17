@@ -19,9 +19,9 @@ namespace Spectrum.Content
 		public readonly uint PackSize;
 		public readonly uint Timestamp;
 
-		// Loaders
-		private readonly Dictionary<uint, string> _loaders;
-		public IReadOnlyDictionary<uint, string> Loaders => _loaders;
+		// Dictionary of loader hashes and their instances
+		private readonly Dictionary<uint, IContentLoader> _loaders;
+		public IReadOnlyDictionary<uint, IContentLoader> Loaders => _loaders;
 
 		// Bin files (will only exist for release built content)
 		private readonly BinFile[] _binFiles;
@@ -52,14 +52,22 @@ namespace Spectrum.Content
 			PackSize = reader.ReadUInt32();
 			Timestamp = reader.ReadUInt32();
 
-			// Loader hash map (TODO: Load the loader types instead of just the names)
+			// Load the hash/name loader map
 			uint lcount = reader.ReadUInt32();
-			_loaders = new Dictionary<uint, string>((int)lcount);
+			var loaders = new List<(uint Hash, string Name)>((int)lcount);
 			for (uint i = 0; i < lcount; ++i)
 			{
 				var lname = reader.ReadString();
 				var lhash = reader.ReadUInt32();
-				_loaders.Add(lhash, lname);
+				loaders.Add((lhash, lname));
+			}
+
+			// Get the loader types
+			_loaders = new Dictionary<uint, IContentLoader>();
+			foreach (var lpair in loaders)
+			{
+				var ltype = LoaderCache.GetOrLoad(lpair.Name);
+				_loaders.Add(lpair.Hash, ltype.CreateInstance());
 			}
 
 			// Load the bin files (if release)

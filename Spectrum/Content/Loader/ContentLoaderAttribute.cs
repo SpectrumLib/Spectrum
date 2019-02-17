@@ -10,6 +10,11 @@ namespace Spectrum.Content
 	{
 		#region Fields
 		/// <summary>
+		/// The name of the content loader. This name is used to locate the loader using the `LoaderName` value in 
+		/// Prism ContentWriter types.
+		/// </summary>
+		public readonly string Name;
+		/// <summary>
 		/// Gets if the decorated loader is currently usable. Attempting to use a disabled loader will result in an
 		/// exception being thrown.
 		/// </summary>
@@ -19,9 +24,11 @@ namespace Spectrum.Content
 		/// <summary>
 		/// Creates a new attribute for a <see cref="ContentLoader{T}"/> type.
 		/// </summary>
+		/// <param name="name">The name of the content loader, must be unique within an assembly.</param>
 		/// <param name="enabled">If the decorated type is useable.</param>
-		public ContentLoaderAttribute(bool enabled = true)
+		public ContentLoaderAttribute(string name, bool enabled = true)
 		{
+			Name = name;
 			Enabled = enabled;
 		}
 	}

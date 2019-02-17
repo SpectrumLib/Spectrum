@@ -13,7 +13,7 @@ namespace Spectrum.Content
 		#region Fields
 		public readonly Type Type;
 		public readonly Type ContentType;
-		public readonly string Name; // The [Assembly:FullTypeName] formatted name used by ContentWriters
+		public readonly string Name; // The [Assembly:Name] formatted name used by ContentWriters
 		#endregion // Fields
 
 		private LoaderType(Type type, string name)
@@ -25,16 +25,14 @@ namespace Spectrum.Content
 
 		public IContentLoader CreateInstance() => (IContentLoader)Activator.CreateInstance(Type);
 
+		// Returns null means that it could not load, but error != null means that there was an error
 		public static LoaderType TryCreate(Type type, string name, out string error)
 		{
 			error = null;
 
 			// Check if it derives from ContentLoader
 			if (type.GetInterface(INTERFACE_NAME) == null)
-			{
-				error = "the type is not derived from ContentLoader{T}.";
 				return null;
-			}
 
 			// Check for the attribute
 			ContentLoaderAttribute attrib =
@@ -44,6 +42,8 @@ namespace Spectrum.Content
 				error = "the type does not have a ContentLoader attribute.";
 				return null;
 			}
+			if (attrib.Name != name)
+				return null; // Not an error, just not the correct type
 			if (!attrib.Enabled)
 			{
 				error = "the type is not currently enabled.";
