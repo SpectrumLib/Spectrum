@@ -95,10 +95,10 @@ namespace Prism
 
 		protected override void onItemPack(ContentItem item, uint packNum)
 		{
-			if (_isReleaseBuild)
-				Info($"Content item '{item.ItemPath}' packed in content pack {packNum}.");
-			else
+			if (!_isReleaseBuild)
 				Info($"Content item '{item.ItemPath}' processed to output.");
+			else if (Verbose)
+				Info($"Content item '{item.ItemPath}' packed in content pack {packNum}.");
 		}
 	}
 }

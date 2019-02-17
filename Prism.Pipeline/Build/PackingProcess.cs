@@ -11,8 +11,11 @@ namespace Prism.Build
 	internal class PackingProcess
 	{
 		public static readonly string CPACK_NAME = "Content.cpak";
+		private static readonly string DEBUG_EXTENSION = ".dci";
+		private static readonly string RELEASE_EXTENSION = ".cbin";
 		private static readonly byte[] CPACK_HEADER = Encoding.ASCII.GetBytes("CPAK");
-		private static readonly byte[] CITEM_HEADER = Encoding.ASCII.GetBytes("PCI");
+		private static readonly byte[] DEBUG_HEADER = Encoding.ASCII.GetBytes("DCI");
+		private static readonly byte[] RELEASE_HEADER = Encoding.ASCII.GetBytes("CBIN");
 		private static readonly byte CPACK_VERSION = 1;
 
 		#region Fields
@@ -25,6 +28,8 @@ namespace Prism.Build
 
 		private Dictionary<string, (string Name, uint Hash)> _loaders = null;
 		public IReadOnlyDictionary<string, (string Name, uint Hash)> Loaders => _loaders;
+
+		private uint _timestampHash; // Used to make sure that build items match up to the correct pack (release only)
 		#endregion // Fields
 
 		public PackingProcess(BuildTaskManager manager, BuildTask[] tasks)
@@ -69,6 +74,12 @@ namespace Prism.Build
 					// The pack size
 					writer.Write(Project.Properties.PackSize);
 
+					// Create a timestamp hash for the build
+					ulong tstamp = (ulong)DateTime.UtcNow.Ticks;
+					uint thash = (uint)(tstamp >> 32) ^ (uint)(tstamp & 0xFFFFFFFF);
+					writer.Write(thash);
+					_timestampHash = thash;
+
 					// Write the number of loaders, then all of the loader names and hashes as pairs
 					writer.Write((uint)_loaders.Count);
 					_loaders.Values.ToList().ForEach(pair => { writer.Write(pair.Name); writer.Write(pair.Hash); });
@@ -95,6 +106,27 @@ namespace Prism.Build
 		// Implements content output with no packing
 		private bool debugOutput(bool force)
 		{
+			// Clear out any previous build output files (unless they should be there)
+			try
+			{
+				var dInfo = new DirectoryInfo(Project.Paths.OutputRoot);
+				var fInfos = dInfo.GetFiles($"*{RELEASE_EXTENSION}", SearchOption.TopDirectoryOnly);
+				foreach (var file in fInfos)
+					file.Delete();
+				if (force)
+				{
+					fInfos = dInfo.GetFiles($"*{DEBUG_EXTENSION}", SearchOption.TopDirectoryOnly);
+					foreach (var file in fInfos)
+						file.Delete();
+				}
+			}
+			catch (Exception e)
+			{
+				Engine.Logger.EngineError($"Unable to clean previous build output, reason: {e.Message}");
+				return false;
+			}
+
+			// Write the items through
 			var results = _tasks.Select(t => t.Results);
 			foreach (var result in results)
 			{
@@ -107,7 +139,7 @@ namespace Prism.Build
 
 					// The source and destination paths for this content item
 					var srcPath = item.Item.Paths.OutputPath;
-					var dstPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, item.Item.Paths.OutputFile) + ".pci";
+					var dstPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, item.Item.Paths.OutputFile) + DEBUG_EXTENSION;
 
 					try
 					{
@@ -115,7 +147,7 @@ namespace Prism.Build
 						using (var dstFile = File.Open(dstPath, FileMode.Create, FileAccess.Write, FileShare.None))
 						using (var writer = new BinaryWriter(dstFile))
 						{
-							writer.Write(CITEM_HEADER);
+							writer.Write(DEBUG_HEADER);
 							writer.Write(CPACK_VERSION);
 
 							// Write the loader hash
@@ -204,6 +236,67 @@ namespace Prism.Build
 				return false;
 			}
 
+			// Clear out any previous build output files
+			try
+			{
+				var dInfo = new DirectoryInfo(Project.Paths.OutputRoot);
+				var fInfos = dInfo.GetFiles($"*{RELEASE_EXTENSION}", SearchOption.TopDirectoryOnly);
+				foreach (var file in fInfos)
+					file.Delete();
+				fInfos = dInfo.GetFiles($"*{DEBUG_EXTENSION}", SearchOption.TopDirectoryOnly);
+				foreach (var file in fInfos)
+					file.Delete();
+			}
+			catch (Exception e)
+			{
+				Engine.Logger.EngineError($"Unable to clean previous build output, reason: {e.Message}");
+				return false;
+			}
+
+			// For each bin file, simply write the header, number of files, the timestamp hash, and then tightly pack the
+			//   binary data in order
+			try
+			{
+				uint binNum = 0;
+				foreach (var bin in binner.Bins)
+				{
+					// Check if we should exit
+					if (Manager.ShouldStop)
+					{
+						Engine.Logger.EngineError("The build process was cancelled during the packing process.");
+						return false;
+					}
+
+					// Do the write
+					Engine.Logger.EngineInfo($"Writing content bin file {bin.BinNumber} ({bin.Items.Count} items).");
+					var binPath = PathUtils.CombineToAbsolute(Project.Paths.OutputRoot, $"{bin.BinNumber}{RELEASE_EXTENSION}");
+					using (var file = File.Open(binPath, FileMode.Create, FileAccess.Write, FileShare.None))
+					using (var writer = new BinaryWriter(file))
+					{
+						writer.Write(RELEASE_HEADER);
+						writer.Write(CPACK_VERSION);
+						writer.Write((uint)bin.Items.Count);
+						writer.Write(_timestampHash);
+
+						foreach (var item in bin.Items)
+						{
+							Engine.Logger.ItemPack(item.Item, binNum);
+							using (var infile = File.Open(item.Item.Paths.OutputPath, FileMode.Open, FileAccess.Read, FileShare.None))
+							{
+								infile.CopyTo(file);
+							}
+						}
+					}
+					++binNum;
+				}
+			}
+			catch (Exception e)
+			{
+				Engine.Logger.EngineError($"Could not write the content bin files, reason: {e.Message}");
+				return false;
+			}
+
+			// Good to go
 			return true;
 		}
 	}
