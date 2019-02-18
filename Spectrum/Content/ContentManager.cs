@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace Spectrum.Content
 {
@@ -28,9 +30,13 @@ namespace Spectrum.Content
 		// Note: This can result in a memory leak for certain poorly-desgined objects that are collected without being
 		//       disposed (use finalizers people!), because they are stored as weak references.
 		private readonly List<WeakReference<IDisposableContent>> _disposableItems;
-
 		// Cached items
 		private readonly Dictionary<string, object> _itemCache;
+
+		// Filestreams to the bin files (index by bin index), null for debug builds
+		private readonly List<FileStream> _binStreams;
+		// List of loader instances in this content manager
+		private readonly Dictionary<uint, IContentLoader> _loaders;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -40,6 +46,17 @@ namespace Spectrum.Content
 			_pack = pack;
 			_disposableItems = new List<WeakReference<IDisposableContent>>();
 			_itemCache = new Dictionary<string, object>();
+
+			_loaders = new Dictionary<uint, IContentLoader>(pack.Loaders.Count);
+
+			if (pack.ReleaseMode)
+			{
+				_binStreams = pack.BinFiles
+					.Select(bf => bf.OpenStream())
+					.ToList();
+			}
+			else
+				_binStreams = null;
 
 			AddManager(this);
 		}
@@ -63,6 +80,285 @@ namespace Spectrum.Content
 			_disposableItems.Clear();
 			_itemCache.Clear();
 		}
+
+		/// <summary>
+		/// Gets if the manager instance is currently caching the content item with the name and matching type.
+		/// </summary>
+		/// <typeparam name="T">The type of the content item to check is cached.</typeparam>
+		/// <param name="name">The content item name to check for.</param>
+		/// <returns>If the content item with the name is cached, and the cached item is the same type.</returns>
+		public bool IsItemCached<T>(string name) where T : class => (_itemCache.TryGetValue(name, out var obj) && (obj is T));
+
+		/// <summary>
+		/// Sets the manager to stop tracking the item's lifetime. After this call, the item must be manually managed
+		/// and disposed.
+		/// </summary>
+		/// <param name="item">The item for this manager to stop tracking.</param>
+		/// <returns>If the item was previously tracked by this manager, and is no longer being tracked.</returns>
+		public bool StopTracking(IDisposableContent item)
+		{
+			if (item == null)
+				throw new ArgumentNullException(nameof(item));
+
+			// Remove the item from tracking, and also any items that may have been collected
+			bool found = false;
+			for (int i = _disposableItems.Count - 1; i >= 0; --i)
+			{
+				if (!_disposableItems[i].TryGetTarget(out var target))
+					_disposableItems.RemoveAt(i);
+				if (ReferenceEquals(target, item))
+				{
+					_disposableItems.RemoveAt(i);
+					found = true;
+				}
+			}
+
+			return found;
+		}
+
+		#region Load Functions
+		/// <summary>
+		/// Attempts to load the given content item as the provided type. Will first check the cached items, and then
+		/// will load the content item from the disk. If the item should be loaded regardless of whether or not it
+		/// is in the cache, then you should use <see cref="Reload{T}(string, bool, bool)"/>.
+		/// </summary>
+		/// <typeparam name="T">The type to load the content data into.</typeparam>
+		/// <param name="name">The name of the content item to load, without the extension.</param>
+		/// <param name="cache">If the manager should cache the result of this load operation for later use.</param>
+		/// <param name="manage">
+		/// If the manager should manage the lifetime of the result of this load operation. This is only valid if the
+		/// type <typeparamref name="T"/> implements <see cref="IDisposableContent"/>, and is ignored otherwise.
+		/// </param>
+		/// <returns>The cached or newly loaded content item.</returns>
+		public T Load<T>(string name, bool cache = true, bool manage = true)
+			where T : class
+		{
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("The content item name cannot be null or whitespace.", nameof(name));
+
+			// Check the cache first
+			if (_itemCache.TryGetValue(name, out var item) && (item is T))
+				return item as T;
+
+			// Load in the new content item
+			item = readContentItem(name, typeof(T));
+			if (cache)
+				_itemCache.Add(name, item);
+			if (manage && (item is IDisposableContent))
+				_disposableItems.Add(new WeakReference<IDisposableContent>((IDisposableContent)item));
+			return item as T;
+		}
+
+		/// <summary>
+		/// Attempts to load a localized content item from the disk. Localized content items are specified by appending
+		/// the language code, or language and region code, to the end of the file name. 
+		/// <para>
+		/// This function will auto-detect the correct file to look for (without the user having to specify the region) 
+		/// based off of the culture info passed to the function. It will first look for region-specific items 
+		/// (e.g. `en-US`), then language-specific items (e.g. `en`), then will fall back on the unlocalized version of 
+		/// the item.
+		/// </para>
+		/// </summary>
+		/// <typeparam name="T">The type to load the content data into.</typeparam>
+		/// <param name="name">The name of the content item to load, without the extension.</param>
+		/// <param name="culture">The culture to use as the localization, or <c>null</c> to use the current culture.</param>
+		/// <param name="cache">If the manager should cache the result of this load operation for later use.</param>
+		/// <param name="manage">
+		/// If the manager should manage the lifetime of the result of this load operation. This is only valid if the
+		/// type <typeparamref name="T"/> implements <see cref="IDisposableContent"/>, and is ignored otherwise.
+		/// </param>
+		/// <param name="reload">
+		/// If the <see cref="Reload{T}(string, bool, bool)"/> function should be used to load the localized content
+		/// item, instead of the standard <see cref="Load{T}(string, bool, bool)"/> function.
+		/// </param>
+		/// <returns>The cached or newly loaded content item.</returns>
+		public T LoadLocalized<T>(string name, CultureInfo culture = null, bool cache = true, bool manage = true, bool reload = false)
+			where T : class
+		{
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("The content item name cannot be null or whitespace.", nameof(name));
+			if (culture == null)
+				culture = CultureInfo.CurrentCulture;
+
+			// Try by region first
+			var tname = name + culture.Name; // e.g. "en-US"
+			try
+			{
+				return reload ? Reload<T>(tname, cache, manage) : Load<T>(tname, cache, manage);
+			}
+			catch (ContentLoadException) { }
+
+			// Try by langauge first
+			tname = name + culture.TwoLetterISOLanguageName; // e.g. "en"
+			try
+			{
+				return reload ? Reload<T>(tname, cache, manage) : Load<T>(tname, cache, manage);
+			}
+			catch (ContentLoadException) { }
+
+			// Localized asset not found, load the non-localized one
+			return reload ? Reload<T>(name, cache, manage) : Load<T>(name, cache, manage);
+		}
+
+		/// <summary>
+		/// Similar to the <see cref="Load{T}(string, bool, bool)"/> function, but does not check the cache for the
+		/// item. It instead attempts to load the item directly off of the disk.
+		/// </summary>
+		/// <typeparam name="T">The type to load the content data into.</typeparam>
+		/// <param name="name">The name of the content item to load, without the extension.</param>
+		/// <param name="cache">If the manager should cache the result of this load operation for later use.</param>
+		/// <param name="manage">
+		/// If the manager should manage the lifetime of the result of this load operation. This is only valid if the
+		/// type <typeparamref name="T"/> implements <see cref="IDisposableContent"/>, and is ignored otherwise.
+		/// </param>
+		/// <returns>The newly loaded content item.</returns>
+		public T Reload<T>(string name, bool cache = true, bool manage = true)
+			where T : class
+		{
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("The content item name cannot be null or whitespace.", nameof(name));
+
+			// Load in the new content item
+			var item = readContentItem(name, typeof(T));
+			if (cache)
+				_itemCache.Add(name, item);
+			if (manage && (item is IDisposableContent))
+				_disposableItems.Add(new WeakReference<IDisposableContent>((IDisposableContent)item));
+			return item as T;
+		}
+		#endregion // Load Functions
+
+		// Performs the actual loading of the content item from the disk
+		private object readContentItem(string name, Type type)
+		{
+			if (_pack.ReleaseMode)
+			{
+				if (!_pack.TryGetItem(name, out var item))
+					throw new ContentLoadException(name, "the item does not exist in the content pack.");
+				var loader = getOrCreateLoader(item.LoaderHash);
+				if (loader == null)
+					throw new ContentLoadException(name, "the item specified a loader that does not exist.");
+				if (!type.IsAssignableFrom(loader.ContentType))
+					throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
+				
+				object loadedObj = null;
+				try
+				{
+					// TODO: Create the actual stream and context
+					ContentStream stream = null;
+					LoaderContext ctx = null;
+					loadedObj = loader.Load(stream, ctx);
+				}
+				catch (Exception e)
+				{
+					throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) in loader function: {e.Message}", e);
+				}
+
+				if (loadedObj == null)
+					throw new ContentLoadException(name, "the loader produced a null value.");
+
+				return loadedObj;
+			}
+			else
+			{
+				var path = _pack.GetDebugItemPath(name);
+				if (!File.Exists(path))
+					throw new ContentLoadException(name, "the item file does not exist.");
+
+				try
+				{
+					using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
+					using (var reader = new BinaryReader(file))
+					{
+						loadDebugItemInfo(name, reader, out var hash, out var length);
+						var loader = getOrCreateLoader(hash);
+						if (loader == null)
+							throw new ContentLoadException(name, "the item specified a loader that does not exist.");
+						if (!type.IsAssignableFrom(loader.ContentType))
+							throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
+
+						object loadedObj = null;
+						try
+						{
+							// TODO: Create the actual stream and context
+							ContentStream stream = null;
+							LoaderContext ctx = null;
+							loadedObj = loader.Load(stream, ctx);
+						}
+						catch (Exception e)
+						{
+							throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) in loader function: {e.Message}", e);
+						}
+
+						if (loadedObj == null)
+							throw new ContentLoadException(name, "the loader produced a null value.");
+
+						return loadedObj;
+					}
+				}
+				catch (ContentLoadException) { throw; }
+				catch (Exception e)
+				{
+					throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) while loading content: {e.Message}", e);
+				}
+			}
+		}
+
+		// Performs validation and header parsing for a .dci file
+		private void loadDebugItemInfo(string name, BinaryReader reader, out uint hash, out uint length)
+		{
+			var header = reader.ReadBytes(4);
+			if (header[0] != 'D' || header[1] != 'C' || header[2] != 'I' || header[3] != 1)
+				throw new ContentLoadException(name, "the item file header is invalid.");
+			hash = reader.ReadUInt32();
+			length = reader.ReadUInt32();
+		}
+
+		private IContentLoader getOrCreateLoader(uint hash)
+		{
+			if (_loaders.ContainsKey(hash))
+				return _loaders[hash];
+
+			if (!_pack.Loaders.ContainsKey(hash))
+				return null;
+
+			var ltype = _pack.Loaders[hash];
+			var inst = ltype.CreateInstance();
+			_loaders.Add(hash, inst);
+			return inst;
+		}
+
+		#region IDiposable
+		public void Dispose()
+		{
+			dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		private void dispose(bool disposing)
+		{
+			if (!_isDisposed)
+			{
+				if (disposing)
+				{
+					Unload();
+
+					if (_pack.ReleaseMode)
+					{
+						foreach (var bs in _binStreams)
+						{
+							bs.Close();
+							bs.Dispose();
+						}
+						_binStreams.Clear();
+					}
+				}
+
+				RemoveManager(this);
+			}
+			_isDisposed = true;
+		}
+		#endregion // IDisposable
 
 		/// <summary>
 		/// Creates a new content manager for loading content from the given content pack file.
@@ -107,24 +403,5 @@ namespace Spectrum.Content
 				}
 			}
 		}
-
-		#region IDiposable
-		public void Dispose()
-		{
-			dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		private void dispose(bool disposing)
-		{
-			if (!_isDisposed)
-			{
-				if (disposing)
-					Unload(); // Since the important items implement IDisposable, they will take care of themselves
-				RemoveManager(this);
-			}
-			_isDisposed = true;
-		}
-		#endregion // IDisposable
 	}
 }

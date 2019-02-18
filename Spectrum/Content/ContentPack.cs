@@ -10,6 +10,7 @@ namespace Spectrum.Content
 	internal class ContentPack
 	{
 		public static readonly string FILE_EXTENSION = ".cpak";
+		public static readonly string DEBUG_EXTENSION = ".dci";
 
 		private static readonly Dictionary<string, ContentPack> s_packCache = 
 			new Dictionary<string, ContentPack>();
@@ -22,8 +23,8 @@ namespace Spectrum.Content
 		public readonly uint Timestamp;
 
 		// Dictionary of loader hashes and their instances
-		private readonly Dictionary<uint, IContentLoader> _loaders;
-		public IReadOnlyDictionary<uint, IContentLoader> Loaders => _loaders;
+		private readonly Dictionary<uint, LoaderType> _loaders;
+		public IReadOnlyDictionary<uint, LoaderType> Loaders => _loaders;
 
 		// Bin files (will only exist for release built content)
 		private readonly BinFile[] _binFiles;
@@ -69,11 +70,11 @@ namespace Spectrum.Content
 			}
 
 			// Get the loader types
-			_loaders = new Dictionary<uint, IContentLoader>();
+			_loaders = new Dictionary<uint, LoaderType>();
 			foreach (var lpair in loaders)
 			{
 				var ltype = LoaderCache.GetOrLoad(lpair.Name);
-				_loaders.Add(lpair.Hash, ltype.CreateInstance());
+				_loaders.Add(lpair.Hash, ltype);
 			}
 
 			// Load the bin files (if release)
@@ -101,15 +102,22 @@ namespace Spectrum.Content
 			}
 		}
 
-		// Can only be called for release build content
-		public IContentLoader GetLoader(string item)
+		public bool TryGetItem(string name, out (string Name, uint Size, uint Offset, uint LoaderHash) item)
 		{
-			if (!_itemMap.TryGetValue(item, out var map))
-				throw new ContentException($"The content item '{item}' does not exist in the content pack.");
-
-			uint hash = _binFiles[map.BinNum].Items[(int)map.Index].LoaderHash;
-			return _loaders[hash];
+			if (_itemMap.ContainsKey(name))
+			{
+				var map = _itemMap[name];
+				item = _binFiles[map.BinNum].Items[(int)map.Index];
+				return true;
+			}
+			else
+			{
+				item = default;
+				return false;
+			}
 		}
+
+		public string GetDebugItemPath(string name) => Path.Combine(Directory, $"{name}{DEBUG_EXTENSION}");
 
 		// If there is a content pack loaded at the path, return the cached instance, otherwise load and cache a new one
 		public static ContentPack GetOrLoad(string path)

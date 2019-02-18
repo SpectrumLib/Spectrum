@@ -6,6 +6,7 @@ namespace Spectrum.Content
 	/// Provides metadata information about <see cref="ContentLoader{T}"/> types. Types that implement content loading
 	/// functionality must provide this attribute.
 	/// </summary>
+	[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 	public sealed class ContentLoaderAttribute : Attribute
 	{
 		#region Fields
