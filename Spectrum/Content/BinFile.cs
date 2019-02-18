@@ -15,11 +15,11 @@ namespace Spectrum.Content
 		public readonly uint FileNumber;
 		public readonly string FilePath;
 
-		private readonly List<(string, uint, uint, uint)> _items;
-		public IReadOnlyList<(string Name, uint Size, uint Offset, uint LoaderHash)> Items => _items;
+		private readonly List<(string, uint, uint, uint, uint)> _items;
+		public IReadOnlyList<(string Name, uint RealSize, uint UCSize, uint Offset, uint LoaderHash)> Items => _items;
 		#endregion // Fields
 
-		private BinFile(uint fnum, string path, List<(string, uint, uint, uint)> items)
+		private BinFile(uint fnum, string path, List<(string, uint, uint, uint, uint)> items)
 		{
 			FileNumber = fnum;
 			FilePath = path;
@@ -40,14 +40,15 @@ namespace Spectrum.Content
 
 			// Parse the item info for the file
 			uint iCount = reader.ReadUInt32();
-			List<(string, uint, uint, uint)> items = new List<(string, uint, uint, uint)>((int)iCount);
+			List<(string, uint, uint, uint, uint)> items = new List<(string, uint, uint, uint, uint)>((int)iCount);
 			for (uint i = 0; i < iCount; ++i)
 			{
 				var iname = reader.ReadString();
-				var isize = reader.ReadUInt32();
+				var realsize = reader.ReadUInt32();
+				var ucsize = reader.ReadUInt32();
 				var ioffset = reader.ReadUInt32();
 				var ihash = reader.ReadUInt32();
-				items.Add((iname, isize, ioffset, ihash));
+				items.Add((iname, realsize, ucsize, ioffset, ihash));
 			}
 
 			// Load in the header of the bin file

@@ -102,7 +102,7 @@ namespace Spectrum.Content
 			}
 		}
 
-		public bool TryGetItem(string name, out (string Name, uint Size, uint Offset, uint LoaderHash) item)
+		public bool TryGetItem(string name, out (string Name, uint RealSize, uint UCSize, uint Offset, uint LoaderHash) item)
 		{
 			if (_itemMap.ContainsKey(name))
 			{
