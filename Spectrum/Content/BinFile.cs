@@ -8,9 +8,7 @@ namespace Spectrum.Content
 	internal class BinFile
 	{
 		public static readonly string FILE_EXTENSION = ".cbin";
-		// The length of the header (to add to the content offset to get to content data)
-		public const uint HEADER_LENGTH = 13;
-
+		
 		#region Fields
 		public readonly uint FileNumber;
 		public readonly string FilePath;

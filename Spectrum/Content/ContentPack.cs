@@ -102,17 +102,19 @@ namespace Spectrum.Content
 			}
 		}
 
-		public bool TryGetItem(string name, out (string Name, uint RealSize, uint UCSize, uint Offset, uint LoaderHash) item)
+		public bool TryGetItem(string name, out uint binNum, out (string Name, uint RealSize, uint UCSize, uint Offset, uint LoaderHash) item)
 		{
 			if (_itemMap.ContainsKey(name))
 			{
 				var map = _itemMap[name];
+				binNum = map.BinNum;
 				item = _binFiles[map.BinNum].Items[(int)map.Index];
 				return true;
 			}
 			else
 			{
 				item = default;
+				binNum = UInt32.MaxValue;
 				return false;
 			}
 		}

@@ -2,8 +2,6 @@ language: csharp
 mono: none
 dotnet: 2.1.502
 dist: trusty
-before_install:
-  - sudo apt-get install -y mono-complete
 script:
   - dotnet restore
   - cd ./Spectrum.Native

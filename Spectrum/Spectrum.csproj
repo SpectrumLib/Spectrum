@@ -36,7 +36,7 @@
     <Reference Include="VulkanCore">
       <HintPath>..\Dependencies\Vulkan\VulkanCore.dll</HintPath>
     </Reference>
-	<Reference Include="LZ4">
+    <Reference Include="LZ4">
       <HintPath>..\Dependencies\LZ4\LZ4.dll</HintPath>
     </Reference>
   </ItemGroup>

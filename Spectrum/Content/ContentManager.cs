@@ -233,7 +233,7 @@ namespace Spectrum.Content
 		{
 			if (_pack.ReleaseMode)
 			{
-				if (!_pack.TryGetItem(name, out var item))
+				if (!_pack.TryGetItem(name, out var binNum, out var item))
 					throw new ContentLoadException(name, "the item does not exist in the content pack.");
 				var loader = getOrCreateLoader(item.LoaderHash);
 				if (loader == null)
@@ -242,16 +242,21 @@ namespace Spectrum.Content
 					throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
 				
 				object loadedObj = null;
+				ContentStream stream = null;
 				try
 				{
-					// TODO: Create the actual stream and context
-					ContentStream stream = null;
-					LoaderContext ctx = null;
+					var fstream = getOrOpenBinStream(binNum);
+					stream = new ContentStream(name, fstream, item.Offset, item.RealSize, item.UCSize);
+					LoaderContext ctx = new LoaderContext();
 					loadedObj = loader.Load(stream, ctx);
 				}
 				catch (Exception e)
 				{
 					throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) in loader function: {e.Message}", e);
+				}
+				finally
+				{
+					stream?.Free();
 				}
 
 				if (loadedObj == null)
@@ -278,16 +283,20 @@ namespace Spectrum.Content
 							throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
 
 						object loadedObj = null;
+						ContentStream stream = null;
 						try
 						{
-							// TODO: Create the actual stream and context
-							ContentStream stream = null;
-							LoaderContext ctx = null;
+							stream = new ContentStream(name, file, length);
+							LoaderContext ctx = new LoaderContext();
 							loadedObj = loader.Load(stream, ctx);
 						}
 						catch (Exception e)
 						{
 							throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) in loader function: {e.Message}", e);
+						}
+						finally
+						{
+							stream?.Free();
 						}
 
 						if (loadedObj == null)
@@ -326,6 +335,16 @@ namespace Spectrum.Content
 			var inst = ltype.CreateInstance();
 			_loaders.Add(hash, inst);
 			return inst;
+		}
+
+		private FileStream getOrOpenBinStream(uint binNum)
+		{
+			if (_binStreams[(int)binNum] != null)
+				return _binStreams[(int)binNum];
+
+			var stream = _pack.BinFiles[(int)binNum].OpenStream();
+			_binStreams[(int)binNum] = stream;
+			return stream;
 		}
 
 		#region IDiposable
