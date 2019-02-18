@@ -155,7 +155,7 @@ namespace Prism.Build
 							writer.Write(loader.Hash);
 
 							// Write the length of the raw item data
-							writer.Write(item.Size);
+							writer.Write(item.RealSize);
 
 							// Copy the output file from the pipeline to the new output file
 							using (var srcFile = File.Open(srcPath, FileMode.Open, FileAccess.Read, FileShare.None))
@@ -211,11 +211,12 @@ namespace Prism.Build
 						// Write the number of items in the bin
 						writer.Write((uint)bin.Items.Count);
 
-						// Write the name, length, offset, and loader hash of each item
+						// Write the name, real length, uncompressed length, offset, and loader hash of each item
 						foreach (var item in bin.Items)
 						{
 							writer.Write(item.Item.Paths.OutputFile);
-							writer.Write(item.Size);
+							writer.Write(item.RealSize);
+							writer.Write(item.UCSize);
 							writer.Write(item.Offset);
 							var loader = _loaders[item.Item.ProcessorName];
 							writer.Write(loader.Hash);

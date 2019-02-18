@@ -13,7 +13,7 @@ namespace Prism.Build
 		public BuildEngine Engine => Process.Engine;
 		public ContentProject Project => Process.Engine.Project;
 
-		private readonly IEnumerable<(ContentItem Item, uint Size, bool Skipped)> _items;
+		private readonly IEnumerable<(ContentItem Item, uint RealSize, uint UCSize, bool Skipped)> _items;
 
 		private readonly List<ItemBin> _bins;
 		public IReadOnlyList<ItemBin> Bins => _bins;
@@ -33,12 +33,12 @@ namespace Prism.Build
 		{
 			// Sort the items by size (largest first)
 			var sorted = _items
-				.OrderByDescending(item => item.Size)
+				.OrderByDescending(item => item.RealSize)
 				.ToArray();
 
 			// Check that they will all fit
 			uint limit = Project.Properties.PackSize;
-			var tooBig = sorted.Where(item => item.Size > limit);
+			var tooBig = sorted.Where(item => item.RealSize > limit);
 			if (tooBig.Any())
 			{
 				int count = tooBig.Count();
@@ -91,8 +91,8 @@ namespace Prism.Build
 		public uint SizeLimit => Binner.Project.Properties.PackSize;
 
 		// Offsets are from the start of the item data, not the start of the file
-		private readonly List<(ContentItem Item, uint Size, uint Offset)> _items;
-		public IReadOnlyList<(ContentItem Item, uint Size, uint Offset)> Items => _items;
+		private readonly List<(ContentItem Item, uint RealSize, uint UCSize, uint Offset)> _items;
+		public IReadOnlyList<(ContentItem Item, uint RealSize, uint UCSize, uint Offset)> Items => _items;
 
 		public uint TotalSize { get; private set; }
 		#endregion // Fields
@@ -101,17 +101,17 @@ namespace Prism.Build
 		{
 			Binner = binner;
 			BinNumber = number;
-			_items = new List<(ContentItem Item, uint Size, uint Offset)>();
+			_items = new List<(ContentItem, uint, uint, uint)>();
 			TotalSize = 0;
 		}
 
-		public bool TryAdd(in (ContentItem Item, uint Size, bool Skipped) item)
+		public bool TryAdd(in (ContentItem Item, uint RealSize, uint UCSize, bool Skipped) item)
 		{
-			if ((TotalSize + item.Size) > SizeLimit)
+			if ((TotalSize + item.RealSize) > SizeLimit)
 				return false;
 
-			_items.Add((item.Item, item.Size, TotalSize));
-			TotalSize += item.Size;
+			_items.Add((item.Item, item.RealSize, item.UCSize, TotalSize));
+			TotalSize += item.RealSize;
 			return true;
 		}
 	}

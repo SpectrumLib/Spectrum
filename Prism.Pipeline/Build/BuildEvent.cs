@@ -51,8 +51,10 @@ namespace Prism.Build
 		public readonly DateTime InputTime = ERROR_TIME;
 		public readonly DateTime OutputTime = ERROR_TIME;
 
-		// The size of the output file
-		public readonly uint OutputSize = 0;
+		// The size of the output file (real size, potentially compressed)
+		public readonly uint RealSize = 0;
+		// The uncompressed size of the output file (how much data to expect after decompression)
+		public readonly uint UCSize = 0;
 		#endregion // Fields
 
 		private BuildEvent(ContentItem item, uint idx, bool compress, DateTime iTime, DateTime oTime, uint outSize)
@@ -62,15 +64,16 @@ namespace Prism.Build
 			Compress = compress;
 			InputTime = iTime;
 			OutputTime = oTime;
-			OutputSize = outSize;
+			RealSize = outSize;
 		}
 
-		private BuildEvent(string c, string s, string o, bool compress, string i, string p, string args)
+		private BuildEvent(string c, string s, string o, bool compress, uint ncsize, string i, string p, string args)
 		{
 			_cachePath = c;
 			_cachedSource = s;
 			_cachedOutput = o;
 			Compress = compress;
+			UCSize = ncsize;
 			_cachedImporter = i;
 			_cachedProcessor = p;
 			_cachedArgs = ContentItem.ParseArgs(args);
@@ -131,7 +134,8 @@ namespace Prism.Build
 		}
 
 		// Saves the event info into a cache file
-		public void SaveCache(BuildEngine engine)
+		// This function will only ever be called on events that are loaded from items and have been rebuilt
+		public void SaveCache(BuildEngine engine, uint ucsize)
 		{
 			try
 			{
@@ -139,6 +143,7 @@ namespace Prism.Build
 				{
 					writer.Write(BUILD_CACHE_HEADER);
 					writer.Write(Compress);
+					writer.Write(ucsize);
 					writer.Write(ImporterName);
 					writer.Write(ProcessorName);
 					var argStr = String.Join(";", ProcessorArgs.Select(arg => $"{arg.Key}={arg.Value}"));
@@ -184,6 +189,7 @@ namespace Prism.Build
 						item.Paths.SourcePath,
 						item.Paths.OutputPath,
 						reader.ReadBoolean(),
+						reader.ReadUInt32(),
 						reader.ReadString(),
 						reader.ReadString(),
 						reader.ReadString()

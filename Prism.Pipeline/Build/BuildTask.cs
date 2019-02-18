@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using Prism.Content;
 
@@ -133,7 +132,9 @@ namespace Prism.Build
 					if (!current.NeedsBuild(cached, processor.Instance))
 					{
 						Engine.Logger.ItemSkipped(current);
-						Results.PassItem(current.OutputSize, true);
+						Results.PassItem(cached.UCSize, true);
+						if (Engine.Compress && !processor.Instance.SkipCompression)
+							Results.UpdatePreviousItem(current.RealSize); // Update with the real (compressed) size of the data
 						continue;
 					}
 				}
@@ -234,7 +235,9 @@ namespace Prism.Build
 				try
 				{
 					_logger.UpdateStageName(processor.Type.WriterType.Name);
-					cStream.Reset(current.Paths.OutputPath, processor.Instance.SkipCompression);
+					uint lastRealSize = cStream.Reset(current.Paths.OutputPath, processor.Instance.SkipCompression);
+					if (lastRealSize != 0)
+						Results.UpdatePreviousItem(lastRealSize);
 					WriterContext ctx = new WriterContext(_logger);
 					processor.WriterInstance.Write(processedData, cStream, ctx);
 					cStream.Flush();
@@ -246,7 +249,7 @@ namespace Prism.Build
 				}
 
 				// Save the cache
-				current.SaveCache(Engine);
+				current.SaveCache(Engine, cStream.OutputSize);
 
 				// Report end
 				Engine.Logger.ItemFinished(current, _timer.Elapsed);
@@ -254,7 +257,9 @@ namespace Prism.Build
 			}
 
 			// Wait for the final output to be complete
-			cStream.Reset(null, false);
+			uint realsize = cStream.Reset(null, false);
+			if (realsize != 0)
+				Results.UpdatePreviousItem(realsize);
 			Results.UseItem(null); // In the case that the last item fails
 		}
 	}

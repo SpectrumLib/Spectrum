@@ -9,8 +9,9 @@ namespace Prism.Build
 	{
 		#region Fields
 		// Includes successful and skipped items, with their file sizes
-		private readonly List<(ContentItem, uint, bool)> _passItems;
-		public IReadOnlyList<(ContentItem Item, uint Size, bool Skipped)> PassItems => _passItems;
+		// RealSize is the size of the saved binary data, and UCSize is the size of the data when uncompressed
+		private readonly List<(ContentItem, uint, uint, bool)> _passItems;
+		public IReadOnlyList<(ContentItem Item, uint RealSize, uint UCSize, bool Skipped)> PassItems => _passItems;
 
 		// Failed items
 		private readonly List<ContentItem> _failItems;
@@ -21,13 +22,13 @@ namespace Prism.Build
 		public uint SkipCount { get; private set; } = 0;
 		public uint FailCount => (uint)_failItems.Count;
 
-		// Tracks the current item being worked on
+		// Tracks the items being worked on
 		private BuildEvent _currentEvent = null;
 		#endregion // Fields
 
 		public TaskResults()
 		{
-			_passItems = new List<(ContentItem, uint, bool)>();
+			_passItems = new List<(ContentItem, uint, uint, bool)>();
 			_failItems = new List<ContentItem>();
 		}
 
@@ -46,12 +47,20 @@ namespace Prism.Build
 			_currentEvent = evt;
 		}
 
-		public void PassItem(uint size, bool skipped)
+		public void PassItem(uint ucsize, bool skipped)
 		{
-			_passItems.Add((_currentEvent.Item, size, skipped));
+			_passItems.Add((_currentEvent.Item, ucsize, ucsize, skipped));
 			_currentEvent = null;
 			if (skipped)
 				SkipCount += 1;
+		}
+
+		// Will update the previous item with the real size
+		public void UpdatePreviousItem(uint realsize)
+		{
+			var copy = _passItems[_passItems.Count - 1];
+			copy.Item2 = realsize;
+			_passItems[_passItems.Count - 1] = copy;
 		}
 	}
 }

@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using K4os.Compression.LZ4;
 using K4os.Compression.LZ4.Streams;
-using Prism.Content;
 
 namespace Prism
 {
@@ -40,10 +39,15 @@ namespace Prism
 		internal readonly bool Compress;
 		internal bool SkipCompress = false;
 
-		// The current async write task, if any
-		private Task _writeTask = null;
+		// The current async write task, if any. The task will return the compressed size of the file
+		private Task<uint> _writeTask = null;
 		// The absolute path to the current output file
 		private string _currentFile = null;
+
+		// The underlying streams (need to be declared here, as we cannot close a LZ4 stream part-way through
+		//   or else the compression will fail)
+		private FileStream _file;
+		private LZ4EncoderStream _compressor;
 		#endregion // Fields
 
 		internal ContentStream(bool compress)
@@ -58,13 +62,36 @@ namespace Prism
 		}
 
 		// Waits on the old write task, then resets the type to start recoding at the beginning of the buffer
-		internal void Reset(string path, bool skipCompression)
+		// This will return the compressed size of the previous item, or zero if it was not compressed
+		internal uint Reset(string path, bool skipCompression)
 		{
-			_writeTask?.Wait();
+			uint usize = _writeTask?.Result ?? 0; // The "Result" property blocks until the task is finished
 			_bufferPos = 0;
 			OutputSize = 0;
 			_currentFile = path;
 			SkipCompress = skipCompression;
+
+			// Regardless of the compression of the last item, the file will have to close itself
+			_compressor?.Dispose();
+			_file?.Close();
+			_file?.Dispose();
+
+			// Create the new streams (if there is a file)
+			if (path != null)
+			{
+				_file = File.Open(_currentFile, FileMode.Create, FileAccess.Write, FileShare.None);
+				if (Compress && !SkipCompress)
+					_compressor = LZ4Stream.Encode(_file, LZ4Level.L00_FAST, leaveOpen: true);
+				else
+					_compressor = null; 
+			}
+			else
+			{
+				_file = null;
+				_compressor = null;
+			}
+
+			return usize;
 		}
 
 		// Called by the task when it is done with this writer, launches the async write
@@ -72,25 +99,19 @@ namespace Prism
 		{
 			OutputSize += _bufferPos;
 
-			_writeTask = new Task(() => {
-				using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+			_writeTask = Task<uint>.Factory.StartNew(() => {
+				if (Compress && !SkipCompress)
 				{
-					if (Compress && !SkipCompress)
-					{
-						using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
-						{
-							writer.Write(_memBuffer, 0, (int)_bufferPos);
-							writer.Flush();
-						}
-					}
-					else
-					{
-						file.Write(_memBuffer, 0, (int)_bufferPos);
-						file.Flush();
-					}
+					_compressor.Write(_memBuffer, 0, (int)_bufferPos);
+					_compressor.Flush();
 				}
+				else
+				{
+					_file.Write(_memBuffer, 0, (int)_bufferPos);
+					_file.Flush();
+				}
+				return (Compress && !SkipCompress) ? (uint)_file.Position : 0;
 			});
-			_writeTask.Start();
 		}
 
 		// Called by write functions when the backing buffer is full to synchronously write the buffer out and reset it
@@ -99,21 +120,15 @@ namespace Prism
 			OutputSize += _bufferPos;
 
 			// Synchronously write
-			using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+			if (Compress && !SkipCompress)
 			{
-				if (Compress && !SkipCompress)
-				{
-					using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
-					{
-						writer.Write(_memBuffer, 0, (int)_bufferPos);
-						writer.Flush();
-					}
-				}
-				else
-				{
-					file.Write(_memBuffer, 0, (int)_bufferPos);
-					file.Flush();
-				}
+				_compressor.Write(_memBuffer, 0, (int)_bufferPos);
+				_compressor.Flush();
+			}
+			else
+			{
+				_file.Write(_memBuffer, 0, (int)_bufferPos);
+				_file.Flush();
 			}
 
 			// Reset
@@ -127,21 +142,17 @@ namespace Prism
 			OutputSize += length;
 
 			// Synchronously write
-			using (var file = File.Open(_currentFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
 			using (var buffer = new UnmanagedMemoryStream(data, length))
 			{
 				if (Compress && !SkipCompress)
 				{
-					using (var writer = LZ4Stream.Encode(file, LZ4Level.L00_FAST))
-					{
-						buffer.CopyTo(writer);
-						writer.Flush();
-					}
+					buffer.CopyTo(_compressor);
+					_compressor.Flush();
 				}
 				else
 				{
-					buffer.CopyTo(file);
-					file.Flush();
+					buffer.CopyTo(_file);
+					_file.Flush();
 				}
 			}
 
