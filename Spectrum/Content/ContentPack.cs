@@ -9,6 +9,8 @@ namespace Spectrum.Content
 	// Also caches content packs to speed up pointing more than one content manager at the same pack file
 	internal class ContentPack
 	{
+		public static readonly string FILE_EXTENSION = ".cpak";
+
 		private static readonly Dictionary<string, ContentPack> s_packCache = 
 			new Dictionary<string, ContentPack>();
 
