@@ -1,145 +1,93 @@
 ﻿using System;
+using System.IO;
 
 namespace Prism
 {
-	// To remain compatible with the BinaryReader class, all Write() functionality should be taken from the CoreCLR
-	//   BinaryWriter class at:
-	//   https://github.com/dotnet/coreclr/blob/master/src/System.Private.CoreLib/shared/System/IO/BinaryWriter.cs
+	// Implements the write functions for the stream
 	public sealed partial class ContentStream
     {
 		public void Write(bool val)
 		{
 			if ((_bufferPos + 1) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)(val ? 1 : 0);
+			_writer.Write(val);
 		}
 
 		public void Write(sbyte val)
 		{
 			if ((_bufferPos + 1) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)val;
+			_writer.Write(val);
 		}
 
 		public void Write(byte val)
 		{
 			if ((_bufferPos + 1) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = val;
+			_writer.Write(val);
 		}
 
 		public void Write(short val)
 		{
 			if ((_bufferPos + 2) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)val;
-			_memBuffer[_bufferPos++] = (byte)(val >> 8);
+			_writer.Write(val);
 		}
 
 		public void Write(ushort val)
 		{
 			if ((_bufferPos + 2) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)val;
-			_memBuffer[_bufferPos++] = (byte)(val >> 8);
+			_writer.Write(val);
 		}
 
 		public void Write(int val)
 		{
 			if ((_bufferPos + 4) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)val;
-			_memBuffer[_bufferPos++] = (byte)(val >> 8);
-			_memBuffer[_bufferPos++] = (byte)(val >> 16);
-			_memBuffer[_bufferPos++] = (byte)(val >> 24);
+			_writer.Write(val);
 		}
 
 		public void Write(uint val)
 		{
 			if ((_bufferPos + 4) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)val;
-			_memBuffer[_bufferPos++] = (byte)(val >> 8);
-			_memBuffer[_bufferPos++] = (byte)(val >> 16);
-			_memBuffer[_bufferPos++] = (byte)(val >> 24);
+			_writer.Write(val);
 		}
 
 		public void Write(long val)
 		{
 			if ((_bufferPos + 8) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)val;
-			_memBuffer[_bufferPos++] = (byte)(val >> 8);
-			_memBuffer[_bufferPos++] = (byte)(val >> 16);
-			_memBuffer[_bufferPos++] = (byte)(val >> 24);
-			_memBuffer[_bufferPos++] = (byte)(val >> 32);
-			_memBuffer[_bufferPos++] = (byte)(val >> 40);
-			_memBuffer[_bufferPos++] = (byte)(val >> 48);
-			_memBuffer[_bufferPos++] = (byte)(val >> 56);
+			_writer.Write(val);
 		}
 
 		public void Write(ulong val)
 		{
 			if ((_bufferPos + 8) > BUFFER_SIZE)
 				flushInternal();
-			_memBuffer[_bufferPos++] = (byte)val;
-			_memBuffer[_bufferPos++] = (byte)(val >> 8);
-			_memBuffer[_bufferPos++] = (byte)(val >> 16);
-			_memBuffer[_bufferPos++] = (byte)(val >> 24);
-			_memBuffer[_bufferPos++] = (byte)(val >> 32);
-			_memBuffer[_bufferPos++] = (byte)(val >> 40);
-			_memBuffer[_bufferPos++] = (byte)(val >> 48);
-			_memBuffer[_bufferPos++] = (byte)(val >> 56);
+			_writer.Write(val);
 		}
 
-		public unsafe void Write(float val)
+		public void Write(float val)
 		{
 			if ((_bufferPos + 4) > BUFFER_SIZE)
 				flushInternal();
-			uint tmpval = *(uint*)&val;
-			_memBuffer[_bufferPos++] = (byte)tmpval;
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 8);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 16);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 24);
+			_writer.Write(val);
 		}
 
-		public unsafe void Write(double val)
+		public void Write(double val)
 		{
 			if ((_bufferPos + 8) > BUFFER_SIZE)
 				flushInternal();
-			ulong tmpval = *(ulong*)&val;
-			_memBuffer[_bufferPos++] = (byte)tmpval;
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 8);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 16);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 24);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 32);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 40);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 48);
-			_memBuffer[_bufferPos++] = (byte)(tmpval >> 56);
+			_writer.Write(val);
 		}
 
-		public unsafe void Write(decimal val)
+		public void Write(decimal val)
 		{
 			if ((_bufferPos + 16) > BUFFER_SIZE)
 				flushInternal();
-
-			int* bits = (int*)&val;
-			_memBuffer[_bufferPos++] = (byte)bits[0];
-			_memBuffer[_bufferPos++] = (byte)(bits[0] >> 8);
-			_memBuffer[_bufferPos++] = (byte)(bits[0] >> 16);
-			_memBuffer[_bufferPos++] = (byte)(bits[0] >> 24);
-			_memBuffer[_bufferPos++] = (byte)bits[1];
-			_memBuffer[_bufferPos++] = (byte)(bits[1] >> 8);
-			_memBuffer[_bufferPos++] = (byte)(bits[1] >> 16);
-			_memBuffer[_bufferPos++] = (byte)(bits[1] >> 24);
-			_memBuffer[_bufferPos++] = (byte)bits[2];
-			_memBuffer[_bufferPos++] = (byte)(bits[2] >> 8);
-			_memBuffer[_bufferPos++] = (byte)(bits[2] >> 16);
-			_memBuffer[_bufferPos++] = (byte)(bits[2] >> 24);
-			_memBuffer[_bufferPos++] = (byte)bits[3];
-			_memBuffer[_bufferPos++] = (byte)(bits[3] >> 8);
-			_memBuffer[_bufferPos++] = (byte)(bits[3] >> 16);
-			_memBuffer[_bufferPos++] = (byte)(bits[3] >> 24);
+			_writer.Write(val);
 		}
 
 		public unsafe void Write(byte[] data, uint start = 0, uint count = UInt32.MaxValue)
@@ -169,8 +117,8 @@ namespace Prism
 			{
 				fixed (byte *src = data, dst = _memBuffer)
 				{
-					Buffer.MemoryCopy(src, dst, count, count);
-					_bufferPos += count;
+					Buffer.MemoryCopy(src, dst + _bufferPos, count, count);
+					_memStream.Seek(count, SeekOrigin.Current);
 				}
 			}
 		}
@@ -188,11 +136,14 @@ namespace Prism
 
 			fixed (byte *dst = _memBuffer)
 			{
-				Buffer.MemoryCopy(bytes, dst, 4, numBytes);
-				_bufferPos += (uint)numBytes;
+				Buffer.MemoryCopy(bytes, dst + _bufferPos, 4, numBytes);
+				_memStream.Seek(numBytes, SeekOrigin.Current);
 			}
 		}
 
+		// This function assumes (probably correctly) that nearly all character arrays will fit into the memory buffer on the first try, 
+		//  and 99% of the rest will fit after the buffer is flushed. Only in cases where literally millions of characters are being
+		//  written at once will we need to perform a direct flush to the file.
 		public unsafe void Write(char[] chars, uint start = 0, uint count = UInt32.MaxValue)
 		{
 			if (chars == null)
@@ -204,61 +155,57 @@ namespace Prism
 			if ((start + count) > chars.Length)
 				throw new ArgumentOutOfRangeException(nameof(count), "The array is not large enough to supply the requested amount of data");
 
-			var bytes = stackalloc byte[chars.Length * 4]; // Assumed worst case scenario, but is time-efficient and not the end of the world
-			int numBytes;
-			fixed (char *src = chars)
+			// Will almost always succeed
+			uint savedOff = _bufferPos;
+			try
 			{
-				numBytes = _encoder.GetBytes(src, (int)count, bytes, chars.Length * 4, true);
+				_writer.Write(chars, (int)start, (int)count);
 			}
-
-			bool direct = numBytes >= DIRECT_WRITE_THRESHOLD;
-			if (direct || (_bufferPos + numBytes) > BUFFER_SIZE)
+			catch (NotSupportedException) // We went over, and need to flush the buffer and try again
+			{
+				_memStream.Seek(savedOff, SeekOrigin.Begin); // Restore old position, may be changed in error
 				flushInternal();
 
-			// Write direct to file if over threshold
-			if (direct)
-				flushDirect(bytes, (uint)numBytes);
-			else
-			{
-				fixed (byte* dst = _memBuffer)
+				// Try again with the full buffer space
+				try
 				{
-					Buffer.MemoryCopy(bytes, dst, numBytes, numBytes);
-					_bufferPos += (uint)numBytes;
+					_writer.Write(chars, (int)start, (int)count);
+				}
+				catch (NotSupportedException) // They are trying to write millions of characters at once, we are angry
+				{
+					flushDirect(chars, (int)start, (int)count);
 				}
 			}
 		}
 
+		// This function assumes (probably correctly) that nearly all strings will fit into the memory buffer on the first try, and
+		//  99% of the rest will fit after the buffer is flushed. Only in cases where literally millions of characters are being
+		//  written at once will we need to perform a direct flush to the file.
 		public unsafe void Write(string val)
 		{
 			if (val == null)
 				throw new ArgumentNullException(nameof(val));
-			uint numBytes = (uint)_encoding.GetByteCount(val);
-			// Needs to fit entirely into the available buffer (gross, probably fix this later)
-			//  Still, this equates to ~8mil characters in the worst case (4-byte code points), and you should rethink what you are doing
-			//  if you have a string that is this long (there are only a few published books in history longer than this)
-			if (numBytes > (BUFFER_SIZE - 4)) 
-				throw new ArgumentException("Cannot write a string whose bytes cannot fit in 32MB", nameof(val));
 
-			if ((_bufferPos + numBytes + 4) > BUFFER_SIZE) // +4 for the length encoding
+			// Will almost always succeed
+			uint savedOff = _bufferPos;
+			try
+			{
+				_writer.Write(val);
+			}
+			catch (NotSupportedException) // We went over, and need to flush the buffer and try again
+			{
+				_memStream.Seek(savedOff, SeekOrigin.Begin); // Restore old position, may be changed in error
 				flushInternal();
 
-			// Write the encoded length
-			{
-				uint tmpNum = numBytes;
-				while (tmpNum >= 0x80)
+				// Try again with the full buffer space
+				try
 				{
-					_memBuffer[_bufferPos++] = (byte)(tmpNum | 0x80);
-					tmpNum >>= 7;
+					_writer.Write(val);
 				}
-				_memBuffer[_bufferPos++] = (byte)tmpNum;
-			}
-
-			// Write the bytes directly into the buffer
-			fixed (char* src = val)
-			fixed (byte* dst = _memBuffer)
-			{
-				_encoding.GetBytes(src, val.Length, dst + _bufferPos, (int)numBytes);
-				_bufferPos += numBytes;
+				catch (NotSupportedException) // They are trying to write millions of characters at once, we are angry
+				{
+					flushDirect(val);
+				}
 			}
 		}
 	}

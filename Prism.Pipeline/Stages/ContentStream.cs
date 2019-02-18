@@ -25,8 +25,10 @@ namespace Prism
 		private const uint DIRECT_WRITE_THRESHOLD = (uint)(BUFFER_SIZE * 0.9); // Arbitrary 90% threshold for direct write to disk
 
 		#region Fields
-		private readonly byte[] _memBuffer = null;
-		private uint _bufferPos = 0;
+		private readonly byte[] _memBuffer;
+		private readonly MemoryStream _memStream;
+		private uint _bufferPos => (uint)_memStream.Position;
+		private readonly BinaryWriter _writer;
 
 		// The size (in bytes) of the file written by this stream, not valid until the final Flush() is called
 		internal uint OutputSize { get; private set; } = 0;
@@ -53,6 +55,8 @@ namespace Prism
 		internal ContentStream(bool compress)
 		{
 			_memBuffer = new byte[BUFFER_SIZE];
+			_memStream = new MemoryStream(_memBuffer);
+			_writer = new BinaryWriter(_memStream);
 			_encoding = new UTF8Encoding(
 				encoderShouldEmitUTF8Identifier: false,
 				throwOnInvalidBytes: true
@@ -66,7 +70,7 @@ namespace Prism
 		internal uint Reset(string path, bool skipCompression)
 		{
 			uint usize = _writeTask?.Result ?? 0; // The "Result" property blocks until the task is finished
-			_bufferPos = 0;
+			_memStream.Seek(0, SeekOrigin.Begin);
 			OutputSize = 0;
 			_currentFile = path;
 			SkipCompress = skipCompression;
@@ -132,7 +136,7 @@ namespace Prism
 			}
 
 			// Reset
-			_bufferPos = 0;
+			_memStream.Seek(0, SeekOrigin.Begin);
 		}
 
 		// Used to directly flush very large arrays directly to the file
@@ -157,7 +161,49 @@ namespace Prism
 			}
 
 			// Reset
-			_bufferPos = 0;
+			_memStream.Seek(0, SeekOrigin.Begin);
+		}
+
+		// Used to directly flush very large strings directly to the file, this function will only be called in instances
+		//  where millions of characters are being written at once
+		//  !!! flushInternal() should be called before this or the data will get out of order !!!
+		private void flushDirect(string str)
+		{
+			// Synchronously write
+			bool c = (Compress && !SkipCompress);
+			uint size = 0;
+			using (var directWriter = new BinaryWriter(c ? (Stream)_compressor : (Stream)_file))
+			{
+				uint pos = (uint)directWriter.BaseStream.Position;
+				directWriter.Write(str);
+				directWriter.BaseStream.Flush();
+				size = (uint)directWriter.BaseStream.Position - pos;
+			}
+			OutputSize += size;
+
+			// Reset
+			_memStream.Seek(0, SeekOrigin.Begin);
+		}
+
+		// Used to directly flush very large character arrays directly to the file, this function will only be called in instances
+		//  where millions of characters are being written at once
+		//  !!! flushInternal() should be called before this or the data will get out of order !!!
+		private void flushDirect(char[] chars, int off, int len)
+		{
+			// Synchronously write
+			bool c = (Compress && !SkipCompress);
+			uint size = 0;
+			using (var directWriter = new BinaryWriter(c ? (Stream)_compressor : (Stream)_file))
+			{
+				uint pos = (uint)directWriter.BaseStream.Position;
+				directWriter.Write(chars, off, len);
+				directWriter.BaseStream.Flush();
+				size = (uint)directWriter.BaseStream.Position - pos;
+			}
+			OutputSize += size;
+
+			// Reset
+			_memStream.Seek(0, SeekOrigin.Begin);
 		}
 	}
 }
