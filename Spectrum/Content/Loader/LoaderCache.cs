@@ -70,6 +70,8 @@ namespace Spectrum.Content
 		static LoaderCache()
 		{
 			s_typeCache = new Dictionary<string, LoaderType>();
+
+			s_typeCache.Add("Spectrum:PassthroughLoader", new LoaderType(typeof(PassthroughLoader), "Spectrum", "PassthroughLoader"));
 		}
 	}
 }

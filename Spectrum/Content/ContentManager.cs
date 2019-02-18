@@ -247,7 +247,7 @@ namespace Spectrum.Content
 				{
 					var fstream = getOrOpenBinStream(binNum);
 					stream = new ContentStream(name, fstream, item.Offset, item.RealSize, item.UCSize);
-					LoaderContext ctx = new LoaderContext();
+					LoaderContext ctx = new LoaderContext(name, true, stream.Compressed, item.UCSize);
 					loadedObj = loader.Load(stream, ctx);
 				}
 				catch (Exception e)
@@ -287,7 +287,7 @@ namespace Spectrum.Content
 						try
 						{
 							stream = new ContentStream(name, file, length);
-							LoaderContext ctx = new LoaderContext();
+							LoaderContext ctx = new LoaderContext(name, false, false, length);
 							loadedObj = loader.Load(stream, ctx);
 						}
 						catch (Exception e)

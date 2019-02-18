@@ -16,7 +16,7 @@ namespace Spectrum.Content
 		public readonly string Name; // The [Assembly:Name] formatted name used by ContentWriters
 		#endregion // Fields
 
-		private LoaderType(Type type, string assembly, string name)
+		internal LoaderType(Type type, string assembly, string name)
 		{
 			Type = type;
 			ContentType = type.BaseType.GetGenericArguments()[0];
