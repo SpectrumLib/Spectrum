@@ -75,11 +75,6 @@ namespace Prism
 			_currentFile = path;
 			SkipCompress = skipCompression;
 
-			// Regardless of the compression of the last item, the file will have to close itself
-			_compressor?.Dispose();
-			_file?.Close();
-			_file?.Dispose();
-
 			// Create the new streams (if there is a file)
 			if (path != null)
 			{
@@ -108,13 +103,20 @@ namespace Prism
 				{
 					_compressor.Write(_memBuffer, 0, (int)_bufferPos);
 					_compressor.Flush();
+					_compressor.Close();
+					_file.Flush();
 				}
 				else
 				{
 					_file.Write(_memBuffer, 0, (int)_bufferPos);
 					_file.Flush();
 				}
-				return (Compress && !SkipCompress) ? (uint)_file.Position : 0;
+
+				var size = (uint)_file.Position;
+				_compressor?.Dispose();
+				_file?.Dispose();
+
+				return size;
 			});
 		}
 
