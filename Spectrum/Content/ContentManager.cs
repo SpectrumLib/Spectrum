@@ -188,7 +188,7 @@ namespace Spectrum.Content
 			}
 			catch (ContentLoadException) { }
 
-			// Try by langauge first
+			// Try by langauge next
 			tname = name + culture.TwoLetterISOLanguageName; // e.g. "en"
 			try
 			{
@@ -225,6 +225,68 @@ namespace Spectrum.Content
 			if (manage && (item is IDisposableContent))
 				_disposableItems.Add(new WeakReference<IDisposableContent>((IDisposableContent)item));
 			return item as T;
+		}
+
+		/// <summary>
+		/// Loads the content item data from the disk as a raw byte array, with no processing applied. This function
+		/// performs no caching or lifetime management for the data.
+		/// </summary>
+		/// <remarks>
+		/// Note that this loads the entirety of the content data at once, while may cause speed or memory problems 
+		/// for very large files.
+		/// </remarks>
+		/// <param name="name">The name of the content item to load, without the extension.</param>
+		/// <returns>The raw data of the content item.</returns>
+		public byte[] LoadRaw(string name)
+		{
+			if (_pack.ReleaseMode)
+			{
+				if (!_pack.TryGetItem(name, out var binNum, out var item))
+					throw new ContentLoadException(name, "the item does not exist in the content pack.");
+
+				ContentStream stream = null;
+				try
+				{
+					var fstream = getOrOpenBinStream(binNum);
+					stream = new ContentStream(name, fstream, item.Offset, item.RealSize, item.UCSize);
+					return stream.ReadBytes(item.UCSize);
+				}
+				catch (Exception e)
+				{
+					throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) when loading raw data: {e.Message}", e);
+				}
+				finally
+				{
+					stream?.Free();
+				}
+			}
+			else
+			{
+				var path = _pack.GetDebugItemPath(name);
+				if (!File.Exists(path))
+					throw new ContentLoadException(name, "the item file does not exist.");
+
+				using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
+				using (var reader = new BinaryReader(file))
+				{
+					loadDebugItemInfo(name, reader, out var hash, out var length);
+
+					ContentStream stream = null;
+					try
+					{
+						stream = new ContentStream(name, file, length);
+						return stream.ReadBytes(length);
+					}
+					catch (Exception e)
+					{
+						throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) when loading raw data: {e.Message}", e);
+					}
+					finally
+					{
+						stream?.Free();
+					}
+				}
+			}
 		}
 		#endregion // Load Functions
 

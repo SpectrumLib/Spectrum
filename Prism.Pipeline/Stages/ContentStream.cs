@@ -116,7 +116,7 @@ namespace Prism
 				_compressor?.Dispose();
 				_file?.Dispose();
 
-				return size;
+				return (Compress && !SkipCompress) ? size : 0;
 			});
 		}
 
