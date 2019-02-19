@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -33,10 +34,31 @@ namespace Spectrum.Content
 		// Cached items
 		private readonly Dictionary<string, object> _itemCache;
 
+		/// <summary>
+		/// A mapping of the names of content items to their cached objects, if one exists.
+		/// </summary>
+		public IReadOnlyDictionary<string, object> Cache => _itemCache;
+
 		// Filestreams to the bin files (index by bin index), null for debug builds
 		private readonly List<FileStream> _binStreams;
 		// List of loader instances in this content manager
 		private readonly Dictionary<uint, IContentLoader> _loaders;
+
+		/// <summary>
+		/// The absolute path to the .cpak file this content manager was opened with.
+		/// </summary>
+		public string FilePath => _pack.FilePath;
+		/// <summary>
+		/// Gets if the content managed by the instance was build in release mode.
+		/// </summary>
+		public bool IsRelease => _pack.ReleaseMode;
+
+		/// <summary>
+		/// Gets the amount of time that it took to load the last content item using one of the <see cref="LoadRaw(string)"/>,
+		/// <see cref="Load{T}(string, bool, bool)"/>, <see cref="LoadLocalized{T}(string, CultureInfo, bool, bool, bool)"/>,
+		/// or <see cref="Reload{T}(string, bool, bool)"/> functions.
+		/// </summary>
+		public TimeSpan LastLoadTime { get; private set; } = TimeSpan.Zero;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -138,14 +160,19 @@ namespace Spectrum.Content
 
 			// Check the cache first
 			if (_itemCache.TryGetValue(name, out var item) && (item is T))
+			{
+				LastLoadTime = TimeSpan.Zero;
 				return item as T;
+			}
 
+			Stopwatch timer = Stopwatch.StartNew();
 			// Load in the new content item
 			item = readContentItem(name, typeof(T));
 			if (cache)
 				_itemCache.Add(name, item);
 			if (manage && (item is IDisposableContent))
 				_disposableItems.Add(new WeakReference<IDisposableContent>((IDisposableContent)item));
+			LastLoadTime = timer.Elapsed;
 			return item as T;
 		}
 
@@ -219,11 +246,13 @@ namespace Spectrum.Content
 				throw new ArgumentException("The content item name cannot be null or whitespace.", nameof(name));
 
 			// Load in the new content item
+			Stopwatch timer = Stopwatch.StartNew();
 			var item = readContentItem(name, typeof(T));
 			if (cache)
 				_itemCache.Add(name, item);
 			if (manage && (item is IDisposableContent))
 				_disposableItems.Add(new WeakReference<IDisposableContent>((IDisposableContent)item));
+			LastLoadTime = timer.Elapsed;
 			return item as T;
 		}
 
@@ -239,6 +268,7 @@ namespace Spectrum.Content
 		/// <returns>The raw data of the content item.</returns>
 		public byte[] LoadRaw(string name)
 		{
+			Stopwatch timer = Stopwatch.StartNew();
 			if (_pack.ReleaseMode)
 			{
 				if (!_pack.TryGetItem(name, out var binNum, out var item))
@@ -249,7 +279,9 @@ namespace Spectrum.Content
 				{
 					var fstream = getOrOpenBinStream(binNum);
 					stream = new ContentStream(name, fstream, item.Offset, item.RealSize, item.UCSize);
-					return stream.ReadBytes(item.UCSize);
+					var ret = stream.ReadBytes(item.UCSize);
+					LastLoadTime = timer.Elapsed;
+					return ret;
 				}
 				catch (Exception e)
 				{
@@ -275,7 +307,9 @@ namespace Spectrum.Content
 					try
 					{
 						stream = new ContentStream(name, file, length);
-						return stream.ReadBytes(length);
+						var ret = stream.ReadBytes(length);
+						LastLoadTime = timer.Elapsed;
+						return ret;
 					}
 					catch (Exception e)
 					{

@@ -1,5 +1,6 @@
-﻿using Spectrum.Graphics;
-using System;
+﻿using System;
+using Spectrum.Content;
+using Spectrum.Graphics;
 
 namespace Spectrum
 {
@@ -31,6 +32,11 @@ namespace Spectrum
 		public GraphicsDevice GraphicsDevice => SpectrumApp.Instance.GraphicsDevice;
 
 		/// <summary>
+		/// The manager for the content items specific to this scene.
+		/// </summary>
+		public readonly ContentManager Content;
+
+		/// <summary>
 		/// If this scene has been disposed.
 		/// </summary>
 		protected bool IsDisposed { get; private set; } = false;
@@ -41,7 +47,11 @@ namespace Spectrum
 		/// created with the <see cref="SceneManager.CreateScene{T}"/> functions.
 		/// </summary>
 		/// <param name="name">The name of the scene.</param>
-		protected AppScene(string name)
+		/// <param name="contentPath">
+		/// The path to the content pack to source the scene content items from. Defaults to the default content pack
+		/// in the data/ folder.
+		/// </param>
+		protected AppScene(string name, string contentPath = "data/Content.cpak")
 		{
 			// Ensure we are creating this through SceneManager, and set to false to prevent this scene from making more scenes
 			lock (SceneManager.CreateLock)
@@ -53,8 +63,11 @@ namespace Spectrum
 
 			if (String.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("The scene name cannot be null or empty", nameof(name));
+			if (String.IsNullOrWhiteSpace(contentPath))
+				throw new ArgumentNullException(nameof(contentPath));
 
 			Name = name;
+			Content = ContentManager.OpenPackFile(contentPath);
 		}
 		~AppScene()
 		{
@@ -81,6 +94,7 @@ namespace Spectrum
 		internal void Remove()
 		{
 			OnRemove();
+			Content.Dispose();
 			IsActive = false;
 		}
 
