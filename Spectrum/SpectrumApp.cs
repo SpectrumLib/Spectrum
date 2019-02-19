@@ -1,4 +1,5 @@
 using System;
+using Spectrum.Content;
 using Spectrum.Graphics;
 using static Spectrum.InternalLog;
 
@@ -49,6 +50,14 @@ namespace Spectrum
 		/// will allow it to run as fast as possible. Defaults to null.
 		/// </summary>
 		public float? TargetFPS = null;
+
+		/// <summary>
+		/// The content manager for global content (content that exists outside of individual <see cref="AppScene"/>
+		/// instances, and should persist past active AppScene changes). This manager is not initialized until
+		/// immediately before <see cref="LoadContent"/> is called, and will only be initialized if
+		/// <see cref="AppParameters.GlobalContentPath"/> is not null.
+		/// </summary>
+		public ContentManager GContent { get; private set; } = null;
 
 		#region Events
 		/// <summary>
@@ -103,6 +112,10 @@ namespace Spectrum
 
 			doInitialize();
 
+			if (AppParameters.GlobalContentPath != null)
+				GContent = ContentManager.OpenPackFile(AppParameters.GlobalContentPath);
+			doLoadContent();
+
 			GC.Collect(); // Probably not a bad idea after potentially heavy initialization
 
 			Driver.MainLoop();
@@ -125,10 +138,22 @@ namespace Spectrum
 		}
 
 		/// <summary>
-		/// Override in the base class to perform custom initialization. User code does not need to call 
-		/// <c>base.Initialize()</c>.
+		/// Override in the base class to perform custom initialization. Content cannot be loaded in this function. 
+		/// User code does not need to call <c>base.Initialize()</c>.
 		/// </summary>
 		protected virtual void Initialize() { }
+
+		// Performs internal content loading, then user content loading
+		private void doLoadContent()
+		{
+			LoadContent();
+		}
+
+		/// <summary>
+		/// Override in the base class to perform loading of global content. User code does not need to call
+		/// <c>base.LoadContent()</c>.
+		/// </summary>
+		protected virtual void LoadContent() { }
 		#endregion // Initialization
 
 		#region Main Loop

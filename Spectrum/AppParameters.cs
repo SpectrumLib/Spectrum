@@ -11,6 +11,7 @@ namespace Spectrum
 	///		<item>General - This controls the name and version of the application.</item>
 	///		<item>Logging - Either customize the default logger, or use your own logging classes.</item>
 	///		<item>Graphics - Customization of aspects of the graphics subsystem.</item>
+	///		<item>Content - Global content manager settings.</item>
 	/// </list>
 	/// </summary>
 	public struct AppParameters
@@ -89,10 +90,18 @@ namespace Spectrum
 		public DeviceFeatures EnabledGraphicsFeatures;
 		/// <summary>
 		/// If true, then requesting a graphics device feature that is not available will throw an exception, instead of
-		/// logging an error and proceeding.
+		/// logging an error and proceeding. Defaults to true.
 		/// </summary>
 		public bool StrictGraphicsFeatures;
 		#endregion // Graphics
+
+		#region Content
+		/// <summary>
+		/// The path to the content .cpak file to use for the global content manager. Defaults to "data/Content.cpak",
+		/// which uses the default content pack in the data folder. A value of null will disable loading global content.
+		/// </summary>
+		public string GlobalContentPath;
+		#endregion // Content
 		#endregion // Fields
 
 		/// <summary>
@@ -119,7 +128,10 @@ namespace Spectrum
 			// Graphics defaults
 			EnableValidationLayers = false;
 			EnabledGraphicsFeatures = default;
-			StrictGraphicsFeatures = false;
+			StrictGraphicsFeatures = true;
+
+			// Content defaults
+			GlobalContentPath = "data/Content.cpak";
 		}
 
 		/// <summary>
@@ -142,6 +154,13 @@ namespace Spectrum
 			{
 				throw new AppParameterException(nameof(LogFileDirectory), $"The directory for the log files " +
 					$"'{LogFileDirectory}' contains invalid filesystem characters");
+			}
+
+			// Check the content settings
+			if (!IsValidFS(GlobalContentPath))
+			{
+				throw new AppParameterException(nameof(GlobalContentPath), $"The directory for the global content " +
+					$"'{GlobalContentPath}' contains invalid filesystem characters.");
 			}
 		}
 
