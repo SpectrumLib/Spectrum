@@ -174,6 +174,8 @@ namespace Prism.Build
 				catch (Exception e)
 				{
 					Engine.Logger.ItemFailed(current, $"Unhandled exception in importer, {e.Message} ({e.GetType().Name})");
+					if (e.InnerException != null)
+						Engine.Logger.ItemFailed(current, $"Inner Exception ({e.InnerException.GetType().Name}): {e.InnerException.Message}");
 					continue;
 				}
 				finally
@@ -206,6 +208,8 @@ namespace Prism.Build
 				catch (Exception e)
 				{
 					Engine.Logger.ItemFailed(current, $"Unhandled exception in processor, {e.Message} ({e.GetType().Name})");
+					if (e.InnerException != null)
+						Engine.Logger.ItemFailed(current, $"Inner Exception ({e.InnerException.GetType().Name}): {e.InnerException.Message}");
 					continue;
 				}
 
@@ -245,6 +249,8 @@ namespace Prism.Build
 				catch (Exception e)
 				{
 					Engine.Logger.ItemFailed(current, $"Unhandled exception in writer, {e.Message} ({e.GetType().Name})");
+					if (e.InnerException != null)
+						Engine.Logger.ItemFailed(current, $"Inner Exception ({e.InnerException.GetType().Name}): {e.InnerException.Message}");
 					continue;
 				}
 
