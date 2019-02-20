@@ -82,39 +82,5 @@ namespace Spectrum.Audio
 			}
 		}
 		#endregion // IDisposable
-
-        /// <summary>
-        /// This function will attempt to load a sound effect from an unprocessed file. This function only supports
-        /// WAV, OGG (Vorbis), and FLAC formats. It will select the format based on the file extension.
-        /// </summary>
-        /// <param name="path">The path to the audio file to load.</param>
-        /// <returns>A sound effect containing the audio file data.</returns>
-        public static SoundEffect LoadFromFile(string path)
-        {
-			string ext = Path.GetExtension(path);
-
-			Stopwatch timer = Stopwatch.StartNew();
-
-			SoundBuffer sb = null;
-			switch (ext)
-			{
-				case ".wav":
-				case ".wave":
-					sb = AudioLoader.LoadWaveFile(path);
-					break;
-				case ".ogg":
-					sb = AudioLoader.LoadVorbisFile(path);
-					break;
-				case ".flac":
-					sb = AudioLoader.LoadFlacFile(path);
-					break;
-				default:
-					throw new ArgumentException($"The file extension '{ext}' is not an understood audio file extension");
-			}
-
-			LDEBUG($"Loaded audio file '{path}' as SoundEffect in {timer.ElapsedMilliseconds:.00} ms.");
-
-			return new SoundEffect(sb);
-        }
 	}
 }
