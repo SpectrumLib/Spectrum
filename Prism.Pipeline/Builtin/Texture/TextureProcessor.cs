@@ -1,14 +1,16 @@
 ﻿using System;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Prism.Builtin
 {
 	// Currently just a passthrough processor for image data, but will soon implement standard transforms
 	[ContentProcessor("TextureProcessor")]
-	internal class TextureProcessor : ContentProcessor<RawTextureData, RawTextureData, TextureWriter>
+	internal class TextureProcessor : ContentProcessor<ImportedTextureData, Image<Rgba32>, TextureWriter>
 	{
-		public override RawTextureData Process(RawTextureData input, ProcessorContext ctx)
+		public override Image<Rgba32> Process(ImportedTextureData input, ProcessorContext ctx)
 		{
-			throw new NotImplementedException();
+			return input.Image;
 		}
 	}
 }
