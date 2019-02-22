@@ -10,6 +10,12 @@ namespace Prism.Builtin
 	{
 		public override Image<Rgba32> Process(ImportedTextureData input, ProcessorContext ctx)
 		{
+			if (input.Image.Width > UInt16.MaxValue || input.Image.Height > UInt16.MaxValue)
+			{
+				ctx.Logger.Error($"cannot process textures larger than {UInt16.MaxValue} ({input.Image.Width}x{input.Image.Height}).");
+				return null;
+			}
+
 			return input.Image;
 		}
 	}

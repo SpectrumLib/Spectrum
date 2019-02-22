@@ -9,12 +9,14 @@ namespace Prism.Builtin
 	{
 		public override string LoaderName => "Spectrum:TextureLoader";
 
+		public override CompressionPolicy Policy => CompressionPolicy.ReleaseOnly;
+
 		public override void Write(Image<Rgba32> input, ContentStream writer, WriterContext ctx)
 		{
 			try
 			{
-				writer.Write((uint)input.Width);
-				writer.Write((uint)input.Height);
+				writer.Write((ushort)input.Width);
+				writer.Write((ushort)input.Height);
 
 				var frame = input.Frames.RootFrame;
 				for (int y = 0; y < frame.Height; ++y)

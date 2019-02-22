@@ -9,8 +9,6 @@ namespace Prism
 	public abstract class ContentWriter<Tin> : IContentWriter
 		where Tin : class
 	{
-		private static readonly char[] NAME_SPLIT = { ',' };
-
 		#region Fields
 		/// <summary>
 		/// The type instance describing the data type that this writer consumes.
@@ -23,6 +21,12 @@ namespace Prism
 		/// (without the .dll at the end), and 'Name' is the name provided to the ContentLoader attribute.
 		/// </summary>
 		public abstract string LoaderName { get; }
+
+		/// <summary>
+		/// Controls how compression is applied to the content data output from this writer type. Defaults to
+		/// <see cref="CompressionPolicy.Default"/>.
+		/// </summary>
+		public virtual CompressionPolicy Policy => CompressionPolicy.Default;
 		#endregion // Fields
 
 		/// <summary>

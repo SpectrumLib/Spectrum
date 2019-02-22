@@ -7,6 +7,7 @@ namespace Prism
 	{
 		Type InputType { get; }
 		string LoaderName { get; }
+		CompressionPolicy Policy { get; }
 
 		void Write(object input, ContentStream writer, WriterContext ctx);
 	}
