@@ -301,13 +301,13 @@ namespace Spectrum.Content
 				using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
 				using (var reader = new BinaryReader(file))
 				{
-					loadDebugItemInfo(name, reader, out var hash, out var length);
+					loadDebugItemInfo(name, reader, out var hash, out var realSize, out var ucSize);
 
 					ContentStream stream = null;
 					try
 					{
-						stream = new ContentStream(name, file, length);
-						var ret = stream.ReadBytes(length);
+						stream = new ContentStream(name, file, realSize, ucSize);
+						var ret = stream.ReadBytes(ucSize);
 						LastLoadTime = timer.Elapsed;
 						return ret;
 					}
@@ -371,7 +371,7 @@ namespace Spectrum.Content
 					using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
 					using (var reader = new BinaryReader(file))
 					{
-						loadDebugItemInfo(name, reader, out var hash, out var length);
+						loadDebugItemInfo(name, reader, out var hash, out var realSize, out var ucSize);
 						var loader = getOrCreateLoader(hash);
 						if (loader == null)
 							throw new ContentLoadException(name, "the item specified a loader that does not exist.");
@@ -382,8 +382,8 @@ namespace Spectrum.Content
 						ContentStream stream = null;
 						try
 						{
-							stream = new ContentStream(name, file, length);
-							LoaderContext ctx = new LoaderContext(name, false, false, length);
+							stream = new ContentStream(name, file, realSize, ucSize);
+							LoaderContext ctx = new LoaderContext(name, false, false, ucSize);
 							loadedObj = loader.Load(stream, ctx);
 						}
 						catch (Exception e)
@@ -410,13 +410,14 @@ namespace Spectrum.Content
 		}
 
 		// Performs validation and header parsing for a .dci file
-		private void loadDebugItemInfo(string name, BinaryReader reader, out uint hash, out uint length)
+		private void loadDebugItemInfo(string name, BinaryReader reader, out uint hash, out uint realSize, out uint ucSize)
 		{
 			var header = reader.ReadBytes(4);
 			if (header[0] != 'D' || header[1] != 'C' || header[2] != 'I' || header[3] != 1)
 				throw new ContentLoadException(name, "the item file header is invalid.");
 			hash = reader.ReadUInt32();
-			length = reader.ReadUInt32();
+			realSize = reader.ReadUInt32();
+			ucSize = reader.ReadUInt32();
 		}
 
 		private IContentLoader getOrCreateLoader(uint hash)

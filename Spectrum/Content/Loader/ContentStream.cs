@@ -13,7 +13,7 @@ namespace Spectrum.Content
 	{
 		// The length of the headers (to add to the content offset to get to content data)
 		private const uint BIN_HEADER_LENGTH = 13;
-		private const uint DCI_HEADER_LENGTH = 12;
+		private const uint DCI_HEADER_LENGTH = 16;
 
 		// The UTF8 encoding and associated encoder used to get string and character bytes
 		private static readonly Encoding s_encoding = new UTF8Encoding(
@@ -62,18 +62,20 @@ namespace Spectrum.Content
 		}
 
 		// Creates a content stream to read from a debug item
-		internal ContentStream(string item, FileStream fstream, uint length)
+		internal ContentStream(string item, FileStream fstream, uint rlen, uint uclen)
 		{
 			Item = item;
 			Offset = DCI_HEADER_LENGTH;
-			RealSize = length;
-			UCSize = length;
-			Compressed = false;
+			RealSize = rlen;
+			UCSize = uclen;
+			Compressed = (rlen != uclen);
 			IsRelease = false;
 
 			_file = fstream;
 			_file.Seek(Offset, SeekOrigin.Begin); // Probably already there, but should make sure
-			_reader = new BinaryReader(_file);
+			if (Compressed)
+				_decompressor = LZ4Stream.Decode(_file, 0, leaveOpen: true);
+			_reader = new BinaryReader(Compressed ? (Stream)_decompressor : (Stream)_file, s_encoding, true);
 			_pos = 0;
 		}
 

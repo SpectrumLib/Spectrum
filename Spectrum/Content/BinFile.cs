@@ -13,11 +13,11 @@ namespace Spectrum.Content
 		public readonly uint FileNumber;
 		public readonly string FilePath;
 
-		private readonly List<(string, uint, uint, uint, uint)> _items;
-		public IReadOnlyList<(string Name, uint RealSize, uint UCSize, uint Offset, uint LoaderHash)> Items => _items;
+		private readonly List<BinEntry> _items;
+		public IReadOnlyList<BinEntry> Items => _items;
 		#endregion // Fields
 
-		private BinFile(uint fnum, string path, List<(string, uint, uint, uint, uint)> items)
+		private BinFile(uint fnum, string path, List<BinEntry> items)
 		{
 			FileNumber = fnum;
 			FilePath = path;
@@ -38,16 +38,9 @@ namespace Spectrum.Content
 
 			// Parse the item info for the file
 			uint iCount = reader.ReadUInt32();
-			List<(string, uint, uint, uint, uint)> items = new List<(string, uint, uint, uint, uint)>((int)iCount);
+			List<BinEntry> items = new List<BinEntry>((int)iCount);
 			for (uint i = 0; i < iCount; ++i)
-			{
-				var iname = reader.ReadString();
-				var realsize = reader.ReadUInt32();
-				var ucsize = reader.ReadUInt32();
-				var ioffset = reader.ReadUInt32();
-				var ihash = reader.ReadUInt32();
-				items.Add((iname, realsize, ucsize, ioffset, ihash));
-			}
+				items.Add(new BinEntry(reader));
 
 			// Load in the header of the bin file
 			using (var binReader = new BinaryReader(File.Open(binPath, FileMode.Open, FileAccess.Read, FileShare.None)))
@@ -65,6 +58,28 @@ namespace Spectrum.Content
 
 			// Create the bin file
 			return new BinFile(num, binPath, items);
+		}
+	}
+
+	// Holds information about a file entry in a .cbin, read from the .cpak file
+	internal class BinEntry
+	{
+		#region Fields
+		public readonly string Name;
+		public readonly uint RealSize;
+		public readonly uint UCSize;
+		public readonly uint Offset;
+		public readonly uint LoaderHash;
+		public bool Compressed => RealSize != UCSize;
+		#endregion // Fields
+
+		public BinEntry(BinaryReader reader)
+		{
+			Name = reader.ReadString();
+			RealSize = reader.ReadUInt32();
+			UCSize = reader.ReadUInt32();
+			Offset = reader.ReadUInt32();
+			LoaderHash = reader.ReadUInt32();
 		}
 	}
 }
