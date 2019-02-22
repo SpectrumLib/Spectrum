@@ -9,7 +9,7 @@ namespace Prism.Builtin
 	{
 		public override string LoaderName => "Spectrum:TextureLoader";
 
-		public override CompressionPolicy Policy => CompressionPolicy.ReleaseOnly;
+		public override CompressionPolicy Policy => CompressionPolicy.Always;
 
 		public override void Write(Image<Rgba32> input, ContentStream writer, WriterContext ctx)
 		{

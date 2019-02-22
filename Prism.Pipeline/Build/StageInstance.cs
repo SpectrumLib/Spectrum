@@ -24,6 +24,7 @@ namespace Prism.Build
 		public readonly IContentProcessor Instance;
 		public readonly IContentWriter WriterInstance;
 		public string LoaderName => WriterInstance.LoaderName;
+		public CompressionPolicy Policy => WriterInstance.Policy;
 		public readonly uint LoaderHash;
 
 		public ProcessorInstance(ProcessorType type)

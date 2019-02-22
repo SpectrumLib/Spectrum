@@ -32,7 +32,7 @@ namespace Prism.Build
 		private readonly string _cachedOutput = null;
 		public string OutputPath => Item?.Paths.OutputPath ?? _cachedOutput;
 
-		// If this build was created with compression
+		// If this item was built with compression (only valid for cached builds)
 		public readonly bool Compress;
 
 		// Importer name
@@ -57,11 +57,10 @@ namespace Prism.Build
 		public readonly uint UCSize = 0;
 		#endregion // Fields
 
-		private BuildEvent(ContentItem item, uint idx, bool compress, DateTime iTime, DateTime oTime, uint outSize)
+		private BuildEvent(ContentItem item, uint idx, DateTime iTime, DateTime oTime, uint outSize)
 		{
 			Item = item;
 			Index = idx;
-			Compress = compress;
 			InputTime = iTime;
 			OutputTime = oTime;
 			RealSize = outSize;
@@ -80,7 +79,7 @@ namespace Prism.Build
 		}
 
 		// Compares this event with the potential cached event to see if a rebuild is needed
-		public bool NeedsBuild(BuildEvent cached, IContentProcessor processor)
+		public bool NeedsBuild(BuildEvent cached, ProcessorInstance processor, bool compress)
 		{
 			// There is no exising build for this file
 			if (cached == null || OutputTime == ERROR_TIME)
@@ -94,8 +93,8 @@ namespace Prism.Build
 			if (ImporterName != cached.ImporterName || ProcessorName != cached.ProcessorName)
 				return true;
 
-			// If the last build was with a different compression (unless compression is skipped, then it doesnt matter)
-			if (!processor.SkipCompression && (Compress != cached.Compress))
+			// If the last build was with a different compression
+			if (compress != cached.Compress)
 				return true;
 
 			// The parameters have changed since the last build
@@ -135,14 +134,14 @@ namespace Prism.Build
 
 		// Saves the event info into a cache file
 		// This function will only ever be called on events that are loaded from items and have been rebuilt
-		public void SaveCache(BuildEngine engine, uint ucsize)
+		public void SaveCache(BuildEngine engine, uint ucsize, bool compress)
 		{
 			try
 			{
 				using (var writer = new BinaryWriter(File.Open(CachePath, FileMode.Create, FileAccess.Write, FileShare.None)))
 				{
 					writer.Write(BUILD_CACHE_HEADER);
-					writer.Write(Compress);
+					writer.Write(compress);
 					writer.Write(ucsize);
 					writer.Write(ImporterName);
 					writer.Write(ProcessorName);
@@ -164,7 +163,6 @@ namespace Prism.Build
 			return new BuildEvent(
 				item, 
 				idx, 
-				engine.Compress,
 				iInfo.Exists ? iInfo.LastWriteTimeUtc : ERROR_TIME, 
 				oInfo.Exists ? oInfo.LastWriteTimeUtc : ERROR_TIME,
 				oInfo.Exists ? (uint)oInfo.Length : 0u

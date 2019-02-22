@@ -28,12 +28,6 @@ namespace Prism
 		/// The type instance describing the ContentWriter type that writes out the data that this type produces.
 		/// </summary>
 		public Type WriterType { get; } = typeof(Twriter);
-
-		/// <summary>
-		/// Controls if items built with this processor type are already compressed, or should otherwise skip the
-		/// final LZ4 compression performed on content items. Defaults to <c>false</c>.
-		/// </summary>
-		public virtual bool SkipCompression { get => false; }
 		#endregion // Fields
 
 		/// <summary>

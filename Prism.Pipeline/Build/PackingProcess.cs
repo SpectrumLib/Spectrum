@@ -67,7 +67,7 @@ namespace Prism.Build
 
 					// Build flags
 					byte buildFlags = (byte)(
-						(Engine.Release  ? 0x01 : 0x00) |
+						(Engine.IsRelease  ? 0x01 : 0x00) |
 						(Engine.Compress ? 0x02 : 0x00));
 					writer.Write(buildFlags);
 
@@ -99,7 +99,7 @@ namespace Prism.Build
 		// Performs the final processing and moving to the output, potentially packing the content
 		public bool ProcessOutput(bool force)
 		{
-			if (Engine.Release) return releaseOutput(force);
+			if (Engine.IsRelease) return releaseOutput(force);
 			else return debugOutput(force);
 		}
 

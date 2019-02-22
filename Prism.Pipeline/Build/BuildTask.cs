@@ -75,7 +75,7 @@ namespace Prism.Build
 			Results.Reset();
 
 			// Create the content stream
-			var cStream = new ContentStream(Engine.Compress);
+			var cStream = new ContentStream();
 
 			// Iterate over the tasks
 			while (!Manager.ShouldStop && Manager.GetTaskItem(out BuildEvent current))
@@ -126,14 +126,19 @@ namespace Prism.Build
 
 				// Compare the current and cached build events to see if we can skip the build
 				//   If we are forcing a rebuild we have to build so we can skip the check
+				bool compress =
+					(processor.Policy == CompressionPolicy.Always) ||
+					(processor.Policy == CompressionPolicy.ReleaseOnly && Engine.IsRelease) ||
+					(processor.Policy == CompressionPolicy.Default && Engine.Compress) ||
+					false; // policy is never, compress = false
 				if (!rebuild)
 				{
 					var cached = BuildEvent.FromCacheFile(Engine, current.Item);
-					if (!current.NeedsBuild(cached, processor.Instance))
+					if (!current.NeedsBuild(cached, processor, compress))
 					{
 						Engine.Logger.ItemSkipped(current);
 						Results.PassItem(cached.UCSize, true);
-						if (Engine.Compress && !processor.Instance.SkipCompression)
+						if (compress)
 							Results.UpdatePreviousItem(current.RealSize); // Update with the real (compressed) size of the data
 						continue;
 					}
@@ -239,7 +244,7 @@ namespace Prism.Build
 				try
 				{
 					_logger.UpdateStageName(processor.Type.WriterType.Name);
-					uint lastRealSize = cStream.Reset(current.Paths.OutputPath, processor.Instance.SkipCompression);
+					uint lastRealSize = cStream.Reset(current.Paths.OutputPath, compress);
 					if (lastRealSize != 0)
 						Results.UpdatePreviousItem(lastRealSize);
 					WriterContext ctx = new WriterContext(_logger);
@@ -255,7 +260,7 @@ namespace Prism.Build
 				}
 
 				// Save the cache
-				current.SaveCache(Engine, cStream.OutputSize);
+				current.SaveCache(Engine, cStream.OutputSize, compress);
 
 				// Report end
 				Engine.Logger.ItemFinished(current, _timer.Elapsed);

@@ -94,7 +94,7 @@ namespace Prism.Build
 					bool rel = (flags & 0x01) > 0;
 					bool compress = (flags & 0x02) > 0;
 					uint packSize = reader.ReadUInt32();
-					return (Engine.Release != rel) || (compress != Engine.Compress) || 
+					return (Engine.IsRelease != rel) || (compress != Engine.Compress) || 
 						(Project.Properties.PackSize != packSize);
 				}
 			}
@@ -113,7 +113,7 @@ namespace Prism.Build
 			bool success = false;
 			try
 			{
-				Engine.Logger.BuildStart(rebuild, Engine.Release);
+				Engine.Logger.BuildStart(rebuild, Engine.IsRelease);
 
 				// Reset the item enumerator to the beginning
 				_itemEnumerator = Project.Items.GetEnumerator();

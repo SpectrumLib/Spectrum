@@ -38,8 +38,7 @@ namespace Prism
 		private readonly Encoder _encoder;
 
 		// The compression type to use
-		internal readonly bool Compress;
-		internal bool SkipCompress = false;
+		internal bool Compress = false;
 
 		// The current async write task, if any. The task will return the compressed size of the file
 		private Task<uint> _writeTask = null;
@@ -52,7 +51,7 @@ namespace Prism
 		private LZ4EncoderStream _compressor;
 		#endregion // Fields
 
-		internal ContentStream(bool compress)
+		internal ContentStream()
 		{
 			_memBuffer = new byte[BUFFER_SIZE];
 			_memStream = new MemoryStream(_memBuffer);
@@ -61,25 +60,24 @@ namespace Prism
 				encoderShouldEmitUTF8Identifier: false,
 				throwOnInvalidBytes: true
 			);
-			Compress = compress;
 			_encoder = _encoding.GetEncoder();
 		}
 
 		// Waits on the old write task, then resets the type to start recoding at the beginning of the buffer
 		// This will return the compressed size of the previous item, or zero if it was not compressed
-		internal uint Reset(string path, bool skipCompression)
+		internal uint Reset(string path, bool compress)
 		{
 			uint usize = _writeTask?.Result ?? 0; // The "Result" property blocks until the task is finished
 			_memStream.Seek(0, SeekOrigin.Begin);
 			OutputSize = 0;
 			_currentFile = path;
-			SkipCompress = skipCompression;
+			Compress = compress;
 
 			// Create the new streams (if there is a file)
 			if (path != null)
 			{
 				_file = File.Open(_currentFile, FileMode.Create, FileAccess.Write, FileShare.None);
-				if (Compress && !SkipCompress)
+				if (Compress)
 					_compressor = LZ4Stream.Encode(_file, LZ4Level.L00_FAST, leaveOpen: true);
 				else
 					_compressor = null; 
@@ -99,7 +97,7 @@ namespace Prism
 			OutputSize += _bufferPos;
 
 			_writeTask = Task<uint>.Factory.StartNew(() => {
-				if (Compress && !SkipCompress)
+				if (Compress)
 				{
 					_compressor.Write(_memBuffer, 0, (int)_bufferPos);
 					_compressor.Flush();
@@ -116,7 +114,7 @@ namespace Prism
 				_compressor?.Dispose();
 				_file?.Dispose();
 
-				return (Compress && !SkipCompress) ? size : 0;
+				return Compress ? size : 0;
 			});
 		}
 
@@ -126,7 +124,7 @@ namespace Prism
 			OutputSize += _bufferPos;
 
 			// Synchronously write
-			if (Compress && !SkipCompress)
+			if (Compress)
 			{
 				_compressor.Write(_memBuffer, 0, (int)_bufferPos);
 				_compressor.Flush();
@@ -150,7 +148,7 @@ namespace Prism
 			// Synchronously write
 			using (var buffer = new UnmanagedMemoryStream(data, length))
 			{
-				if (Compress && !SkipCompress)
+				if (Compress)
 				{
 					buffer.CopyTo(_compressor);
 					_compressor.Flush();
@@ -172,9 +170,8 @@ namespace Prism
 		private void flushDirect(string str)
 		{
 			// Synchronously write
-			bool c = (Compress && !SkipCompress);
 			uint size = 0;
-			using (var directWriter = new BinaryWriter(c ? (Stream)_compressor : (Stream)_file))
+			using (var directWriter = new BinaryWriter(Compress ? (Stream)_compressor : (Stream)_file))
 			{
 				uint pos = (uint)directWriter.BaseStream.Position;
 				directWriter.Write(str);
@@ -193,9 +190,8 @@ namespace Prism
 		private void flushDirect(char[] chars, int off, int len)
 		{
 			// Synchronously write
-			bool c = (Compress && !SkipCompress);
 			uint size = 0;
-			using (var directWriter = new BinaryWriter(c ? (Stream)_compressor : (Stream)_file))
+			using (var directWriter = new BinaryWriter(Compress ? (Stream)_compressor : (Stream)_file))
 			{
 				uint pos = (uint)directWriter.BaseStream.Position;
 				directWriter.Write(chars, off, len);

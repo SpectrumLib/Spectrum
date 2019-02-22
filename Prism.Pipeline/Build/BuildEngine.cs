@@ -18,10 +18,10 @@ namespace Prism.Build
 		public bool Busy => _manager.Busy; // If there is a currently a build/clean process happening
 
 		// If the current build process is a release build
-		public bool Release { get; private set; }
+		public bool IsRelease { get; private set; }
 
 		// Get the compression settings taking into account the build type and project settings
-		public bool Compress => Release && Project.Properties.Compress;
+		public bool Compress => IsRelease && Project.Properties.Compress;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -49,7 +49,7 @@ namespace Prism.Build
 			if (Busy)
 				throw new InvalidOperationException("Cannot start a build task while a task is already running");
 
-			Release = release;
+			IsRelease = release;
 			return new Task(() => _manager.Build(rebuild));
 		}
 
