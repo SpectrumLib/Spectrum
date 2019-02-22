@@ -229,7 +229,7 @@ namespace Prism.Build
 						File.Delete(packPath);
 
 					// Clean the individual items out (no packing)
-					var oInfo = (new DirectoryInfo(Project.Paths.OutputRoot)).GetFiles("*.pci", SearchOption.TopDirectoryOnly);
+					var oInfo = (new DirectoryInfo(Project.Paths.OutputRoot)).GetFiles("*.dci", SearchOption.TopDirectoryOnly);
 					for (int i = 0; i < oInfo.Length; ++i)
 					{
 						// Check for stop every 5th item, middle ground between too often (slow) and not enough (why implement cancelling to begin with)
