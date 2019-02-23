@@ -38,13 +38,13 @@
   
   <ItemGroup>
     <Reference Include="System.Json">
-      <HintPath>..\Dependencies\Json\System.Json.dll</HintPath>
+      <HintPath>..\Dependencies\Managed\System.Json.dll</HintPath>
     </Reference>
 	<Reference Include="LZ4">
-      <HintPath>..\Dependencies\LZ4\LZ4.dll</HintPath>
+      <HintPath>..\Dependencies\Managed\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="SixLabors.ImageSharp">
-      <HintPath>..\Dependencies\ImageSharp\SixLabors.ImageSharp.dll</HintPath>
+      <HintPath>..\Dependencies\Managed\ImageSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 
@@ -59,7 +59,7 @@
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:library /internalize /parallel /log:ILRepack.log</RepackFlags>
-      <RepackInput>Prism.Pipeline.tmp.dll System.Json.dll LZ4.dll SixLabors.ImageSharp.dll</RepackInput>
+      <RepackInput>Prism.Pipeline.tmp.dll System.Json.dll LZ4.dll ImageSharp.dll</RepackInput>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Prism.Pipeline.dll" DestinationFiles="$(OUTDIR)/Prism.Pipeline.tmp.dll" />

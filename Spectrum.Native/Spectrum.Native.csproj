@@ -33,8 +33,8 @@
 
   <ItemGroup>
     <!-- Windows -->
-    <EmbeddedResource Include="..\Dependencies\GLFW\glfw3.w" Link="glfw3.w" />
-    <EmbeddedResource Include="..\Dependencies\OAL\oal.w" Link="oal.w" />
+    <EmbeddedResource Include="..\Dependencies\Native\glfw3.w" Link="glfw3.w" />
+    <EmbeddedResource Include="..\Dependencies\Native\oal.w" Link="oal.w" />
   </ItemGroup>
 
 </Project>

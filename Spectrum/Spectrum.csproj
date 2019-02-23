@@ -34,10 +34,10 @@
 
   <ItemGroup>
     <Reference Include="VulkanCore">
-      <HintPath>..\Dependencies\Vulkan\VulkanCore.dll</HintPath>
+      <HintPath>..\Dependencies\Managed\VulkanCore.dll</HintPath>
     </Reference>
     <Reference Include="LZ4">
-      <HintPath>..\Dependencies\LZ4\LZ4.dll</HintPath>
+      <HintPath>..\Dependencies\Managed\LZ4.dll</HintPath>
     </Reference>
   </ItemGroup>
 

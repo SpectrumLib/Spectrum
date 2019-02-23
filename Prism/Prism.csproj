@@ -33,15 +33,6 @@
     <ProjectReference Include="..\Prism.Pipeline\Prism.Pipeline.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Eto">
-      <HintPath>..\Dependencies\Eto\Eto.dll</HintPath>
-    </Reference>
-    <Reference Include="Eto.Wpf">
-      <HintPath>..\Dependencies\Eto\Eto.Wpf.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
   <PropertyGroup>
     <IsTravisCI>true</IsTravisCI>
     <IsTravisCI Condition="'$(OS)' != 'Unix' or !Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">false</IsTravisCI>
