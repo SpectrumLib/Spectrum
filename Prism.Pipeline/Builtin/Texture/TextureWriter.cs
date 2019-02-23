@@ -1,36 +1,17 @@
 ﻿using System;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace Prism.Builtin
 {
 	// Writes image data in an efficient fashion
-	internal class TextureWriter : ContentWriter<Image<Rgba32>>
+	internal class TextureWriter : ContentWriter<object>
 	{
 		public override string LoaderName => "Spectrum:TextureLoader";
 
 		public override CompressionPolicy Policy => CompressionPolicy.Always;
 
-		public override void Write(Image<Rgba32> input, ContentStream writer, WriterContext ctx)
+		public override void Write(object input, ContentStream writer, WriterContext ctx)
 		{
-			try
-			{
-				writer.Write((ushort)input.Width);
-				writer.Write((ushort)input.Height);
 
-				var frame = input.Frames.RootFrame;
-				for (int y = 0; y < frame.Height; ++y)
-				{
-					for (int x = 0; x < frame.Width; ++x)
-					{
-						writer.Write(frame[x, y].Rgba);
-					}
-				}
-			}
-			finally
-			{
-				input.Dispose();
-			}
 		}
 	}
 }

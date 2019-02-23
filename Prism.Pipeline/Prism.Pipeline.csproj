@@ -35,16 +35,17 @@
   <ItemGroup>
     <EmbeddedResource Include="..\Resources\DefaultFiles\Default.prism" Link="Resources\Default.prism" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\Dependencies\Native\image.w" Link="Native\image.w" />
+  </ItemGroup>
   
   <ItemGroup>
     <Reference Include="System.Json">
       <HintPath>..\Dependencies\Managed\System.Json.dll</HintPath>
     </Reference>
-	<Reference Include="LZ4">
+  <Reference Include="LZ4">
       <HintPath>..\Dependencies\Managed\LZ4.dll</HintPath>
-    </Reference>
-    <Reference Include="SixLabors.ImageSharp">
-      <HintPath>..\Dependencies\Managed\ImageSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 
