@@ -18,7 +18,6 @@ namespace Spectrum.Content
 		#region Fields
 		// Build information
 		public readonly bool ReleaseMode;
-		public readonly bool Compressed;
 		public readonly uint PackSize;
 		public readonly uint Timestamp;
 
@@ -53,7 +52,6 @@ namespace Spectrum.Content
 			// Build flags
 			byte flags = reader.ReadByte();
 			ReleaseMode = (flags & 0x01) > 0;
-			Compressed = (flags & 0x02) > 0;
 
 			// Other build info
 			PackSize = reader.ReadUInt32();

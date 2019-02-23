@@ -158,6 +158,10 @@ namespace Spectrum.Graphics
 			// Release the temp buffers if needed
 			if (length > DEFAULT_BUFFER_SIZE)
 			{
+				// Cant dispose until we are done, we have to do this syncronously
+				s_pushFence.Wait();
+				s_pushFence.Reset();
+
 				buffer.Dispose();
 				memory.Dispose();
 			}

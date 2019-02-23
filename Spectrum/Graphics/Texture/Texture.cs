@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Vk = VulkanCore;
+using Spectrum.Content;
 
 namespace Spectrum.Graphics
 {
@@ -9,7 +10,7 @@ namespace Spectrum.Graphics
 	/// be used to upload from the CPU and sample in shaders. There is a separate type for textures to render to. All
 	/// texel data to and from textures must be in R8G8B8A8 format (standard 8-bit 4-channel format)
 	/// </summary>
-	public abstract class Texture : IDisposable
+	public abstract class Texture : IDisposableContent
 	{
 		#region Fields
 		/// <summary>
@@ -49,7 +50,7 @@ namespace Spectrum.Graphics
 		// The limits for the device
 		protected DeviceLimits Limits => Device.Limits;
 		// If the texture is disposed
-		protected bool IsDisposed { get; private set; } = false;
+		public bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
 
 		private protected Texture(TextureType type, uint w, uint h, uint d, uint layers)
