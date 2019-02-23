@@ -60,7 +60,7 @@
       <RepackPrefix Condition="'$(OS)' == 'Unix'">mono</RepackPrefix>
       <RepackExe>$(ProjectDir)../Resources/Tools/ILRepack.exe</RepackExe>
       <RepackFlags>/target:library /internalize /parallel /log:ILRepack.log</RepackFlags>
-      <RepackInput>Prism.Pipeline.tmp.dll System.Json.dll LZ4.dll ImageSharp.dll</RepackInput>
+      <RepackInput>Prism.Pipeline.tmp.dll System.Json.dll LZ4.dll</RepackInput>
     </PropertyGroup>
 
     <Move SourceFiles="$(OUTDIR)/Prism.Pipeline.dll" DestinationFiles="$(OUTDIR)/Prism.Pipeline.tmp.dll" />
