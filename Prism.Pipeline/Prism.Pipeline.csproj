@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\Dependencies\Native\image.w" Link="Native\image.w" />
+    <EmbeddedResource Include="..\Dependencies\Native\audio.w" Link="Native\audio.w" />
   </ItemGroup>
   
   <ItemGroup>

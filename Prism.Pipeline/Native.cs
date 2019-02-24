@@ -34,6 +34,7 @@ namespace Prism
 
 			// Load the libraries
 			ExtractAndLoad("image");
+			ExtractAndLoad("audio");
 		}
 
 		// Gets the handle of the loaded library
