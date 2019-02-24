@@ -16,7 +16,10 @@ namespace Prism.Builtin
 				writer.Write((ushort)input.Width);
 				writer.Write((ushort)input.Height);
 
-				// TODO: Write pixel data
+				unsafe
+				{
+					writer.Write(input.Data, input.DataLength);
+				}
 			}
 			finally
 			{

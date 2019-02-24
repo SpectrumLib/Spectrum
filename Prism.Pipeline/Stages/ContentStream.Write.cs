@@ -123,6 +123,25 @@ namespace Prism
 			}
 		}
 
+		// Maybe expose this later, but will probably change after Span<T> is available
+		internal unsafe void Write(byte *data, uint count)
+		{
+			bool direct = count >= DIRECT_WRITE_THRESHOLD;
+			if (direct || (_bufferPos + count) > BUFFER_SIZE)
+				flushInternal();
+
+			if (direct)
+				flushDirect(data, count);
+			else
+			{
+				fixed (byte *dst = _memBuffer)
+				{
+					Buffer.MemoryCopy(data, dst + _bufferPos, count, count);
+					_memStream.Seek(count, SeekOrigin.Current);
+				}
+			}
+		}
+
 		public unsafe void Write(char val)
 		{
 			if (Char.IsSurrogate(val))

@@ -10,6 +10,7 @@ namespace Prism.Builtin
 		public readonly uint Height;
 		public readonly uint Channels; // 1 = gray, 2 = gray + alpha, 3 = rgb, 4 = rgba
 		public readonly byte* Data; // Raw packed data received from the native library
+		public uint DataLength => Width * Height * Channels;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
