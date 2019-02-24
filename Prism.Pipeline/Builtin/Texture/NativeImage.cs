@@ -8,14 +8,14 @@ namespace Prism.Builtin
 	// Interfaces with the native image loading library
 	internal static class NativeImage
 	{
-		#region Fields
+		#region Delegates
 		private static readonly Delegates.stbi_load stbi_load;
 		private static readonly Delegates.stbi_image_free stbi_image_free;
 		private static readonly Delegates.stbi_failure_reason stbi_failure_reason;
 		private static readonly Delegates.stbir_resize_uint8 stbir_resize_uint8;
 		private static readonly Delegates.stl_c_free stl_c_free;
 		private static readonly Delegates.stl_c_alloc stl_c_alloc;
-		#endregion // Fields
+		#endregion // Delegates
 
 		static NativeImage()
 		{
