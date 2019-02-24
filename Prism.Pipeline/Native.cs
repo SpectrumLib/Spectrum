@@ -32,20 +32,23 @@ namespace Prism
 
 			AppDomain.CurrentDomain.ProcessExit += (sender, e) => { Release(); };
 
-			Load();
-		}
-
-		// Called by internal functions when the native libraries are needed
-		internal static void Load()
-		{
-			if (s_loadedLibs.Count > 0)
-				return; // Already loaded
-
+			// Load the libraries
 			ExtractAndLoad("image");
 		}
 
+		// Gets the handle of the loaded library
+		public static IntPtr GetLibraryHandle(string lib) => s_loadedLibs[lib];
+
+		// Loads a function from the passed C library handle (see GetLibraryHandle())
+		public static T LoadFunction<T>(IntPtr library, string function)
+			where T : Delegate
+		{
+			IntPtr handle = (s_platform == PlatformOS.Windows) ? Kernel32.GetProcAddress(library, function) : Dl.Symbol(library, function);
+			return (handle == IntPtr.Zero) ? null : Marshal.GetDelegateForFunctionPointer(handle, typeof(T)) as T;
+		}
+
 		// Called when the process exits
-		internal static void Release()
+		private static void Release()
 		{
 			// Release the handles
 			foreach (var pair in s_loadedLibs)
