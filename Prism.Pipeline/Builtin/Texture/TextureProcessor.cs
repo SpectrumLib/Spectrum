@@ -4,11 +4,11 @@ namespace Prism.Builtin
 {
 	// Currently just a passthrough processor for image data, but will soon implement standard transforms
 	[ContentProcessor("TextureProcessor")]
-	internal class TextureProcessor : ContentProcessor<object, object, TextureWriter>
+	internal class TextureProcessor : ContentProcessor<ImageData, ImageData, TextureWriter>
 	{
-		public override object Process(object input, ProcessorContext ctx)
+		public override ImageData Process(ImageData input, ProcessorContext ctx)
 		{
-			return null;
+			return input;
 		}
 	}
 }

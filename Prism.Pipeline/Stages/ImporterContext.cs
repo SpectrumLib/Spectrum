@@ -16,6 +16,10 @@ namespace Prism
 		/// </summary>
 		public string FileName => _fileInfo.Name;
 		/// <summary>
+		/// The absolute path to the input file.
+		/// </summary>
+		public string FilePath => _fileInfo.FullName;
+		/// <summary>
 		/// The extension of the current content file, with the period.
 		/// </summary>
 		public string FileExtension => _fileInfo.Extension;

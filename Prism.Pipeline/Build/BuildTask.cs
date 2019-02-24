@@ -157,7 +157,7 @@ namespace Prism.Build
 				try
 				{
 					importInfo = new FileInfo(current.Paths.SourcePath);
-					importStream = importInfo.Open(FileMode.Open, FileAccess.Read, FileShare.None);
+					importStream = importInfo.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
 				}
 				catch (Exception e)
 				{

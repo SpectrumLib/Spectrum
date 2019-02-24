@@ -95,7 +95,7 @@ namespace Prism
 
 		// Appends the platform extension for the embedded resource
 		private static string GetResourceName(string baseName) =>
-			"Prism.Pipeline." + baseName + (s_platform == PlatformOS.Windows ? ".w" : s_platform == PlatformOS.OSX ? ".m" : ".l");
+			"Prism.Native." + baseName + (s_platform == PlatformOS.Windows ? ".w" : s_platform == PlatformOS.OSX ? ".m" : ".l");
 
 		// Native loader methods for windows
 		private static class Kernel32
