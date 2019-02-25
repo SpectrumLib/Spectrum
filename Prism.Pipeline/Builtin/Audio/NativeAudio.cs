@@ -61,9 +61,10 @@ namespace Prism.Builtin
 				if (channels > 2)
 					throw new InvalidOperationException("Cannot process data that has >2 channels.");
 			}
-			finally
+			catch
 			{
 				FreeWav(data);
+				throw;
 			}
 
 			return new RawAudio(AudioFormat.Wav, (uint)frames, channels == 2, (uint)rate, data);
@@ -80,9 +81,10 @@ namespace Prism.Builtin
 				if (channels > 2)
 					throw new InvalidOperationException("Cannot process data that has >2 channels.");
 			}
-			finally
+			catch
 			{
 				Free(data);
+				throw;
 			}
 
 			return new RawAudio(AudioFormat.Ogg, (uint)(samples / channels), channels == 2, (uint)rate, data);
@@ -101,9 +103,10 @@ namespace Prism.Builtin
 				if (channels > 2)
 					throw new InvalidOperationException("Cannot process data that has >2 channels.");
 			}
-			finally
+			catch
 			{
 				FreeFlac(data);
+				throw;
 			}
 
 			return new RawAudio(AudioFormat.Flac, (uint)frames, channels == 2, (uint)rate, data);
@@ -122,9 +125,10 @@ namespace Prism.Builtin
 				if (config.Channels > 2)
 					throw new InvalidOperationException("Cannot process data that has >2 channels.");
 			}
-			finally
+			catch
 			{
 				FreeMp3(data);
+				throw;
 			}
 
 			return new RawAudio(AudioFormat.Mp3, (uint)frames, config.Channels == 2, config.SampleRate, data);

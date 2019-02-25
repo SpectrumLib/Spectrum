@@ -16,7 +16,7 @@ namespace Prism.Builtin
 		// Size of the data (in bytes)
 		public ulong DataLength => SampleCount * SampleSize;
 
-		public readonly IntPtr Data; // The data in unmanaged memory
+		public IntPtr Data { get; private set; } // The data in unmanaged memory
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -32,6 +32,14 @@ namespace Prism.Builtin
 		~RawAudio()
 		{
 			Dispose();
+		}
+
+		// Moves ownership of data to a processed data type, and this type no longer needs to dispose the data
+		public IntPtr TakeData()
+		{
+			var tmp = Data;
+			Data = IntPtr.Zero;
+			return tmp;
 		}
 
 		public void Dispose()

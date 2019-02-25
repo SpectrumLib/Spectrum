@@ -4,7 +4,7 @@ namespace Prism.Builtin
 {
 	// Performs the processing of audio data from the raw PCM to the custom compressed format
 	[ContentProcessor("AudioProcessor")]
-	internal class AudioProcessor : ContentProcessor<RawAudio, RLADAudio, AudioWriter>
+	internal class AudioProcessor : ContentProcessor<RawAudio, ProcessedAudio, AudioWriter>
 	{
 		// Multiplicitive factor for converting f32 [-1,1] to s16
 		private const float F2S_FACTOR = Int16.MaxValue - 1;
@@ -12,16 +12,23 @@ namespace Prism.Builtin
 		[PipelineParameter(description: "If the processor can use a faster, but slightly lossy compression algorithm.")]
 		public bool Lossy = true;
 
-		public unsafe override RLADAudio Process(RawAudio input, ProcessorContext ctx)
+		public unsafe override ProcessedAudio Process(RawAudio input, ProcessorContext ctx)
 		{
 			// Preprocessing step for mp3, convert from float to s16
 			short* data = (short*)input.Data.ToPointer();
 			if (input.Format == AudioFormat.Mp3)
 				ConvertF32ToS16(data, (float*)input.Data.ToPointer(), input.SampleCount);
 
-
-			// Passthrough for now, apply compression soon
-			return new RLADAudio();
+			// Perform the compression steps
+			try
+			{
+				var proc = Lossy ? S3RAudio.Encode(input) : throw new InvalidOperationException("Lossless compression not yet implemented.");
+				return proc;
+			}
+			finally
+			{
+				input.Dispose(); // Wont do anything if the encoding functions work properly
+			}
 		}
 
 		// For MP3, converts float PCM to s16 PCM
@@ -57,6 +64,46 @@ namespace Prism.Builtin
 			// Remaining samples
 			for (uint rc = 0; rc < rem; ++rc, ++si)
 				dst[si] = (short)(src[si] * F2S_FACTOR);
+		}
+	}
+
+	// Base class for audio that has been compressed and processed
+	internal abstract class ProcessedAudio : IDisposable
+	{
+		#region Fields
+		public readonly AudioFormat Format; // Used to select the correct free function
+		public readonly bool Stereo;
+		public readonly uint SampleRate;
+		public abstract uint FrameCount { get; protected set; }
+		public abstract IntPtr Data { get; protected set; }
+
+		protected bool _isDisposed { get; private set; } = false;
+		#endregion // Fields
+
+		protected ProcessedAudio(RawAudio raw)
+		{
+			Format = raw.Format;
+			Stereo = raw.Stereo;
+			SampleRate = raw.Rate;
+		}
+		~ProcessedAudio()
+		{
+			Dispose();
+		}
+
+		public void Dispose()
+		{
+			if (!_isDisposed && (Data != IntPtr.Zero))
+			{
+				switch (Format)
+				{
+					case AudioFormat.Wav: NativeAudio.FreeWav(Data); break;
+					case AudioFormat.Ogg: NativeAudio.Free(Data); break;
+					case AudioFormat.Flac: NativeAudio.FreeFlac(Data); break;
+					case AudioFormat.Mp3: NativeAudio.FreeMp3(Data); break;
+				}
+			}
+			_isDisposed = true;
 		}
 	}
 }
