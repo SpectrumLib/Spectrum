@@ -48,28 +48,50 @@ namespace Prism.Builtin
 		// Unmanaged memory allocation
 		public unsafe static byte* AllocData(ulong size) => (byte*)stl_c_alloc(size).ToPointer();
 
-		// Load raw audio data from an ogg vorbis file
-		public static RawAudio LoadVorbis(string path)
-		{
-			throw new NotImplementedException();
-		}
-
 		// Load raw audio data from a wave file
 		public static RawAudio LoadWave(string path)
 		{
-			throw new NotImplementedException();
+			IntPtr data = drwav_open_file_and_read_pcm_frames_s16(path, out int channels, out int rate, out ulong frames);
+			if (data == IntPtr.Zero || frames == 0)
+				throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
+			if (frames > UInt32.MaxValue)
+				throw new InvalidOperationException("The audio file was too long.");
+
+			return new RawAudio(AudioFormat.Wav, (uint)frames, (uint)channels, (uint)rate, data);
+		}
+
+		// Load raw audio data from an ogg vorbis file
+		public static RawAudio LoadVorbis(string path)
+		{
+			var samples = stb_vorbis_decode_filename(path, out int channels, out int rate, out IntPtr data);
+			if (samples == -1)
+				throw new ArgumentException("The file could not be opened, or was not a valid OGG Vorbis file.", nameof(path));
+
+			return new RawAudio(AudioFormat.Ogg, (uint)(samples / channels), (uint)channels, (uint)rate, data);
 		}
 
 		// Load raw audio data from a flac file
 		public static RawAudio LoadFlac(string path)
 		{
-			throw new NotImplementedException();
+			IntPtr data = drflac_open_file_and_read_pcm_frames_s16(path, out int channels, out int rate, out ulong frames);
+			if (data == IntPtr.Zero || frames == 0)
+				throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
+			if (frames > UInt32.MaxValue)
+				throw new InvalidOperationException("The audio file was too long.");
+
+			return new RawAudio(AudioFormat.Flac, (uint)frames, (uint)channels, (uint)rate, data);
 		}
 
 		// Load raw audio data from a mp3 file
 		public static RawAudio LoadMp3(string path)
 		{
-			throw new NotImplementedException();
+			IntPtr data = drmp3_open_file_and_read_f32(path, out drmp3_config config, out ulong frames);
+			if (data == IntPtr.Zero || frames == 0)
+				throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
+			if (frames > UInt32.MaxValue)
+				throw new InvalidOperationException("The audio file was too long.");
+
+			return new RawAudio(AudioFormat.Mp3, (uint)frames, config.Channels, config.SampleRate, data);
 		}
 		
 		// Unmanaged delegate types
@@ -80,7 +102,7 @@ namespace Prism.Builtin
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate IntPtr stl_c_alloc(ulong size);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
-			public delegate int stb_vorbis_decode_filename(string filename, out int channels, out int rate, IntPtr output); // Output = short**
+			public delegate int stb_vorbis_decode_filename(string filename, out int channels, out int rate, out IntPtr output);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate IntPtr drwav_open_file_and_read_pcm_frames_s16(string filename, out int channels, out int rate, out ulong frames);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
