@@ -22,13 +22,6 @@ namespace Prism.Builtin
 					return null;
 			}
 
-			// Check channel count
-			if (ra.ChannelCount > 2)
-			{
-				ctx.Logger.Error("the audio importer does not currently support >2 channel data.");
-				return null;
-			}
-			
 			// Good to move forward
 			return ra;
 		}

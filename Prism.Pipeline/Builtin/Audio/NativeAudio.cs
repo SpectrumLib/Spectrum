@@ -52,46 +52,82 @@ namespace Prism.Builtin
 		public static RawAudio LoadWave(string path)
 		{
 			IntPtr data = drwav_open_file_and_read_pcm_frames_s16(path, out int channels, out int rate, out ulong frames);
-			if (data == IntPtr.Zero || frames == 0)
-				throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
-			if (frames > UInt32.MaxValue)
-				throw new InvalidOperationException("The audio file was too long.");
+			try
+			{
+				if (data == IntPtr.Zero || frames == 0)
+					throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
+				if (frames > UInt32.MaxValue)
+					throw new InvalidOperationException("The audio file was too long.");
+				if (channels > 2)
+					throw new InvalidOperationException("Cannot process data that has >2 channels.");
+			}
+			finally
+			{
+				FreeWav(data);
+			}
 
-			return new RawAudio(AudioFormat.Wav, (uint)frames, (uint)channels, (uint)rate, data);
+			return new RawAudio(AudioFormat.Wav, (uint)frames, channels == 2, (uint)rate, data);
 		}
 
 		// Load raw audio data from an ogg vorbis file
 		public static RawAudio LoadVorbis(string path)
 		{
 			var samples = stb_vorbis_decode_filename(path, out int channels, out int rate, out IntPtr data);
-			if (samples == -1)
-				throw new ArgumentException("The file could not be opened, or was not a valid OGG Vorbis file.", nameof(path));
+			try
+			{
+				if (samples == -1)
+					throw new ArgumentException("The file could not be opened, or was not a valid OGG Vorbis file.", nameof(path));
+				if (channels > 2)
+					throw new InvalidOperationException("Cannot process data that has >2 channels.");
+			}
+			finally
+			{
+				Free(data);
+			}
 
-			return new RawAudio(AudioFormat.Ogg, (uint)(samples / channels), (uint)channels, (uint)rate, data);
+			return new RawAudio(AudioFormat.Ogg, (uint)(samples / channels), channels == 2, (uint)rate, data);
 		}
 
 		// Load raw audio data from a flac file
 		public static RawAudio LoadFlac(string path)
 		{
 			IntPtr data = drflac_open_file_and_read_pcm_frames_s16(path, out int channels, out int rate, out ulong frames);
-			if (data == IntPtr.Zero || frames == 0)
-				throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
-			if (frames > UInt32.MaxValue)
-				throw new InvalidOperationException("The audio file was too long.");
+			try
+			{
+				if (data == IntPtr.Zero || frames == 0)
+					throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
+				if (frames > UInt32.MaxValue)
+					throw new InvalidOperationException("The audio file was too long.");
+				if (channels > 2)
+					throw new InvalidOperationException("Cannot process data that has >2 channels.");
+			}
+			finally
+			{
+				FreeFlac(data);
+			}
 
-			return new RawAudio(AudioFormat.Flac, (uint)frames, (uint)channels, (uint)rate, data);
+			return new RawAudio(AudioFormat.Flac, (uint)frames, channels == 2, (uint)rate, data);
 		}
 
 		// Load raw audio data from a mp3 file
 		public static RawAudio LoadMp3(string path)
 		{
 			IntPtr data = drmp3_open_file_and_read_f32(path, out drmp3_config config, out ulong frames);
-			if (data == IntPtr.Zero || frames == 0)
-				throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
-			if (frames > UInt32.MaxValue)
-				throw new InvalidOperationException("The audio file was too long.");
+			try
+			{
+				if (data == IntPtr.Zero || frames == 0)
+					throw new ArgumentException("The file could not be opened, or was not a valid WAV file.", nameof(path));
+				if (frames > UInt32.MaxValue)
+					throw new InvalidOperationException("The audio file was too long.");
+				if (config.Channels > 2)
+					throw new InvalidOperationException("Cannot process data that has >2 channels.");
+			}
+			finally
+			{
+				FreeMp3(data);
+			}
 
-			return new RawAudio(AudioFormat.Mp3, (uint)frames, config.Channels, config.SampleRate, data);
+			return new RawAudio(AudioFormat.Mp3, (uint)frames, config.Channels == 2, config.SampleRate, data);
 		}
 		
 		// Unmanaged delegate types

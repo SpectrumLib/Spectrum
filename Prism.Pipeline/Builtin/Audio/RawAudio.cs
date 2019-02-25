@@ -8,9 +8,9 @@ namespace Prism.Builtin
 		#region Fields
 		public readonly AudioFormat Format;
 		public readonly uint FrameCount;
-		public readonly uint ChannelCount;
+		public readonly bool Stereo;
 		public readonly uint Rate;
-		public uint SampleCount => FrameCount * ChannelCount;
+		public uint SampleCount => FrameCount * (Stereo ? 2u : 1u);
 		// The size of a single sample
 		public uint SampleSize => (Format == AudioFormat.Mp3) ? 4u : 2u;
 		// Size of the data (in bytes)
@@ -21,11 +21,11 @@ namespace Prism.Builtin
 		private bool _isDisposed = false;
 		#endregion // Fields
 
-		public RawAudio(AudioFormat format, uint fc, uint cc, uint r, IntPtr data)
+		public RawAudio(AudioFormat format, uint fc, bool s, uint r, IntPtr data)
 		{
 			Format = format;
 			FrameCount = fc;
-			ChannelCount = cc;
+			Stereo = s;
 			Rate = r;
 			Data = data;
 		}
