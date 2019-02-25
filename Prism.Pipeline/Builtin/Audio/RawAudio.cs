@@ -3,7 +3,7 @@
 namespace Prism.Builtin
 {
 	// Holds information about a raw chunk of PCM data (of varying formats)
-	internal class RawAudio
+	internal class RawAudio : IDisposable
 	{
 		#region Fields
 		public readonly AudioFormat Format;
@@ -17,6 +17,8 @@ namespace Prism.Builtin
 		public ulong DataLength => SampleCount * SampleSize;
 
 		public readonly IntPtr Data; // The data in unmanaged memory
+
+		private bool _isDisposed = false;
 		#endregion // Fields
 
 		public RawAudio(AudioFormat format, uint fc, uint cc, uint r, IntPtr data)
@@ -26,6 +28,25 @@ namespace Prism.Builtin
 			ChannelCount = cc;
 			Rate = r;
 			Data = data;
+		}
+		~RawAudio()
+		{
+			Dispose();
+		}
+
+		public void Dispose()
+		{
+			if (!_isDisposed && (Data != IntPtr.Zero))
+			{
+				switch (Format)
+				{
+					case AudioFormat.Wav: NativeAudio.FreeWav(Data); break;
+					case AudioFormat.Ogg: NativeAudio.Free(Data); break;
+					case AudioFormat.Flac: NativeAudio.FreeFlac(Data); break;
+					case AudioFormat.Mp3: NativeAudio.FreeMp3(Data); break;
+				}
+			}
+			_isDisposed = true;
 		}
 	}
 

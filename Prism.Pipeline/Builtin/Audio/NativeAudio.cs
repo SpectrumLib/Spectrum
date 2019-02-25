@@ -34,16 +34,16 @@ namespace Prism.Builtin
 		}
 
 		// Standard free() function, for use with stb_vorbis, and allocated image data with AllocData()
-		public unsafe static void Free(byte* mem) => stl_c_free(new IntPtr(mem));
+		public static void Free(IntPtr mem) => stl_c_free(mem);
 
 		// Free function for dr_wav
-		public unsafe static void FreeWav(byte* mem) => drwav_free(new IntPtr(mem));
+		public static void FreeWav(IntPtr mem) => drwav_free(mem);
 
 		// Free function for dr_flac
-		public unsafe static void FreeFlac(byte* mem) => drflac_free(new IntPtr(mem));
+		public static void FreeFlac(IntPtr mem) => drflac_free(mem);
 
 		// Free function for dr_mp3
-		public unsafe static void FreeMp3(byte* mem) => drmp3_free(new IntPtr(mem));
+		public static void FreeMp3(IntPtr mem) => drmp3_free(mem);
 
 		// Unmanaged memory allocation
 		public unsafe static byte* AllocData(ulong size) => (byte*)stl_c_alloc(size).ToPointer();

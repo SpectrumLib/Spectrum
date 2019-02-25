@@ -28,11 +28,13 @@ namespace Prism.Build
 			// TODO: This list must be updated whenever new builtin stages are added, or else they wont appear
 			_importers.Add(nameof(PassthroughImporter), ImporterType.TryCreate(engine, typeof(PassthroughImporter)));
 			_importers.Add(nameof(TextureImporter), ImporterType.TryCreate(engine, typeof(TextureImporter)));
+			_importers.Add(nameof(AudioImporter), ImporterType.TryCreate(engine, typeof(AudioImporter)));
 
 			// Add the builtin processors
 			// TODO: This list must be updated whenever new builtin stages are added, or else they wont appear
 			_processors.Add(nameof(PassthroughProcessor), ProcessorType.TryCreate(engine, typeof(PassthroughProcessor)));
 			_processors.Add(nameof(TextureProcessor), ProcessorType.TryCreate(engine, typeof(TextureProcessor)));
+			_processors.Add(nameof(AudioProcessor), ProcessorType.TryCreate(engine, typeof(AudioProcessor)));
 		}
 
 		public void AddAssemblyTypes(Assembly asm)
