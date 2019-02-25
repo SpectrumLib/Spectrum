@@ -30,13 +30,14 @@ namespace Prism.Builtin
 			bool isOdd = (raw.FrameCount % 2) == 1;
 			uint encLen = raw.FrameCount - (isOdd ? 0u : 1u); // Can only encode an odd-length stream (tack on last sample at end)
 
+			return new S3RAudio(raw, raw.TakeData(), raw.FrameCount, (uint)raw.DataLength);
+
 			uint dataLen = 0;
 			if (raw.Stereo)
 			{
 				short* dstPtr = (short*)data;
 				short c1_l = *(short*)data;
 				short c2_l = *(short*)(data + 2);
-				sbyte* res = stackalloc sbyte[2];
 
 				for (uint fi = 0; fi < encLen; fi += 2)
 				{
@@ -62,9 +63,8 @@ namespace Prism.Builtin
 					dstPtr[1] = c2_l;
 
 					// Encode the diff samples
-					res[0] = (sbyte)((c1_d < D_MIN) ? D_MIN : (c1_d > D_MAX) ? D_MAX : c1_d);
-					res[1] = (sbyte)((c2_d < D_MIN) ? D_MIN : (c2_d > D_MAX) ? D_MAX : c2_d);
-					dstPtr[2] = *(short*)res;
+					*(sbyte*)((byte*)dstPtr + 4) = (sbyte)((c1_d < D_MIN) ? D_MIN : (c1_d > D_MAX) ? D_MAX : c1_d);
+					*(sbyte*)((byte*)dstPtr + 5) = (sbyte)((c2_d < D_MIN) ? D_MIN : (c2_d > D_MAX) ? D_MAX : c2_d);
 
 					// Save the old right-hand samples as the new left-hand samples, progress the dst pointer
 					c1_l = c1_r;

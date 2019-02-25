@@ -73,6 +73,7 @@ namespace Spectrum.Content
 
 			s_typeCache.Add("Spectrum:PassthroughLoader", new LoaderType(typeof(PassthroughLoader), "Spectrum", "PassthroughLoader"));
 			s_typeCache.Add("Spectrum:TextureLoader", new LoaderType(typeof(TextureLoader), "Spectrum", "TextureLoader"));
+			s_typeCache.Add("Spectrum:AudioLoader", new LoaderType(typeof(AudioLoader), "Spectrum", "AudioLoader"));
 		}
 	}
 }

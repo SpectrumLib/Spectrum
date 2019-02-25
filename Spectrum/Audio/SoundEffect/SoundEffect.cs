@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
-using static Spectrum.InternalLog;
 
 namespace Spectrum.Audio
 {
@@ -26,7 +23,7 @@ namespace Spectrum.Audio
 		#endregion // Fields
 
 		// Buffer instances are wholey owned by each sound effect, do not reuse the same buffer for multiple effects
-		private SoundEffect(SoundBuffer buffer)
+		internal SoundEffect(SoundBuffer buffer)
 		{
 			Buffer = buffer;
 		}

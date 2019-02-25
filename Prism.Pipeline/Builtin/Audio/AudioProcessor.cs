@@ -27,7 +27,7 @@ namespace Prism.Builtin
 			}
 			finally
 			{
-				input.Dispose(); // Wont do anything if the encoding functions work properly
+				//input.Dispose(); // Wont do anything if the encoding functions work properly
 			}
 		}
 
