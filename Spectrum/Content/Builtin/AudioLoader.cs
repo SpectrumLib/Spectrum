@@ -23,59 +23,58 @@ namespace Spectrum.Content
 
 			try
 			{
-				short* dst = (short*)data.ToPointer();
+				short* dstPtr = (short*)data.ToPointer();
 
-				for (uint fi = 0; fi < frameCount; ++fi)
+				if (isStereo)
 				{
-					*(dst++) = stream.ReadInt16();
-					if (isStereo)
-						*(dst++) = stream.ReadInt16();
+					short c1_l = (short)((stream.ReadByte() | (stream.ReadByte() << 8)) & 0xFFFF),
+					      c2_l = (short)((stream.ReadByte() | (stream.ReadByte() << 8)) & 0xFFFF);
+
+					for (uint fi = 0; fi < frameCount; fi += 2, dstPtr += 4)
+					{
+						// Read in the residuals
+						sbyte c1_d = stream.ReadSByte(),
+							  c2_d = stream.ReadSByte();
+
+						// Read in the right-hand samples
+						short c1_r = (short)((stream.ReadByte() | (stream.ReadByte() << 8)) & 0xFFFF),
+						      c2_r = (short)((stream.ReadByte() | (stream.ReadByte() << 8)) & 0xFFFF);
+
+						// Store the full frame first
+						dstPtr[0] = c1_l;
+						dstPtr[1] = c2_l;
+
+						// Calculate and store the residul frame second
+						dstPtr[2] = (short)(((c1_l + c1_r) / 2) + c1_d);
+						dstPtr[3] = (short)(((c2_l + c2_r) / 2) + c2_d);
+
+						// Save the current right-hand samples as the new left-hand samples
+						c1_l = c1_r;
+						c2_l = c2_r;
+					}
 				}
+				else
+				{
+					short sl = (short)((stream.ReadByte() | (stream.ReadByte() << 8)) & 0xFFFF);
 
-				//if (isStereo)
-				//{
-				//	short c1_l = stream.ReadInt16();
-				//	short c2_l = stream.ReadInt16();
+					for (uint fi = 0; fi < frameCount; fi += 2, dstPtr += 2)
+					{
+						// Read in the residuals
+						sbyte sd = stream.ReadSByte();
 
-				//	for (uint fi = 0; fi < frameCount; fi += 2)
-				//	{
-				//		// Read the data needed to decode the residual frame
-				//		sbyte c1_d = stream.ReadSByte();
-				//		sbyte c2_d = stream.ReadSByte();
-				//		short c1_r = stream.ReadInt16();
-				//		short c2_r = stream.ReadInt16();
+						// Read in the right-hand samples
+						short sr = (short)((stream.ReadByte() | (stream.ReadByte() << 8)) & 0xFFFF);
 
-				//		// Store the full frame and calculate the residual frame
-				//		dst[0] = c1_l;
-				//		dst[1] = c2_l;
-				//		dst[2] = (short)(((c1_l + c1_r) / 2) + c1_d);
-				//		dst[4] = (short)(((c2_l + c2_r) / 2) + c2_d);
+						// Store the full frame first
+						dstPtr[0] = sl;
 
-				//		// Save right frames as next left frames, and move dst pointer
-				//		c1_l = c1_r;
-				//		c2_l = c2_r;
-				//		dst += 4;
-				//	}
-				//}
-				//else
-				//{
-				//	short cl = stream.ReadInt16();
+						// Calculate and store the residul frame second
+						dstPtr[1] = (short)(((sl + sr) / 2) + sd);
 
-				//	for (uint fi = 0; fi < frameCount; fi += 2)
-				//	{
-				//		// Read the data needed to decode the residual frame
-				//		sbyte cd = stream.ReadSByte();
-				//		short cr = stream.ReadInt16();
-
-				//		// Store the full frame and calculate the residual frame
-				//		dst[0] = cl;
-				//		dst[1] = (short)(((cl + cr) / 2) + cd);
-
-				//		// Save right frames as next left frames, and move dst pointer
-				//		cl = cr;
-				//		dst += 2;
-				//	}
-				//}
+						// Save the current right-hand samples as the new left-hand samples
+						sl = sr;
+					}
+				}
 
 				var sb = new SoundBuffer();
 				sb.SetData(data, AudioFormat.Stereo16, sampleRate, fullLen);

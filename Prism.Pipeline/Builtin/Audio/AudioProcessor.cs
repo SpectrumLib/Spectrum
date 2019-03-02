@@ -15,9 +15,8 @@ namespace Prism.Builtin
 		public unsafe override ProcessedAudio Process(RawAudio input, ProcessorContext ctx)
 		{
 			// Preprocessing step for mp3, convert from float to s16
-			short* data = (short*)input.Data.ToPointer();
 			if (input.Format == AudioFormat.Mp3)
-				ConvertF32ToS16(data, (float*)input.Data.ToPointer(), input.SampleCount);
+				ConvertF32ToS16((short*)input.Data.ToPointer(), (float*)input.Data.ToPointer(), input.SampleCount);
 
 			// Perform the compression steps
 			try
