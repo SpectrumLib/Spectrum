@@ -64,17 +64,17 @@ namespace Prism.Builtin
 					ushort c1_d1 = (ushort)Math.Abs(srcPtr[2] - c1_m),
 						   c1_d2 = (ushort)Math.Abs(srcPtr[4] - c1_m),
 						   c1_d3 = (ushort)Math.Abs(srcPtr[6] - c1_m),
-						   c2_d1 = (ushort)Math.Abs(srcPtr[3] - c1_m),
-						   c2_d2 = (ushort)Math.Abs(srcPtr[5] - c1_m),
-						   c2_d3 = (ushort)Math.Abs(srcPtr[7] - c1_m);
+						   c2_d1 = (ushort)Math.Abs(srcPtr[3] - c2_m),
+						   c2_d2 = (ushort)Math.Abs(srcPtr[5] - c2_m),
+						   c2_d3 = (ushort)Math.Abs(srcPtr[7] - c2_m);
 
 					// Calculate the clamped step differences
-					byte c1_s1 = (byte)Math.Min(c1_d1 / c1_ss, MAX_FRAC),
-						 c1_s2 = (byte)Math.Min(c1_d2 / c1_ss, MAX_FRAC),
-						 c1_s3 = (byte)Math.Min(c1_d3 / c1_ss, MAX_FRAC),
-						 c2_s1 = (byte)Math.Min(c2_d1 / c2_ss, MAX_FRAC),
-						 c2_s2 = (byte)Math.Min(c2_d2 / c2_ss, MAX_FRAC),
-						 c2_s3 = (byte)Math.Min(c2_d3 / c2_ss, MAX_FRAC);
+					byte c1_s1 = (byte)(Math.Min(c1_d1 / c1_ss, MAX_FRAC) & 0x7F),
+						 c1_s2 = (byte)(Math.Min(c1_d2 / c1_ss, MAX_FRAC) & 0x7F),
+						 c1_s3 = (byte)(Math.Min(c1_d3 / c1_ss, MAX_FRAC) & 0x7F),
+						 c2_s1 = (byte)(Math.Min(c2_d1 / c2_ss, MAX_FRAC) & 0x7F),
+						 c2_s2 = (byte)(Math.Min(c2_d2 / c2_ss, MAX_FRAC) & 0x7F),
+						 c2_s3 = (byte)(Math.Min(c2_d3 / c2_ss, MAX_FRAC) & 0x7F);
 
 					// Write the fractional residuals (adding sign bit, where necessary)
 					dstPtr[4] = ((srcPtr[2] - c1_m) >= 0) ? c1_s1 : (byte)(c1_s1 | 0x80);
