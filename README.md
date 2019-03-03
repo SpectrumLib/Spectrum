@@ -30,7 +30,6 @@ Thanks to the following projects/groups for their libraries and tools used in or
 * [GLFWDotNet](https://github.com/smack0007/GLFWDotNet) - Used as the basis of the custom GLFW3 bindings
 * [OpenAL-CS](https://github.com/flibitijibibo/OpenAL-CS) - C# bindings for OpenAL, compiled directly into the project
 * [ILRepack](https://github.com/gluck/il-repack) - Merges .NET assemblies for easier distribution
-* [Eto.Forms](https://github.com/picoe/Eto) - The cross-platform C# GUI library used to create the UI for Prism
 
 Thanks to the following native libraries used in this project, which can be found in the [Dependencies](https://github.com/SpectrumLib/Dependencies) project:
 
