@@ -16,10 +16,10 @@ namespace Prism.Builtin
 				writer.Write(input.FrameCount);
 				writer.Write(input.SampleRate);
 				writer.Write(input.Stereo);
-				writer.Write(input is S3RAudio); // true = lossy, false = lossless
+				writer.Write(input is FSRAudio); // true = lossy, false = lossless
 
-				if (input is S3RAudio)
-					writer.Write((byte*)input.Data.ToPointer(), (input as S3RAudio).DataLength);
+				if (input is FSRAudio)
+					writer.Write((byte*)input.Data.ToPointer(), (input as FSRAudio).DataLength);
 				else
 					throw new InvalidOperationException("Writing uncompressed audio is not yet implmeneted.");
 			}
