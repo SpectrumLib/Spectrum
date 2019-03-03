@@ -78,7 +78,7 @@ namespace Spectrum.Content
 					dstPtr[0] = c1_l;
 					dstPtr[1] = c2_l;
 				}
-				else
+				else // Mono
 				{
 					// Load the initial left border samples
 					short sl = (short)(stream.ReadByte() | (stream.ReadByte() << 8));

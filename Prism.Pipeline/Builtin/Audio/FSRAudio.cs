@@ -125,9 +125,9 @@ namespace Prism.Builtin
 						   sd3 = (ushort)Math.Abs(srcPtr[3] - sm);
 
 					// Calculate the clamped step differences
-					byte ss1 = (byte)Math.Min(sd1 / sss, MAX_FRAC),
-						 ss2 = (byte)Math.Min(sd2 / sss, MAX_FRAC),
-						 ss3 = (byte)Math.Min(sd3 / sss, MAX_FRAC);
+					byte ss1 = (byte)(Math.Min(sd1 / sss, MAX_FRAC) & 0x7F),
+						 ss2 = (byte)(Math.Min(sd2 / sss, MAX_FRAC) & 0x7F),
+						 ss3 = (byte)(Math.Min(sd3 / sss, MAX_FRAC) & 0x7F);
 
 					// Write the fractional residuals (adding sign bit, where necessary)
 					dstPtr[2] = ((srcPtr[1] - sm) >= 0) ? ss1 : (byte)(ss1 | 0x80);
