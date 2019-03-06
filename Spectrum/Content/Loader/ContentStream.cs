@@ -80,11 +80,30 @@ namespace Spectrum.Content
 		}
 
 		// Should be called for proper cleanup, but its not the end of the world as it does not hold the file stream open
-		public void Free()
+		internal void Free()
 		{
 			if (Compressed)
 				_decompressor?.Dispose();
 			_reader?.Dispose();
+		}
+
+		/// <summary>
+		/// Moves the read position of the stream by the given offset. Seeking a compressed stream is unsupported, outside
+		/// of a forward seek from the current position (which is just a simple skip).
+		/// </summary>
+		/// <param name="offset">The offset to move the read position by.</param>
+		/// <param name="o">The origin from which to seek.</param>
+		public void Seek(long offset, SeekOrigin o)
+		{
+			if (Compressed)
+			{
+				if (o != SeekOrigin.Current || offset < 0)
+					throw new InvalidOperationException("Cannot seek a compressed ContentStream other than to skip forward from the current position.");
+				while (offset-- > 0)
+					_decompressor.ReadByte();
+			}
+			else
+				_reader.BaseStream.Seek(offset, o);
 		}
 
 		#region Read Functions
