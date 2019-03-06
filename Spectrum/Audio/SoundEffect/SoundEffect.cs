@@ -1,15 +1,17 @@
 ﻿using System;
+using Spectrum.Content;
 
 namespace Spectrum.Audio
 {
 	/// <summary>
-	/// Contains audio information for a specific sound effect.
+	/// Contains audio information for a specific sound effect, loaded into memory all at once. Use <see cref="Song"/>
+	/// for audio streaming capabilities.
 	/// </summary>
 	/// <remarks>
 	/// This class keeps all of its audio data in memory at once. This makes it good for short sounds that are played
 	/// often or in quick succession, but bad for large sound bytes. Use <see cref="Song"/> for streaming audio.
 	/// </remarks>
-	public sealed class SoundEffect : IDisposable
+	public sealed class SoundEffect : IDisposableContent, IAudioSource
 	{
 		#region Fields
 		/// <summary>
@@ -19,7 +21,7 @@ namespace Spectrum.Audio
 
 		internal readonly SoundBuffer Buffer;
 
-		private bool _isDisposed = false;
+		public bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
 
 		// Buffer instances are wholey owned by each sound effect, do not reuse the same buffer for multiple effects
@@ -70,12 +72,12 @@ namespace Spectrum.Audio
 
 		private void dispose(bool disposing)
 		{
-			if (!_isDisposed)
+			if (!IsDisposed)
 			{
 				if (disposing)
 					Buffer.Dispose();
 
-				_isDisposed = true;
+				IsDisposed = true;
 			}
 		}
 		#endregion // IDisposable
