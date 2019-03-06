@@ -25,14 +25,20 @@ namespace Spectrum.Content
 		/// the total size of the uncompressed data.
 		/// </summary>
 		public readonly uint DataLength;
+		/// <summary>
+		/// The type passed as the type parameter to the <see cref="ContentManager.Load{T}(string, bool, bool)"/>
+		/// function that is invoking the current loader.
+		/// </summary>
+		public readonly Type ContentType;
 		#endregion // Fields
 
-		internal LoaderContext(string name, bool rel, bool comp, uint size)
+		internal LoaderContext(string name, bool rel, bool comp, uint size, Type cType)
 		{
 			ItemName = name;
 			IsRelease = rel;
 			IsCompressed = comp;
 			DataLength = size;
+			ContentType = cType;
 		}
 	}
 }

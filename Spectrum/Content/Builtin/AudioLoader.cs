@@ -8,6 +8,9 @@ namespace Spectrum.Content
 	[ContentLoader("AudioLoader")]
 	internal class AudioLoader : ContentLoader<IAudioSource>
 	{
+		private static readonly Type SONG_TYPE = typeof(Song);
+		private static readonly Type SOUNDEFFECT_TYPE = typeof(SoundEffect);
+
 		public unsafe override IAudioSource Load(ContentStream stream, LoaderContext ctx)
 		{
 			uint frameCount = stream.ReadUInt32() - 1;
@@ -17,6 +20,8 @@ namespace Spectrum.Content
 
 			if (!isLossy)
 				throw new NotImplementedException("Loading lossless audio data not yet implemented.");
+			if (ctx.ContentType != SOUNDEFFECT_TYPE)
+				throw new NotImplementedException("Loading of Song (streamed audio) is not yet implemented.");
 
 			uint fullLen = frameCount * 2 * (isStereo ? 2u : 1u);
 			var data = Marshal.AllocHGlobal((int)fullLen);
