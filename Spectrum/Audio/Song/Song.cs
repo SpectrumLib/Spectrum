@@ -27,9 +27,13 @@ namespace Spectrum.Audio
 		private uint _handle = 0;
 		internal bool HasHandle => _handle != 0;
 
+		// The OpenAL buffers for this song
+		private SoundBuffer[] _buffers;
+
 		// The last update states used for state changes and streaming
 		private SoundState _lastState = SoundState.Stopped;
 		private uint _lastOffset = UInt32.MaxValue;
+		private uint _bufferIndex = 0; // Tracks the OpenAL buffer to use for the next streaming operation (can only be 0 or 1)
 
 		// The current song frame number
 		private uint _currentFrame = 0;
@@ -75,6 +79,15 @@ namespace Spectrum.Audio
 			Duration = TimeSpan.FromSeconds(stream.FrameCount / (double)rate);
 
 			SampleBuffer = new short[BUFF_SIZE * (_stream.Stereo ? 2u : 1u)];
+
+			_buffers = new SoundBuffer[2] { new SoundBuffer(), new SoundBuffer() };
+
+			// Stream the first frame to be ready (but dont queue it, which is done in Play())
+			_bufferIndex = 0;
+			streamFrame();
+
+			// Will only actually start the thread if it is not already running
+			SongThread.Start();
 		}
 		~Song()
 		{
@@ -90,7 +103,6 @@ namespace Spectrum.Audio
 				reset();
 				AudioEngine.ReleaseSource(_handle);
 				_handle = 0;
-				// TODO: free buffers
 				SongThread.RemoveSong(this);
 			}
 			_lastState = nowState;
@@ -105,11 +117,8 @@ namespace Spectrum.Audio
 			// This will not happen in the same frame as the buffer dequeue, which is what triggers this
 			if ((foff < _lastOffset) && !onLastFrame)
 			{
-				uint sCount = Math.Min(BUFF_SIZE, _stream.RemainingFrames);
-				if (_stream.Read(SampleBuffer, sCount) != sCount)
-					throw new InvalidOperationException("Unable to read expected number of samples from stream.");
-				// TODO: Set buffer data
-				// TODO: Queue buffer
+				streamFrame();
+				queueLastFrame();
 			}
 			_lastOffset = foff;
 
@@ -126,7 +135,14 @@ namespace Spectrum.Audio
 		// Resets the stream and playback state (ensure that the source is stopped before calling this)
 		private void reset()
 		{
-			// TODO: unqueue the buffers
+			if (IsDisposed || !HasHandle)
+				return;
+
+			// Unqueue the buffers (dont care about errors, just need the queue emtpy)
+			uint handle = 0;
+			AL10.alSourceUnqueueBuffers(_handle, 1, ref handle);
+			AL10.alSourceUnqueueBuffers(_handle, 1, ref handle);
+			ALUtils.ClearALError();
 
 			// Reset the stream information
 			_stream.Reset();
@@ -134,7 +150,27 @@ namespace Spectrum.Audio
 			_lastState = SoundState.Stopped;
 			_lastOffset = UInt32.MaxValue;
 
-			// TODO: re-stream the first frame to be ready
+			// Re-stream the first frame to be ready (but dont queue it, which is done in Play())
+			_bufferIndex = 0;
+			streamFrame();
+		}
+
+		// Streams a single frame into the current buffer, updates the buffer index
+		private void streamFrame()
+		{
+			uint sCount = Math.Min(BUFF_SIZE, _stream.RemainingFrames);
+			if (_stream.Read(SampleBuffer, sCount) != sCount)
+				throw new InvalidOperationException("Unable to read expected number of samples from stream.");
+			_buffers[_bufferIndex].SetData(SampleBuffer, _stream.Stereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, SampleRate, 0, sCount * (_stream.Stereo ? 2u : 1u));
+			_bufferIndex = 1 - _bufferIndex;
+		}
+
+		// Queues the last used frame (!_bufferIndex) to be played next
+		private void queueLastFrame()
+		{
+			uint handle = _buffers[1 - _bufferIndex].Handle;
+			AL10.alSourceQueueBuffers(_handle, 1, ref handle);
+			ALUtils.CheckALError("Unable to queue buffer to play.");
 		}
 
 		// Calculates the current offset into the entire song, in samples

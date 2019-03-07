@@ -1,4 +1,5 @@
 using System;
+using Spectrum.Audio;
 using Spectrum.Content;
 using Spectrum.Graphics;
 using static Spectrum.InternalLog;
@@ -249,6 +250,7 @@ namespace Spectrum
 
 				OnDisposing(disposing);
 
+				SongThread.Stop();
 				GraphicsDevice.Dispose();
 				CoroutineManager.Cleanup();
 				

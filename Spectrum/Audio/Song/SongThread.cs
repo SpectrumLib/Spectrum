@@ -69,11 +69,16 @@ namespace Spectrum.Audio
 								s_activeSongs.Remove(tr);
 							s_toRemove.Clear();
 						}
+
+						if (s_activeSongs.Count == 0)
+							break; // No more active songs, spin down thread to conserve resources
 					}
 
 					// Stop the thread from busy-spinning
 					Thread.Sleep(100);
 				}
+
+				s_songThread = null; // Clean up for the next thread launch
 			});
 
 			s_shouldStop = false;
@@ -87,7 +92,6 @@ namespace Spectrum.Audio
 
 			lock (s_stopLock) { s_shouldStop = true; }
 			s_songThread.Join();
-			s_songThread = null;
 		}
 	}
 }
