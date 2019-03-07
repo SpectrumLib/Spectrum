@@ -42,7 +42,7 @@ namespace Spectrum.Content
 			else // Song
 			{
 				var astream = new FSRStream(stream.FilePath, stream.CurrentOffset, isStereo, frameCount);
-				return new Song(astream);
+				return new Song(astream, sampleRate);
 			}
 		}
 	}
