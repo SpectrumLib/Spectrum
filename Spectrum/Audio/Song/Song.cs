@@ -85,13 +85,85 @@ namespace Spectrum.Audio
 			// Stream the first frame to be ready (but dont queue it, which is done in Play())
 			_bufferIndex = 0;
 			streamFrame();
-
-			// Will only actually start the thread if it is not already running
-			SongThread.Start();
 		}
 		~Song()
 		{
 			dispose(false);
+		}
+
+		/// <summary>
+		/// Starts playing the song from the start (if stopped), or from the last played point (if paused). If already
+		/// playing, this call does nothing.
+		/// </summary>
+		public void Play()
+		{
+			if (IsDisposed)
+				throw new ObjectDisposedException(nameof(Song));
+			if (IsPlaying)
+				return;
+
+			// If starting to play, reserve a source and disable looping
+			if (IsStopped)
+			{
+				_handle = AudioEngine.ReserveSource();
+				queueLastFrame(); // Will queue frame index 0
+				AL10.alSourcei(_handle, AL10.AL_LOOPING, 0);
+				ALUtils.CheckALError("Unable to reset audio looping.");
+			}
+
+			// Reset the effects from the source
+			if (IsStopped)
+			{
+				AL10.alSourcef(_handle, AL10.AL_GAIN, 1);
+				ALUtils.CheckALError("Unable to reset audio gain.");
+			}
+			if (IsStopped)
+			{
+				AL10.alSourcef(_handle, AL10.AL_PITCH, 1);
+				ALUtils.CheckALError("Unable to reset audio pitch");
+			}
+
+			// Play the source
+			AL10.alSourcePlay(_handle);
+			ALUtils.CheckALError("Unable to play audio source.");
+
+			// Start and add the song to the thread
+			SongThread.AddSong(this);
+			SongThread.Start();
+		}
+
+		/// <summary>
+		/// Pauses the song playback at the current point. If the song is not playing, this call does nothing.
+		/// </summary>
+		public void Pause()
+		{
+			if (IsDisposed)
+				throw new ObjectDisposedException(nameof(Song));
+			if (!IsPlaying)
+				return;
+
+			AL10.alSourcePause(_handle);
+			ALUtils.CheckALError("Unable to pause audio source.");
+		}
+
+		/// <summary>
+		/// Stops the song playback. Resets the song to the beginning of playback. If the song is already stopped, this
+		/// call does nothing.
+		/// </summary>
+		public void Stop()
+		{
+			if (IsDisposed)
+				throw new ObjectDisposedException(nameof(Song));
+			if (IsStopped)
+				return;
+
+			AL10.alSourceStop(_handle);
+			ALUtils.CheckALError("Unable to stop audio source.");
+
+			reset();
+			AudioEngine.ReleaseSource(_handle);
+			_handle = 0;
+			SongThread.RemoveSong(this);
 		}
 
 		// Performs the check to see if the song needs to stream or be removed from the list of active songs
@@ -224,6 +296,9 @@ namespace Spectrum.Audio
 			if (!IsDisposed && disposing)
 			{
 				_stream.Dispose();
+				_buffers[0].Dispose();
+				_buffers[1].Dispose();
+				_buffers = null;
 				SampleBuffer = null;
 			}
 			IsDisposed = true;
