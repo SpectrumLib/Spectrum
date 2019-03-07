@@ -268,6 +268,7 @@ namespace Spectrum.Audio
 		{
 			if (!_isDisposed)
 			{
+				Stop();
 				_isDisposed = true;
 			}
 		}

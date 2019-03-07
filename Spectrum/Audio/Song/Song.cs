@@ -34,6 +34,8 @@ namespace Spectrum.Audio
 		private SoundState _lastState = SoundState.Stopped;
 		private uint _lastOffset = UInt32.MaxValue;
 		private uint _bufferIndex = 0; // Tracks the OpenAL buffer to use for the next streaming operation (can only be 0 or 1)
+		private uint _lastLoadedSize = 0; // Tracks the size of the last queued buffer
+		private uint _playingBufferSize = 0; // The size of the currently playing buffer (to detect when it is time to stream)
 
 		// The current song frame number
 		private uint _currentFrame = 0;
@@ -66,6 +68,64 @@ namespace Spectrum.Audio
 		/// Gets if the song is currently playing.
 		/// </summary>
 		public bool IsPlaying => State == SoundState.Playing;
+
+		/// <summary>
+		/// Gets or sets if the song should loop when it is done playing.
+		/// </summary>
+		public bool IsLooped = false;
+
+		private uint _loopCount = 0;
+		/// <summary>
+		/// The number of times the song has looped since the last call to <see cref="Play()"/>. If <see cref="IsLooped"/>
+		/// is <c>false</c>, then this value will be zero.
+		/// </summary>
+		public uint LoopCount => IsLooped ? _loopCount : 0;
+
+		private float _pitch = 0;
+		private bool _pitchDirty = true;
+		/// <summary>
+		/// Gets or sets the pitch of the song, in the range [-1, 1]. -1 is a full octave down, 0 is unchanged, and 
+		/// +1 is a full octave up. Note that pitch shifting is performed simply by speeding up or slowing down the
+		/// audio playback.
+		/// </summary>
+		public float Pitch
+		{
+			get => _pitch;
+			set
+			{
+				_pitch = Mathf.Clamp(value, -1, 1);
+				if (HasHandle)
+				{
+					AL10.alSourcef(_handle, AL10.AL_PITCH, Mathf.Pow(2, _pitch)); // Map to OpenAL's [0.5, 2] range
+					ALUtils.CheckALError("could not set audio pitch");
+					_pitchDirty = false;
+				}
+				else
+					_pitchDirty = true;
+			}
+		}
+
+		private float _volume = 1;
+		private bool _volumeDirty = true;
+		/// <summary>
+		/// Gets or sets the volume of the sound effect, in the range [0, 1].
+		/// </summary>
+		public float Volume
+		{
+			get => _volume;
+			set
+			{
+				_volume = Mathf.Clamp(value, 0, 1);
+				if (HasHandle)
+				{
+					AL10.alSourcef(_handle, AL10.AL_GAIN, _volume);
+					ALUtils.CheckALError("could not set audio volume");
+					_volumeDirty = false;
+				}
+				else
+					_volumeDirty = true;
+			}
+		}
 		#endregion // Public Fields
 
 		public bool IsDisposed { get; private set; } = false;
@@ -107,7 +167,15 @@ namespace Spectrum.Audio
 			{
 				_handle = AudioEngine.ReserveSource();
 				queueLastFrame(); // Will queue frame index 0
+				_playingBufferSize = _lastLoadedSize;
+				_loopCount = 0;
 			}
+
+			// Set the effects, if they are dirty
+			if (IsStopped || _pitchDirty)
+				Pitch = _pitch;
+			if (IsStopped || _volumeDirty)
+				Volume = _volume;
 
 			// Play the source
 			AL10.alSourcePlay(_handle);
@@ -171,23 +239,34 @@ namespace Spectrum.Audio
 			uint foff = getFrameOffset();
 			bool onLastFrame = _currentFrame == (_frameCount - 1);
 
-			// Sudden jump backwards from the last offset means a new frame has started and we need to stream
-			// This will not happen in the same frame as the buffer dequeue, which is what triggers this
-			if ((foff < _lastOffset) && !onLastFrame)
-			{
-				streamFrame();
-				queueLastFrame();
-			}
-			_lastOffset = foff;
-
-			// Check if we need to dequeue an old buffer (this happens in the frame before a new stream is triggered)
-			if (foff > BUFF_SIZE)
+			// Check if we are beyond the current limit (we have moved into the next buffer, one is free for streaming)
+			// When this happens, dequeue one buffer, which will cause a sudden shift backwards in the sample offset for the source
+			if (foff > _playingBufferSize)
 			{
 				uint handle = 0;
 				AL10.alSourceUnqueueBuffers(_handle, 1, ref handle);
 				ALUtils.CheckALError("Unable to dequeue streaming buffer.");
 				_currentFrame += 1;
+				if (IsLooped && (_currentFrame == _frameCount))
+				{
+					_currentFrame = 0;
+					_loopCount += 1;
+				}
 			}
+
+			// Sudden jump backwards from the last offset means a new frame has started and we need to stream
+			// This will not happen in the same frame as the buffer dequeue, which is what triggers this
+			// _lastOffset is set to u32 max value to trigger an immediate stream of the second frame when a song starts
+			if ((foff < _lastOffset) && (IsLooped || !onLastFrame))
+			{
+				if (onLastFrame && IsLooped)
+					_stream.Reset();
+
+				_playingBufferSize = _lastLoadedSize;
+				streamFrame();
+				queueLastFrame();
+			}
+			_lastOffset = foff;
 		}
 
 		// Resets the stream and playback state (ensure that the source is stopped before calling this)
@@ -221,6 +300,7 @@ namespace Spectrum.Audio
 				throw new InvalidOperationException("Unable to read expected number of samples from stream.");
 			_buffers[_bufferIndex].SetData(SampleBuffer, _stream.Stereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, SampleRate, 0, sCount * (_stream.Stereo ? 2u : 1u));
 			_bufferIndex = 1 - _bufferIndex;
+			_lastLoadedSize = sCount;
 		}
 
 		// Queues the last used frame (!_bufferIndex) to be played next
@@ -281,6 +361,7 @@ namespace Spectrum.Audio
 		{
 			if (!IsDisposed && disposing)
 			{
+				Stop();
 				_stream.Dispose();
 				_buffers[0].Dispose();
 				_buffers[1].Dispose();
