@@ -20,8 +20,8 @@ namespace Spectrum.Audio
 		public readonly SoundEffect Effect;
 
 		// The source handle
-		internal uint Source { get; private set; }
-		internal bool HasSource => (Source != 0);
+		private uint _handle = 0;
+		internal bool HasHandle => (_handle != 0);
 
 		/// <summary>
 		/// The current playback state of this instance.
@@ -30,19 +30,17 @@ namespace Spectrum.Audio
 		{
 			get
 			{
-				if (Source == 0) return SoundState.Stopped;
+				if (!HasHandle)
+					return SoundState.Stopped;
 
-				AL10.alGetSourcei(Source, AL10.AL_SOURCE_STATE, out int state);
+				AL10.alGetSourcei(_handle, AL10.AL_SOURCE_STATE, out int state);
 				ALUtils.CheckALError("could not get source state");
 				switch (state)
 				{
 					case AL10.AL_INITIAL:
-					case AL10.AL_STOPPED:
-						return SoundState.Stopped;
-					case AL10.AL_PAUSED:
-						return SoundState.Paused;
-					case AL10.AL_PLAYING:
-						return SoundState.Playing;
+					case AL10.AL_STOPPED: return SoundState.Stopped;
+					case AL10.AL_PAUSED: return SoundState.Paused;
+					case AL10.AL_PLAYING: return SoundState.Playing;
 					default:
 						throw new AudioException("OpenAL source state returned invalid value");
 				}
@@ -73,9 +71,9 @@ namespace Spectrum.Audio
 			set
 			{
 				_isLooped = value;
-				if (Source != 0)
+				if (HasHandle)
 				{
-					AL10.alSourcei(Source, AL10.AL_LOOPING, value ? 1 : 0);
+					AL10.alSourcei(_handle, AL10.AL_LOOPING, value ? 1 : 0);
 					ALUtils.CheckALError("could not set the audio looping");
 					_loopedDirty = false;
 				}
@@ -97,9 +95,9 @@ namespace Spectrum.Audio
 			set
 			{
 				_pitch = Mathf.Clamp(value, -1, 1);
-				if (Source != 0)
+				if (HasHandle)
 				{
-					AL10.alSourcef(Source, AL10.AL_PITCH, Mathf.Pow(2, _pitch)); // Map to OpenAL's [0.5, 2] range
+					AL10.alSourcef(_handle, AL10.AL_PITCH, Mathf.Pow(2, _pitch)); // Map to OpenAL's [0.5, 2] range
 					ALUtils.CheckALError("could not set audio pitch");
 					_pitchDirty = false;
 				}
@@ -119,9 +117,9 @@ namespace Spectrum.Audio
 			set
 			{
 				_volume = Mathf.Clamp(value, 0, 1);
-				if (Source != 0)
+				if (HasHandle)
 				{
-					AL10.alSourcef(Source, AL10.AL_GAIN, _volume);
+					AL10.alSourcef(_handle, AL10.AL_GAIN, _volume);
 					ALUtils.CheckALError("could not set audio volume");
 					_volumeDirty = false;
 				}
@@ -137,7 +135,7 @@ namespace Spectrum.Audio
 		internal SoundEffectInstance(SoundEffect effect)
 		{
 			Effect = effect;
-			Source = 0;
+			_handle = 0;
 		}
 		~SoundEffectInstance()
 		{
@@ -155,35 +153,35 @@ namespace Spectrum.Audio
 			if (currState == SoundState.Playing) return;
 
 			// Reserve a source if we dont have one, and set the buffer
-			if (Source == 0)
+			if (!HasHandle)
 			{
-				Source = AudioEngine.ReserveSource();
-				AL10.alSourcei(Source, AL10.AL_BUFFER, (int)Effect.Buffer.Handle);
+				_handle = AudioEngine.ReserveSource();
+				AL10.alSourcei(_handle, AL10.AL_BUFFER, (int)Effect.Buffer.Handle);
 				ALUtils.CheckALError("could not set the source buffer");
 			}
 
 			// Set the standard control values
 			if (_loopedDirty)
 			{
-				AL10.alSourcei(Source, AL10.AL_LOOPING, _isLooped ? 1 : 0);
+				AL10.alSourcei(_handle, AL10.AL_LOOPING, _isLooped ? 1 : 0);
 				ALUtils.CheckALError("could not set audio looping");
 				_loopedDirty = false;
 			}
 			if (_pitchDirty)
 			{
-				AL10.alSourcef(Source, AL10.AL_PITCH, (float)Math.Pow(2, _pitch));
+				AL10.alSourcef(_handle, AL10.AL_PITCH, (float)Math.Pow(2, _pitch));
 				ALUtils.CheckALError("could not set audio pitch");
 				_pitchDirty = false;
 			}
 			if (_volumeDirty)
 			{
-				AL10.alSourcef(Source, AL10.AL_GAIN, _volume);
+				AL10.alSourcef(_handle, AL10.AL_GAIN, _volume);
 				ALUtils.CheckALError("could not set audio volume");
 				_volumeDirty = false;
 			}
 
 			// Play the sound
-			AL10.alSourcePlay(Source);
+			AL10.alSourcePlay(_handle);
 			ALUtils.CheckALError("unable to play audio source");
 
 			// Register this is an active instance (only if stopped and not paused)
@@ -196,9 +194,9 @@ namespace Spectrum.Audio
 		/// </summary>
 		public void Pause()
 		{
-			if (State != SoundState.Playing) return;
+			if (!IsPlaying) return;
 
-			AL10.alSourcePause(Source);
+			AL10.alSourcePause(_handle);
 			ALUtils.CheckALError("unable to pause source");
 		}
 		
@@ -207,9 +205,9 @@ namespace Spectrum.Audio
 		/// </summary>
 		public void Stop()
 		{
-			if (State == SoundState.Stopped) return;
+			if (IsStopped) return;
 
-			AL10.alSourceStop(Source);
+			AL10.alSourceStop(_handle);
 			ALUtils.CheckALError("unable to stop source");
 
 			freeSource();
@@ -220,10 +218,10 @@ namespace Spectrum.Audio
 		// See UpdateInstances for the reason for this to return true always
 		private bool freeSource()
 		{
-			if (!_isDisposed && (Source != 0))
+			if (!_isDisposed && HasHandle)
 			{
-				AudioEngine.ReleaseSource(Source);
-				Source = 0;
+				AudioEngine.ReleaseSource(_handle);
+				_handle = 0;
 			}
 			return true;
 		}

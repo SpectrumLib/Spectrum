@@ -107,20 +107,6 @@ namespace Spectrum.Audio
 			{
 				_handle = AudioEngine.ReserveSource();
 				queueLastFrame(); // Will queue frame index 0
-				AL10.alSourcei(_handle, AL10.AL_LOOPING, 0);
-				ALUtils.CheckALError("Unable to reset audio looping.");
-			}
-
-			// Reset the effects from the source
-			if (IsStopped)
-			{
-				AL10.alSourcef(_handle, AL10.AL_GAIN, 1);
-				ALUtils.CheckALError("Unable to reset audio gain.");
-			}
-			if (IsStopped)
-			{
-				AL10.alSourcef(_handle, AL10.AL_PITCH, 1);
-				ALUtils.CheckALError("Unable to reset audio pitch");
 			}
 
 			// Play the source

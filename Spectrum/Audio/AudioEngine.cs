@@ -93,6 +93,7 @@ namespace Spectrum.Audio
 			SoundEffectInstance.UpdateInstances();
 		}
 
+		// Automatically resets all effects the source before returning it
 		public static uint ReserveSource()
 		{
 			lock (s_sourceLock)
@@ -102,6 +103,7 @@ namespace Spectrum.Audio
 
 				uint src = s_availableSources.Pop();
 				s_usedSources.Add(src);
+				ResetSourceEffects(src);
 				return src;	
 			}
 		}
@@ -113,6 +115,17 @@ namespace Spectrum.Audio
 				s_usedSources.Remove(src);
 				s_availableSources.Push(src);
 			}
+		}
+
+		// Resets all of the effects on the source to their default values
+		public static void ResetSourceEffects(uint src)
+		{
+			// Looping (0 = no looping)
+			AL10.alSourcei(src, AL10.AL_LOOPING, 0);
+			// Volume (1 = default)
+			AL10.alSourcei(src, AL10.AL_GAIN, 1);
+			// Pitch (1 = default)
+			AL10.alSourcei(src, AL10.AL_PITCH, 1);
 		}
 	}
 
