@@ -20,23 +20,29 @@ namespace Spectrum.Content
 
 			if (!isLossy)
 				throw new NotImplementedException("Loading lossless audio data not yet implemented.");
-			if (ctx.ContentType != SOUNDEFFECT_TYPE)
-				throw new NotImplementedException("Loading of Song (streamed audio) is not yet implemented.");
 
-			uint fullLen = frameCount * 2 * (isStereo ? 2u : 1u);
-			var data = Marshal.AllocHGlobal((int)fullLen);
-
-			try
+			if (ctx.ContentType == SOUNDEFFECT_TYPE)
 			{
-				FSRStream.ReadSamples(stream, (short*)data.ToPointer(), frameCount, isStereo);
+				uint fullLen = frameCount * 2 * (isStereo ? 2u : 1u);
+				var data = Marshal.AllocHGlobal((int)fullLen);
 
-				var sb = new SoundBuffer();
-				sb.SetData(data, isStereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, sampleRate, fullLen);
-				return new SoundEffect(sb);
+				try
+				{
+					FSRStream.ReadSamples(stream.Reader, (short*)data.ToPointer(), frameCount, isStereo);
+
+					var sb = new SoundBuffer();
+					sb.SetData(data, isStereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, sampleRate, fullLen);
+					return new SoundEffect(sb);
+				}
+				finally
+				{
+					Marshal.FreeHGlobal(data);
+				} 
 			}
-			finally
+			else // Song
 			{
-				Marshal.FreeHGlobal(data);
+				var astream = new FSRStream(stream.FilePath, stream.CurrentOffset, isStereo, frameCount);
+				return new Song(astream);
 			}
 		}
 	}

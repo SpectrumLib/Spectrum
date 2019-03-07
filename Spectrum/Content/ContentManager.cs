@@ -334,7 +334,7 @@ namespace Spectrum.Content
 				var loader = getOrCreateLoader(item.LoaderHash);
 				if (loader == null)
 					throw new ContentLoadException(name, "the item specified a loader that does not exist.");
-				if (!type.IsAssignableFrom(loader.ContentType))
+				if (!loader.ContentType.IsAssignableFrom(type))
 					throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
 				
 				object loadedObj = null;
@@ -375,7 +375,7 @@ namespace Spectrum.Content
 						var loader = getOrCreateLoader(hash);
 						if (loader == null)
 							throw new ContentLoadException(name, "the item specified a loader that does not exist.");
-						if (!type.IsAssignableFrom(loader.ContentType))
+						if (!loader.ContentType.IsAssignableFrom(type))
 							throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
 
 						object loadedObj = null;

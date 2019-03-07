@@ -1,5 +1,4 @@
-﻿using Spectrum.Content;
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -12,28 +11,90 @@ namespace Spectrum.Audio
 		private const float MAX_FRAC_F = MAX_FRAC;
 
 		#region Fields
+		// If the data is stereo
+		public readonly bool Stereo;
+
+		// The total number of frames available in the data
+		public readonly uint FrameCount;
+		// The current frame offset into the stream
+		private uint _frameOffset;
+		// The remaining number of frames to available to read
+		public uint RemainingFrames => FrameCount - _frameOffset;
+
+		// The offset into the file for the start of the audio data
+		public readonly uint Offset;
+		// The file streams
+		private readonly FileStream _file;
+		private readonly BinaryReader _reader;
+
+		private bool _isDisposed = false;
 		#endregion // Fields
 
-		public FSRStream()
+		public FSRStream(string file, uint offset, bool stereo, uint fc)
 		{
+			Offset = offset;
 
+			Stereo = stereo;
+			FrameCount = fc;
+			_frameOffset = 0;
+
+			_file = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+			_reader = new BinaryReader(_file);
+			_file.Seek(offset, SeekOrigin.Begin);
+		}
+		~FSRStream()
+		{
+			dispose(false);
+		}
+
+		// Reads a number of frames into the array
+		public unsafe uint Read(short[] dst, uint count)
+		{
+			if (count > RemainingFrames)
+				count = RemainingFrames;
+
+			fixed (short* ptr = dst)
+			{
+				ReadSamples(_reader, ptr, count, Stereo);
+			}
+
+			_frameOffset += count;
+			return count;
+		}
+
+		// Resets the stream back to the beginning
+		public void Reset()
+		{
+			if (_frameOffset != 0)
+			{
+				_frameOffset = 0;
+				_file.Seek(Offset, SeekOrigin.Begin);
+			}
 		}
 
 		#region IDisposable
 		public void Dispose()
 		{
+			dispose(true);
+			GC.SuppressFinalize(this);
+		}
 
+		private void dispose(bool disposing)
+		{
+			if (!_isDisposed && disposing)
+			{
+				_reader?.Dispose();
+				_file?.Dispose();
+			}
+			_isDisposed = true;
 		}
 		#endregion // IDisposable
 
 		// Performs the actual reading logic, the dst array must be large enough to accept the number of requested samples
 		// The reader *must* be on an FSR chunk boundary for this read to succeed
 		// The reader used by this function must wrap a seekable stream
-		public static unsafe void ReadSamples(ContentStream reader, short* dstPtr, uint count, bool stereo)
+		public static unsafe void ReadSamples(BinaryReader reader, short* dstPtr, uint count, bool stereo)
 		{
-			if (dstPtr == (short*)0)
-				throw new ArgumentNullException(nameof(dstPtr));
-
 			short* ssamp = stackalloc short[2];
 			uint chunkCount = (count - 1) / 4;
 			byte* oPtr = (byte*)dstPtr;
@@ -57,13 +118,13 @@ namespace Spectrum.Audio
 			}
 
 			// Seek to nearest chunk start
-			reader.Seek(stereo ? -4 : -2, SeekOrigin.Current);
+			reader.BaseStream.Seek(stereo ? -4 : -2, SeekOrigin.Current);
 		}
 
 		// Decodes a single 4-sample chunk, returns the new reference sample values
 		// Requires the base samples from the current chunk, returns the base samples of the next chunk
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private static unsafe void DecodeChunk(ContentStream reader, short* dst, bool stereo, ref short c1_l, ref short c2_l)
+		private static unsafe void DecodeChunk(BinaryReader reader, short* dst, bool stereo, ref short c1_l, ref short c2_l)
 		{
 			dst[0] = c1_l;
 			if (stereo) dst[1] = c2_l;

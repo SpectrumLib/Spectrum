@@ -12,8 +12,8 @@ namespace Spectrum.Content
 	public sealed class ContentStream
 	{
 		// The length of the headers (to add to the content offset to get to content data)
-		private const uint BIN_HEADER_LENGTH = 13;
-		private const uint DCI_HEADER_LENGTH = 16;
+		internal const uint BIN_HEADER_LENGTH = 13;
+		internal const uint DCI_HEADER_LENGTH = 16;
 
 		// The UTF8 encoding and associated encoder used to get string and character bytes
 		private static readonly Encoding s_encoding = new UTF8Encoding(
@@ -29,10 +29,19 @@ namespace Spectrum.Content
 		internal readonly bool Compressed;
 		internal readonly bool IsRelease;
 
+		/// <summary>
+		/// The absolute path to the file that this stream is reading from.
+		/// </summary>
+		public string FilePath => _file.Name;
+		/// <summary>
+		/// The current offset into the file.
+		/// </summary>
+		public uint CurrentOffset => (uint)_file.Position;
+
 		// The streams
 		private readonly FileStream _file;
 		private readonly LZ4DecoderStream _decompressor;
-		private readonly BinaryReader _reader;
+		internal readonly BinaryReader Reader;
 
 		// Faster way to keep track of where we are in the stream
 		private uint _pos;
@@ -57,7 +66,7 @@ namespace Spectrum.Content
 			_file.Seek(Offset, SeekOrigin.Begin);
 			if (Compressed)
 				_decompressor = LZ4Stream.Decode(_file, 0, leaveOpen: true);
-			_reader = new BinaryReader(Compressed ? (Stream)_decompressor : (Stream)_file, s_encoding, true);
+			Reader = new BinaryReader(Compressed ? (Stream)_decompressor : (Stream)_file, s_encoding, true);
 			_pos = 0;
 		}
 
@@ -75,7 +84,7 @@ namespace Spectrum.Content
 			_file.Seek(Offset, SeekOrigin.Begin); // Probably already there, but should make sure
 			if (Compressed)
 				_decompressor = LZ4Stream.Decode(_file, 0, leaveOpen: true);
-			_reader = new BinaryReader(Compressed ? (Stream)_decompressor : (Stream)_file, s_encoding, true);
+			Reader = new BinaryReader(Compressed ? (Stream)_decompressor : (Stream)_file, s_encoding, true);
 			_pos = 0;
 		}
 
@@ -84,7 +93,7 @@ namespace Spectrum.Content
 		{
 			if (Compressed)
 				_decompressor?.Dispose();
-			_reader?.Dispose();
+			Reader?.Dispose();
 		}
 
 		/// <summary>
@@ -103,7 +112,7 @@ namespace Spectrum.Content
 					_decompressor.ReadByte();
 			}
 			else
-				_reader.BaseStream.Seek(offset, o);
+				Reader.BaseStream.Seek(offset, o);
 		}
 
 		#region Read Functions
@@ -113,7 +122,7 @@ namespace Spectrum.Content
 		public bool ReadBoolean()
 		{
 			updateSize(1);
-			return _reader.ReadBoolean();
+			return Reader.ReadBoolean();
 		}
 
 		/// <summary>
@@ -122,7 +131,7 @@ namespace Spectrum.Content
 		public sbyte ReadSByte()
 		{
 			updateSize(1);
-			return _reader.ReadSByte();
+			return Reader.ReadSByte();
 		}
 
 		/// <summary>
@@ -131,7 +140,7 @@ namespace Spectrum.Content
 		public byte ReadByte()
 		{
 			updateSize(1);
-			return _reader.ReadByte();
+			return Reader.ReadByte();
 		}
 
 		/// <summary>
@@ -140,7 +149,7 @@ namespace Spectrum.Content
 		public short ReadInt16()
 		{
 			updateSize(2);
-			return _reader.ReadInt16();
+			return Reader.ReadInt16();
 		}
 
 		/// <summary>
@@ -149,7 +158,7 @@ namespace Spectrum.Content
 		public ushort ReadUInt16()
 		{
 			updateSize(2);
-			return _reader.ReadUInt16();
+			return Reader.ReadUInt16();
 		}
 
 		/// <summary>
@@ -158,7 +167,7 @@ namespace Spectrum.Content
 		public int ReadInt32()
 		{
 			updateSize(4);
-			return _reader.ReadInt32();
+			return Reader.ReadInt32();
 		}
 
 		/// <summary>
@@ -167,7 +176,7 @@ namespace Spectrum.Content
 		public uint ReadUInt32()
 		{
 			updateSize(4);
-			return _reader.ReadUInt32();
+			return Reader.ReadUInt32();
 		}
 
 		/// <summary>
@@ -176,7 +185,7 @@ namespace Spectrum.Content
 		public long ReadInt64()
 		{
 			updateSize(8);
-			return _reader.ReadInt64();
+			return Reader.ReadInt64();
 		}
 
 		/// <summary>
@@ -185,7 +194,7 @@ namespace Spectrum.Content
 		public ulong ReadUInt64()
 		{
 			updateSize(8);
-			return _reader.ReadUInt64();
+			return Reader.ReadUInt64();
 		}
 
 		/// <summary>
@@ -194,7 +203,7 @@ namespace Spectrum.Content
 		public float ReadSingle()
 		{
 			updateSize(4);
-			return _reader.ReadSingle();
+			return Reader.ReadSingle();
 		}
 
 		/// <summary>
@@ -203,7 +212,7 @@ namespace Spectrum.Content
 		public double ReadDouble()
 		{
 			updateSize(8);
-			return _reader.ReadDouble();
+			return Reader.ReadDouble();
 		}
 
 		/// <summary>
@@ -212,7 +221,7 @@ namespace Spectrum.Content
 		public decimal ReadDecimal()
 		{
 			updateSize(16);
-			return _reader.ReadDecimal();
+			return Reader.ReadDecimal();
 		}
 
 		/// <summary>
@@ -222,7 +231,7 @@ namespace Spectrum.Content
 		public byte[] ReadBytes(uint count)
 		{
 			updateSize(count);
-			return _reader.ReadBytes((int)count);
+			return Reader.ReadBytes((int)count);
 		}
 
 		/// <summary>
@@ -230,11 +239,11 @@ namespace Spectrum.Content
 		/// </summary>
 		public char ReadChar()
 		{
-			var oldPos = (uint)_reader.BaseStream.Position;
-			if (_reader.PeekChar() == -1)
+			var oldPos = (uint)Reader.BaseStream.Position;
+			if (Reader.PeekChar() == -1)
 				throw new ContentLoadException(Item, "attempted to read past end of content stream.");
-			var ch = _reader.ReadChar();
-			var size = (uint)_reader.BaseStream.Position - oldPos;
+			var ch = Reader.ReadChar();
+			var size = (uint)Reader.BaseStream.Position - oldPos;
 
 			if (IsRelease)
 				updateSize(size); // We may have read into the next item
@@ -262,11 +271,11 @@ namespace Spectrum.Content
 				char[] chs = new char[count];
 				for (uint ci = 0; ci < count; ++ci)
 				{
-					var oldPos = (uint)_reader.BaseStream.Position;
-					if (_reader.PeekChar() == -1)
+					var oldPos = (uint)Reader.BaseStream.Position;
+					if (Reader.PeekChar() == -1)
 						throw new ContentLoadException(Item, "attempted to read past end of content stream.");
-					var ch = _reader.ReadChar();
-					var size = (uint)_reader.BaseStream.Position - oldPos;
+					var ch = Reader.ReadChar();
+					var size = (uint)Reader.BaseStream.Position - oldPos;
 					updateSize(size);
 					chs[ci] = ch;
 				}
@@ -274,11 +283,11 @@ namespace Spectrum.Content
 			}
 			else
 			{
-				var oldPos = (uint)_reader.BaseStream.Position;
-				var chs = _reader.ReadChars((int)count);
+				var oldPos = (uint)Reader.BaseStream.Position;
+				var chs = Reader.ReadChars((int)count);
 				if ((uint)chs.Length != count)
 					throw new ContentLoadException(Item, "attempted to read past end of content stream.");
-				var size = (uint)_reader.BaseStream.Position - oldPos;
+				var size = (uint)Reader.BaseStream.Position - oldPos;
 				_pos += size;
 				return chs;
 			}
@@ -292,9 +301,9 @@ namespace Spectrum.Content
 		{
 			try
 			{
-				var oldPos = (uint)_reader.BaseStream.Position;
-				string val = _reader.ReadString();
-				var size = (uint)_reader.BaseStream.Position - oldPos;
+				var oldPos = (uint)Reader.BaseStream.Position;
+				string val = Reader.ReadString();
+				var size = (uint)Reader.BaseStream.Position - oldPos;
 
 				if (IsRelease)
 					updateSize(size);
