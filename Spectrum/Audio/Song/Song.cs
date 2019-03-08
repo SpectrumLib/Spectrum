@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using OpenAL;
 using Spectrum.Content;
 
@@ -128,6 +129,16 @@ namespace Spectrum.Audio
 		}
 		#endregion // Public Fields
 
+		/// <summary>
+		/// Event raised when the song starts to play, is paused, or is stopped.
+		/// </summary>
+		public event SongStateChangeHandler StateChanged;
+		/// <summary>
+		/// Event raised when the song streams a frame from the disk. This event will only be raised if the song is 
+		/// currently playing.
+		/// </summary>
+		public event SongStreamHandler FrameStreamed;
+
 		public bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
 
@@ -178,12 +189,16 @@ namespace Spectrum.Audio
 				Volume = _volume;
 
 			// Play the source
+			var oldState = State;
 			AL10.alSourcePlay(_handle);
 			ALUtils.CheckALError("Unable to play audio source.");
 
 			// Start and add the song to the thread
 			SongThread.AddSong(this);
 			SongThread.Start();
+
+			// Raise the event
+			StateChanged?.Invoke(this, oldState, SoundState.Playing, false);
 		}
 
 		/// <summary>
@@ -198,6 +213,9 @@ namespace Spectrum.Audio
 
 			AL10.alSourcePause(_handle);
 			ALUtils.CheckALError("Unable to pause audio source.");
+
+			// Raise the event
+			StateChanged?.Invoke(this, SoundState.Playing, SoundState.Paused, false);
 		}
 
 		/// <summary>
@@ -211,6 +229,7 @@ namespace Spectrum.Audio
 			if (IsStopped)
 				return;
 
+			var oldState = State;
 			AL10.alSourceStop(_handle);
 			ALUtils.CheckALError("Unable to stop audio source.");
 
@@ -218,6 +237,9 @@ namespace Spectrum.Audio
 			AudioEngine.ReleaseSource(_handle);
 			_handle = 0;
 			SongThread.RemoveSong(this);
+
+			// Raise the event
+			StateChanged?.Invoke(this, oldState, SoundState.Stopped, true);
 		}
 
 		// Performs the check to see if the song needs to stream or be removed from the list of active songs
@@ -230,6 +252,9 @@ namespace Spectrum.Audio
 				AudioEngine.ReleaseSource(_handle);
 				_handle = 0;
 				SongThread.RemoveSong(this);
+
+				// Raise the event (needs to post to the main thread)
+				CoroutineManager.PostEvent(() => StateChanged?.Invoke(this, SoundState.Playing, SoundState.Stopped, false));
 			}
 			_lastState = nowState;
 			if (_lastState != SoundState.Playing) // Dont update if we arent currently playing
@@ -295,12 +320,22 @@ namespace Spectrum.Audio
 		// Streams a single frame into the current buffer, updates the buffer index
 		private void streamFrame()
 		{
+			Stopwatch timer = Stopwatch.StartNew();
 			uint sCount = Math.Min(BUFF_SIZE, _stream.RemainingFrames);
 			if (_stream.Read(SampleBuffer, sCount) != sCount)
 				throw new InvalidOperationException("Unable to read expected number of samples from stream.");
 			_buffers[_bufferIndex].SetData(SampleBuffer, _stream.Stereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, SampleRate, 0, sCount * (_stream.Stereo ? 2u : 1u));
 			_bufferIndex = 1 - _bufferIndex;
 			_lastLoadedSize = sCount;
+
+			// Raise stream event
+			if (IsPlaying)
+			{
+				bool isLastFrame = _currentFrame == (_frameCount - 1);
+				TimeSpan start = isLastFrame ? TimeSpan.Zero : TimeSpan.FromSeconds(((_currentFrame * BUFF_SIZE) + _playingBufferSize) / (double)SampleRate);
+				var length = TimeSpan.FromSeconds(sCount / (double)SampleRate);
+				CoroutineManager.PostEvent(() => FrameStreamed?.Invoke(this, start, length, timer.Elapsed)); 
+			}
 		}
 
 		// Queues the last used frame (!_bufferIndex) to be played next
@@ -372,4 +407,25 @@ namespace Spectrum.Audio
 		}
 		#endregion // IDisposable
 	}
+
+	/// <summary>
+	/// Delegate for events raised when the state of a song changes (starts playing, pauses, or stops).
+	/// </summary>
+	/// <param name="song">The song that raised the event.</param>
+	/// <param name="oldState">The old state of the song.</param>
+	/// <param name="newState">The new state of the song.</param>
+	/// <param name="manual">
+	/// If `newState` is <see cref="SoundState.Stopped"/>, this indicates if the song was stopped manually, or finished
+	/// normally by reaching the end while playing.
+	/// </param>
+	public delegate void SongStateChangeHandler(Song song, SoundState oldState, SoundState newState, bool manual);
+
+	/// <summary>
+	/// Delegate for the event raised when a song streams a frame from the disk.
+	/// </summary>
+	/// <param name="song">The song that raised the event.</param>
+	/// <param name="start">The offset into the song that the streamed frame starts at.</param>
+	/// <param name="length">The length of the audio data streamed from the disk.</param>
+	/// <param name="elapsed">The time it took to stream the frame.</param>
+	public delegate void SongStreamHandler(Song song, TimeSpan start, TimeSpan length, TimeSpan elapsed);
 }

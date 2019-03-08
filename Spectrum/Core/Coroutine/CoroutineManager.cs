@@ -8,6 +8,8 @@ namespace Spectrum
 	{
 		private static readonly List<Coroutine> s_coroutines = new List<Coroutine>();
 		private static readonly List<Coroutine> s_toAdd = new List<Coroutine>();
+		private static readonly List<Action> s_events = new List<Action>();
+		private static readonly List<Action> s_addEvents = new List<Action>();
 		private static bool s_ticking = false; // We cannot directly add or remove from s_coroutines when ticking
 
 		public static void Tick()
@@ -62,14 +64,33 @@ namespace Spectrum
 			s_toAdd.ForEach(cr => s_coroutines.Add(cr));
 			s_toAdd.Clear();
 
+			// Run all of the posted events
+			lock (s_addEvents)
+			{
+				s_events.AddRange(s_addEvents);
+				s_addEvents.Clear();
+			}
+			s_events.ForEach(a => a());
+			s_events.Clear();
+
 			s_ticking = false;
+		}
+
+		// Used to post an event to be run on the main thread at the next time the events are ticked
+		// This can be used to post events from other threads that must be run on the main thread
+		public static void PostEvent(Action a)
+		{
+			if (s_ticking)
+				lock (s_addEvents) { s_addEvents.Add(a); }
+			else
+				s_events.Add(a);
 		}
 
 		public static void AddCoroutine(Coroutine c)
 		{
 			c.Running = true;
 			if (s_ticking)
-				s_toAdd.Add(c);
+				lock (s_toAdd) { s_toAdd.Add(c); }
 			else
 				s_coroutines.Add(c);
 		}

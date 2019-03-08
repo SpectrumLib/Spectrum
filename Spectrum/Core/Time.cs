@@ -149,6 +149,14 @@ namespace Spectrum
 		public static bool IsTime(float time) => (LastElapsed < time) && (Elapsed >= time);
 
 		/// <summary>
+		/// Returns true on every frame that is the first frame immediately past a multiple of the given time. E.g.
+		/// <c>IsTimeMultiple(1)</c> will return true on every first frame immediately past every whole second.
+		/// </summary>
+		/// <param name="time">The elapsed wall time to check multiples of.</param>
+		/// <returns>True on each first frame past any multiple of the given wall time.</returns>
+		public static bool IsTimeMultiple(float time) => (Elapsed % time) < (LastElapsed % time);
+
+		/// <summary>
 		/// Returns true if the current <see cref="FrameCount"/> is equal to the given frame number.
 		/// </summary>
 		/// <param name="frame">The frame number to check for.</param>
