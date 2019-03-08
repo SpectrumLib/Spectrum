@@ -20,6 +20,9 @@ namespace Prism.Build
 		// If the current build process is a release build
 		public bool IsRelease { get; private set; }
 
+		// If the current build process should include statistics
+		public bool UseStats { get; private set; }
+
 		// Get the compression settings taking into account the build type and project settings
 		public bool Compress => IsRelease && Project.Properties.Compress;
 
@@ -44,12 +47,13 @@ namespace Prism.Build
 
 		#region Actions
 		// Starts the build task
-		public Task Build(bool rebuild, bool release)
+		public Task Build(bool rebuild, bool release, bool stats)
 		{
 			if (Busy)
 				throw new InvalidOperationException("Cannot start a build task while a task is already running");
 
 			IsRelease = release;
+			UseStats = stats;
 			return new Task(() => _manager.Build(rebuild));
 		}
 

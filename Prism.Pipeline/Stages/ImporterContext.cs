@@ -36,12 +36,18 @@ namespace Prism
 		/// The logger to use to report messages inside of ContentImporter instances.
 		/// </summary>
 		public readonly PipelineLogger Logger;
+
+		/// <summary>
+		/// If the build has requested statistics.
+		/// </summary>
+		public readonly bool UseStats;
 		#endregion // Fields
 
-		internal ImporterContext(FileInfo finfo, PipelineLogger logger)
+		internal ImporterContext(FileInfo finfo, PipelineLogger logger, bool stats)
 		{
 			_fileInfo = finfo;
 			Logger = logger;
+			UseStats = stats;
 		}
 	}
 }

@@ -52,6 +52,9 @@ namespace Prism
 		// If there is a release build flag
 		public static bool Release(string[] args) => ContainsArgument(args, "release") || ContainsArgument(args, "r");
 
+		// If there is a stats flag
+		public static bool Stats(string[] args) => ContainsArgument(args, "stats") || ContainsArgument(args, "s");
+
 		// If there is a parallel flag, and the number of threads it specifies (pre clamped to CPU count)
 		//   Returns 1 if there is no parallel flag
 		public static uint Parallel(string[] args)

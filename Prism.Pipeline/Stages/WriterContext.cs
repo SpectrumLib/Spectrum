@@ -12,11 +12,17 @@ namespace Prism
 		/// The logger to use to report messages inside of ContentWriter instances.
 		/// </summary>
 		public readonly PipelineLogger Logger;
+
+		/// <summary>
+		/// If the build has requested statistics.
+		/// </summary>
+		public readonly bool UseStats;
 		#endregion // Fields
 
-		internal WriterContext(PipelineLogger logger)
+		internal WriterContext(PipelineLogger logger, bool stats)
 		{
 			Logger = logger;
+			UseStats = stats;
 		}
 	}
 }

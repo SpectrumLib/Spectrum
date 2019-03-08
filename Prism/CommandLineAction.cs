@@ -67,6 +67,9 @@ namespace Prism
 			// Get the build type
 			bool releaseBuild = ArgParser.Release(args);
 
+			// Get the stats flag
+			bool useStats = ArgParser.Stats(args);
+
 			// Start the action task and logging
 			using (engine)
 			{
@@ -76,8 +79,8 @@ namespace Prism
 					Task task = null;
 					switch (action)
 					{
-						case "build": task = engine.Build(false, releaseBuild); break;
-						case "rebuild": task = engine.Build(true, releaseBuild); break;
+						case "build": task = engine.Build(false, releaseBuild, useStats); break;
+						case "rebuild": task = engine.Build(true, releaseBuild, useStats); break;
 						case "clean": task = engine.Clean(); break;
 						default: CConsole.Error($"The action '{action}' was not understood."); return -1; // Should never be reached
 					}
