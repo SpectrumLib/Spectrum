@@ -24,12 +24,16 @@ namespace Prism.Builtin
 		}
 
 		// This can write to the same data, because it always gets the information it needs before back-writing
-		public unsafe static FSRAudio Encode(RawAudio raw)
+		public unsafe static FSRAudio Encode(RawAudio raw, bool stats, PipelineLogger logger)
 		{
 			uint chunkCount = (raw.FrameCount - 1) / 4; // A chunk is 4 samples: 1 full sample and 3 fractional residuals
 
 			short* srcPtr = (short*)raw.Data.ToPointer();
 			byte* dstPtr = (byte*)raw.Data.ToPointer();
+
+			float eSum = 0; // Sum of percentage errors
+			uint eTotal = 0; // Total samples with errors
+			uint cTotal = 0; // Total samples that were clamped
 
 			uint dataSize = 0;
 			if (raw.Stereo)
@@ -87,6 +91,58 @@ namespace Prism.Builtin
 					// Save the current right border samples as the new left border samples
 					c1_l = c1_r;
 					c2_l = c2_r;
+
+					// Calculate and report the stats
+					if (stats)
+					{
+						// Get the samples as they will be decoded
+						short c1_r1 = (short)(c1_m + (c1_ss * ((c1_d1 & 0x80) > 0 ? -(c1_d1 & 0x7F) : (c1_d1 & 0x7F)))),
+							  c1_r2 = (short)(c1_m + (c1_ss * ((c1_d2 & 0x80) > 0 ? -(c1_d2 & 0x7F) : (c1_d2 & 0x7F)))),
+							  c1_r3 = (short)(c1_m + (c1_ss * ((c1_d3 & 0x80) > 0 ? -(c1_d3 & 0x7F) : (c1_d3 & 0x7F)))),
+							  c2_r1 = (short)(c2_m + (c2_ss * ((c2_d1 & 0x80) > 0 ? -(c2_d1 & 0x7F) : (c2_d1 & 0x7F)))),
+							  c2_r2 = (short)(c2_m + (c2_ss * ((c2_d2 & 0x80) > 0 ? -(c2_d2 & 0x7F) : (c2_d2 & 0x7F)))),
+							  c2_r3 = (short)(c2_m + (c2_ss * ((c2_d3 & 0x80) > 0 ? -(c2_d3 & 0x7F) : (c2_d3 & 0x7F))));
+
+						// Find badly decoded samples and report the fractional error
+						if (c1_r1 != srcPtr[2])
+						{
+							eSum += (srcPtr[2] != 0) ? Math.Abs((c1_r1 - srcPtr[2]) / (float)srcPtr[2]) : 1;
+							++eTotal;
+						}
+						if (c1_r2 != srcPtr[4])
+						{
+							eSum += (srcPtr[4] != 0) ? Math.Abs((c1_r2 - srcPtr[4]) / (float)srcPtr[4]) : 1;
+							++eTotal;
+						}
+						if (c1_r3 != srcPtr[6])
+						{
+							eSum += (srcPtr[6] != 0) ? Math.Abs((c1_r3 - srcPtr[6]) / (float)srcPtr[6]) : 1;
+							++eTotal;
+						}
+						if (c2_r1 != srcPtr[3])
+						{
+							eSum += (srcPtr[3] != 0) ? Math.Abs((c2_r1 - srcPtr[3]) / (float)srcPtr[3]) : 1;
+							++eTotal;
+						}
+						if (c2_r2 != srcPtr[5])
+						{
+							eSum += (srcPtr[5] != 0) ? Math.Abs((c2_r2 - srcPtr[5]) / (float)srcPtr[5]) : 1;
+							++eTotal;
+						}
+						if (c2_r3 != srcPtr[7])
+						{
+							eSum += (srcPtr[7] != 0) ? Math.Abs((c2_r3 - srcPtr[7]) / (float)srcPtr[7]) : 1;
+							++eTotal;
+						}
+
+						// Report the clamped samples
+						if (c1_s1 == MAX_FRAC) ++cTotal;
+						if (c1_s2 == MAX_FRAC) ++cTotal;
+						if (c1_s3 == MAX_FRAC) ++cTotal;
+						if (c2_s1 == MAX_FRAC) ++cTotal;
+						if (c2_s2 == MAX_FRAC) ++cTotal;
+						if (c2_s3 == MAX_FRAC) ++cTotal;
+					}
 				}
 
 				// Write the final border samples to the stream
@@ -136,6 +192,37 @@ namespace Prism.Builtin
 
 					// Save the current right border sample as the new left border sample
 					sl = sr;
+
+					// Calculate and report the stats
+					if (stats)
+					{
+						// Get the samples as they will be decoded
+						short r1 = (short)(sm + (sss * ((sd1 & 0x80) > 0 ? -(sd1 & 0x7F) : (sd1 & 0x7F)))),
+							  r2 = (short)(sm + (sss * ((sd2 & 0x80) > 0 ? -(sd2 & 0x7F) : (sd2 & 0x7F)))),
+							  r3 = (short)(sm + (sss * ((sd3 & 0x80) > 0 ? -(sd3 & 0x7F) : (sd3 & 0x7F))));
+
+						// Find badly decoded samples and report the fractional error
+						if (r1 != srcPtr[1])
+						{
+							eSum += (srcPtr[1] != 0) ? Math.Abs((r1 - srcPtr[1]) / (float)srcPtr[1]) : 1;
+							++eTotal;
+						}
+						if (r2 != srcPtr[2])
+						{
+							eSum += (srcPtr[2] != 0) ? Math.Abs((r2 - srcPtr[2]) / (float)srcPtr[2]) : 1;
+							++eTotal;
+						}
+						if (r3 != srcPtr[3])
+						{
+							eSum += (srcPtr[3] != 0) ? Math.Abs((r3 - srcPtr[3]) / (float)srcPtr[3]) : 1;
+							++eTotal;
+						}
+
+						// Report the clamped samples
+						if (ss1 == MAX_FRAC) ++cTotal;
+						if (ss2 == MAX_FRAC) ++cTotal;
+						if (ss3 == MAX_FRAC) ++cTotal;
+					}
 				}
 
 				// Write the final border samples to the stream
@@ -144,6 +231,14 @@ namespace Prism.Builtin
 
 				// Save the data size
 				dataSize = (uint)(dstPtr - (byte*)raw.Data.ToPointer());
+			}
+
+			// Report the stats
+			if (stats)
+			{
+				uint sTotal = (((chunkCount * 4) + 1) * 3) / 4;
+				logger?.Stats($"Error Rate: {eTotal / (float)sTotal:00.000}%    Avg. Error: {eSum / eTotal:00.000}%    " +
+					$"Clamp Rate: {cTotal / (float)sTotal:00.000}%");
 			}
 
 			// Return the setup

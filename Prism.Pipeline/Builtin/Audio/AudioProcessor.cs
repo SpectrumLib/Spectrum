@@ -21,7 +21,7 @@ namespace Prism.Builtin
 			// Perform the compression steps
 			try
 			{
-				var proc = Lossy ? FSRAudio.Encode(input) : throw new InvalidOperationException("Lossless compression not yet implemented.");
+				var proc = Lossy ? FSRAudio.Encode(input, ctx.UseStats, ctx.Logger) : throw new InvalidOperationException("Lossless compression not yet implemented.");
 				return proc;
 			}
 			finally
