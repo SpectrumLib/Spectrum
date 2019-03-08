@@ -84,6 +84,9 @@ namespace Prism.Build
 		internal void ItemError(BuildEvent evt, string message) =>
 			_messages.Enqueue(new Message(MessageType.ItemError, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
 
+		internal void ItemStats(BuildEvent evt, string message) =>
+			_messages.Enqueue(new Message(MessageType.ItemStats, _startTime + _timer.Elapsed, evt.Item, evt.Index, message));
+
 		internal void ItemPack(ContentItem item, uint packNum) =>
 			_messages.Enqueue(new Message(MessageType.ItemPack, _startTime + _timer.Elapsed, item, packNum));
 		#endregion // Internal Logging
@@ -112,6 +115,7 @@ namespace Prism.Build
 					case MessageType.ItemInfo: onItemInfo((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2], (bool)msg.Args[3]); break;
 					case MessageType.ItemWarning: onItemWarn((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemError: onItemError((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
+					case MessageType.ItemStats: onItemStats((ContentItem)msg.Args[0], (uint)msg.Args[1], (string)msg.Args[2]); break;
 					case MessageType.ItemPack: onItemPack((ContentItem)msg.Args[0], (uint)msg.Args[1]); break;
 				}
 			}
@@ -155,6 +159,9 @@ namespace Prism.Build
 		// Called from a pipeline stage to relay error-level information about a content item build process
 		protected abstract void onItemError(ContentItem item, uint id, string message);
 
+		// Called from a pipeline stage to report build statistics
+		protected abstract void onItemStats(ContentItem item, uint id, string message);
+
 		// Called from the packing process when an item is moved to the output
 		protected abstract void onItemPack(ContentItem item, uint packNum);
 		#endregion // Message Handlers
@@ -192,6 +199,7 @@ namespace Prism.Build
 			ItemInfo,
 			ItemWarning,
 			ItemError,
+			ItemStats,
 			ItemPack
 		}
 		#endregion // Message Impl

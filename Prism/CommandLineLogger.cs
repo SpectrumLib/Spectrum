@@ -10,14 +10,16 @@ namespace Prism
 	{
 		#region Fields
 		public readonly bool Verbose;
+		public readonly bool UseStats;
 
 		private bool _isReleaseBuild;
 		#endregion // Fields
 
-		public CommandLineLogger(bool verbose) :
+		public CommandLineLogger(bool verbose, bool stats) :
 			base()
 		{
 			Verbose = verbose;
+			UseStats = stats;
 		}
 
 		protected override void onEngineInfo(string msg, bool important) => Info($"Build Engine: {msg}");
@@ -92,6 +94,12 @@ namespace Prism
 
 		protected override void onItemError(ContentItem item, uint id, string message) =>
 			Error($"'{item.ItemPath}' {message}");
+
+		protected override void onItemStats(ContentItem item, uint id, string message)
+		{
+			if (UseStats)
+				Stats($"'{item.ItemPath}' {message}");
+		}
 
 		protected override void onItemPack(ContentItem item, uint packNum)
 		{

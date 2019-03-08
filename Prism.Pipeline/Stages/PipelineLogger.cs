@@ -54,5 +54,13 @@ namespace Prism
 		/// <param name="str">The message to log.</param>
 		public void Error(string str) =>
 			Logger.ItemError(_currEvent, $"({_currStageName}) {str}");
+
+		/// <summary>
+		/// Logs statistics about the build process. Should only be used if the context for the pipeline stage reports
+		/// that statistics have been requested. Will print as an info message, but only if statistics are enabled.
+		/// </summary>
+		/// <param name="str">The message to log.</param>
+		public void Stats(string str) =>
+			Logger.ItemStats(_currEvent, $"({_currStageName}) {str}");
 	}
 }

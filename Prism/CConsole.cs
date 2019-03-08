@@ -38,5 +38,12 @@ namespace Prism
 			Console.BackgroundColor = DefaultBGColor;
 			Console.ForegroundColor = DefaultFGColor;
 		}
+
+		public static void Stats(string msg)
+		{
+			Console.ForegroundColor = ConsoleColor.DarkGray;
+			Console.WriteLine($"STAT: {msg}");
+			Console.ForegroundColor = DefaultFGColor;
+		}
 	}
 }

@@ -49,9 +49,10 @@ namespace Prism
 
 			// Create the build engine to manage this action
 			BuildEngine engine = null;
+			bool useStats = ArgParser.Stats(args);
 			try
 			{
-				engine = new BuildEngine(project, new CommandLineLogger(verbose), threadCount);
+				engine = new BuildEngine(project, new CommandLineLogger(verbose, useStats), threadCount);
 			}
 			catch (Exception e)
 			{
@@ -66,9 +67,6 @@ namespace Prism
 
 			// Get the build type
 			bool releaseBuild = ArgParser.Release(args);
-
-			// Get the stats flag
-			bool useStats = ArgParser.Stats(args);
 
 			// Start the action task and logging
 			using (engine)
