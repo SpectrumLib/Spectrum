@@ -15,8 +15,8 @@ namespace Spectrum.Audio
 
 		#region Fields
 		// Audio info
-		public readonly bool Stereo;
-		public readonly uint FrameCount;
+		public bool Stereo { get; private set; }
+		public uint FrameCount { get; private set; }
 
 		// Stream info
 		private readonly ContentStream _stream;
@@ -45,8 +45,9 @@ namespace Spectrum.Audio
 			_bufferOff = 0;
 			_bufferSize = 0;
 
-			// Get first chunk
+			// Get first chunk (skip header)
 			_currChunk = default;
+			_stream.Seek(10, SeekOrigin.Begin);
 			ReadChunkHeader(stream, ref _currChunk);
 		}
 		~RLADStream()
@@ -170,6 +171,8 @@ namespace Spectrum.Audio
 			c.Type = (ushort)((header >> 6) & 0x03);
 			c.Extra = (ushort)(header & 0x3F);
 			// DO NOT CHANGE THE CHANNEL COMPONENTS
+			if (c.Type == 3)
+				throw new InvalidDataException("Invalid RLAD header size type.");
 		}
 
 		// Dst must be large enough to accept up to 512 samples (1024 for stereo)
@@ -228,10 +231,10 @@ namespace Spectrum.Audio
 					*((uint*)(tmp + 8)) = stream.ReadUInt32();
 
 					// Extract the packed values
-					int p1 = *((int*)tmp  );
-					int p2 = *((int*)tmp+3);
-					int p3 = *((int*)tmp+6);
-					int p4 = *((int*)tmp+9);
+					int p1 = *((int*)tmp    );
+					int p2 = *((int*)(tmp+3));
+					int p3 = *((int*)(tmp+6));
+					int p4 = *((int*)(tmp+9));
 
 					// Extract the differences from the packed values (arith. right shift to get 2s compliment)
 					int d1 = ((p1 & 0xFFF) << 20) >> 20;

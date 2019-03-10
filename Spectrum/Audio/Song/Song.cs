@@ -15,7 +15,7 @@ namespace Spectrum.Audio
 
 		#region Fields
 		// The data stream
-		private readonly FSRStream _stream;
+		private readonly IAudioStreamer _stream;
 		// The sampling rate for this audio
 		internal readonly uint SampleRate;
 		// The number of frames in this song
@@ -142,7 +142,7 @@ namespace Spectrum.Audio
 		public bool IsDisposed { get; private set; } = false;
 		#endregion // Fields
 
-		internal Song(FSRStream stream, uint rate)
+		internal Song(IAudioStreamer stream, uint rate)
 		{
 			_stream = stream;
 			SampleRate = rate;
@@ -397,7 +397,8 @@ namespace Spectrum.Audio
 			if (!IsDisposed && disposing)
 			{
 				Stop();
-				_stream.Dispose();
+				if (_stream is IDisposable)
+					(_stream as IDisposable).Dispose();
 				_buffers[0].Dispose();
 				_buffers[1].Dispose();
 				_buffers = null;

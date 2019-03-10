@@ -9,9 +9,6 @@ namespace Prism.Builtin
 		// Multiplicitive factor for converting f32 [-1,1] to s16
 		private const float F2S_FACTOR = Int16.MaxValue - 1;
 
-		[PipelineParameter(name: "lossy", description: "If the processor can use a faster, but slightly lossy compression algorithm (CURRENTLY SOUNDS BAD).")]
-		public bool Lossy = false;
-
 		public unsafe override ProcessedAudio Process(RawAudio input, ProcessorContext ctx)
 		{
 			// Preprocessing step for mp3, convert from float to s16
@@ -21,7 +18,7 @@ namespace Prism.Builtin
 			// Perform the compression steps
 			try
 			{
-				var proc = Lossy ? (ProcessedAudio)FSRAudio.Encode(input, ctx.UseStats, ctx.Logger) : RLADAudio.Encode(input, ctx.UseStats, ctx.Logger);
+				var proc = RLADAudio.Encode(input, ctx.UseStats, ctx.Logger);
 				return proc;
 			}
 			finally

@@ -25,8 +25,7 @@ namespace Spectrum.Content
 
 				try
 				{
-					if (isLossy) FSRStream.ReadSamples(stream.Reader, (short*)data.ToPointer(), frameCount - 1, isStereo);
-					else RLADStream.DecodeAll(stream, (short*)data.ToPointer(), isStereo, frameCount);
+					RLADStream.DecodeAll(stream, (short*)data.ToPointer(), isStereo, frameCount);
 
 					var sb = new SoundBuffer();
 					sb.SetData(data, isStereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, sampleRate, fullLen);
@@ -39,10 +38,7 @@ namespace Spectrum.Content
 			}
 			else // Song
 			{
-				if (!isLossy)
-					throw new NotImplementedException($"Cannot use lossless data in Songs (yet).");
-
-				var astream = new FSRStream(stream.FilePath, stream.CurrentOffset, isStereo, frameCount);
+				var astream = new RLADStream(stream.Duplicate(), isStereo, frameCount);
 				return new Song(astream, sampleRate);
 			}
 		}
