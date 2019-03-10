@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Prism.Builtin
 {
@@ -35,6 +36,7 @@ namespace Prism.Builtin
 			uint eTotal = 0; // Total samples with errors
 			uint cTotal = 0; // Total samples that were clamped
 
+			Stopwatch timer = Stopwatch.StartNew();
 			uint dataSize = 0;
 			if (raw.Stereo)
 			{
@@ -239,6 +241,8 @@ namespace Prism.Builtin
 				uint sTotal = (((chunkCount * 4) + 1) * 3) / 4;
 				logger?.Stats($"Error Rate: {eTotal / (float)sTotal:00.000}%    Avg. Error: {eSum / eTotal:00.000}%    " +
 					$"Clamp Rate: {cTotal / (float)sTotal:00.000}%");
+				float startSize = (chunkCount * 4) * 2 * (raw.Stereo ? 2 : 1);
+				logger.Stats($"Compression Stats:   Ratio={dataSize/startSize:0.0000}   Speed={startSize/timer.Elapsed.TotalSeconds/1024/1024:0.00} MB/s");
 			}
 
 			// Return the setup

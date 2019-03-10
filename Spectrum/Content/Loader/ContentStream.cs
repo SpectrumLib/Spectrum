@@ -9,7 +9,7 @@ namespace Spectrum.Content
 	/// <summary>
 	/// Used to read in data from a content item file, hiding the details such as packing or compression.
 	/// </summary>
-	public sealed class ContentStream
+	public sealed class ContentStream : IDisposable
 	{
 		// The length of the headers (to add to the content offset to get to content data)
 		internal const uint BIN_HEADER_LENGTH = 13;
@@ -42,6 +42,7 @@ namespace Spectrum.Content
 		private readonly FileStream _file;
 		private readonly LZ4DecoderStream _decompressor;
 		internal readonly BinaryReader Reader;
+		private bool _ownsFile;
 
 		// Faster way to keep track of where we are in the stream
 		private uint _pos;
@@ -50,6 +51,8 @@ namespace Spectrum.Content
 		/// Gets the number of bytes remaining in the stream to read.
 		/// </summary>
 		public uint Remaining => UCSize - _pos;
+
+		private bool _isDisposed = false;
 		#endregion // Fields
 
 		// Creates a content stream to read from a portion of a bin file
@@ -67,6 +70,7 @@ namespace Spectrum.Content
 			if (Compressed)
 				_decompressor = LZ4Stream.Decode(_file, 0, leaveOpen: true);
 			Reader = new BinaryReader(Compressed ? (Stream)_decompressor : (Stream)_file, s_encoding, true);
+			_ownsFile = false;
 			_pos = 0;
 		}
 
@@ -85,15 +89,13 @@ namespace Spectrum.Content
 			if (Compressed)
 				_decompressor = LZ4Stream.Decode(_file, 0, leaveOpen: true);
 			Reader = new BinaryReader(Compressed ? (Stream)_decompressor : (Stream)_file, s_encoding, true);
+			_ownsFile = false;
 			_pos = 0;
 		}
 
-		// Should be called for proper cleanup, but its not the end of the world as it does not hold the file stream open
-		internal void Free()
+		~ContentStream()
 		{
-			if (Compressed)
-				_decompressor?.Dispose();
-			Reader?.Dispose();
+			dispose(false);
 		}
 
 		/// <summary>
@@ -113,6 +115,26 @@ namespace Spectrum.Content
 			}
 			else
 				Reader.BaseStream.Seek(offset, o);
+		}
+
+		/// <summary>
+		/// Creates a copy of this stream, pointing to the same content item as the original stream, but at the
+		/// beginning of the item.
+		/// <para>
+		/// Because ContentStreams are reused across multiple <see cref="ContentLoader{T}"/> instances, an instance
+		/// cannot be saved and used again outside of the Load function. This function can be used to duplicate a
+		/// content stream for use outside of the Load function, such as with streaming.
+		/// </para>
+		/// </summary>
+		/// <returns>A duplicate of this content stream, which the user must dispose when finished with it.</returns>
+		public ContentStream Duplicate()
+		{
+			var file = File.Open(_file.Name, FileMode.Open, FileAccess.Read, FileShare.Read);
+			var stream = IsRelease ?
+				new ContentStream(Item, file, Offset - BIN_HEADER_LENGTH, RealSize, UCSize) :
+				new ContentStream(Item, file, RealSize, UCSize);
+			stream._ownsFile = true;
+			return stream;
 		}
 
 		#region Read Functions
@@ -326,5 +348,26 @@ namespace Spectrum.Content
 				throw new ContentLoadException(Item, "attempted to read past end of content stream.");
 			_pos += size;
 		}
+
+		#region IDisposable
+		public void Dispose()
+		{
+			dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		private void dispose(bool disposing)
+		{
+			if (!_isDisposed && disposing)
+			{
+				if (Compressed)
+					_decompressor?.Dispose();
+				Reader?.Dispose();
+				if (_ownsFile)
+					_file.Dispose();
+			}
+			_isDisposed = true;
+		}
+		#endregion // IDisposable
 	}
 }

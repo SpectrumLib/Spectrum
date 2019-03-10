@@ -23,6 +23,12 @@ namespace Spectrum.Content
 		/// <summary>
 		/// Implements the loading logic of reading in a content file and producing a runtime type. Returning null
 		/// from this function is considered an error.
+		/// <para>
+		/// It is important that this function does not reference the stream for later use, as each stream instance
+		/// is shared across multiple <see cref="ContentLoader{T}"/> instances. If you need to read the content file
+		/// outside of this function (such as for streaming), use <see cref="ContentStream.Duplicate"/> to create a 
+		/// usable copy of the stream.
+		/// </para>
 		/// </summary>
 		/// <param name="stream">The opaque stream to the content data on disk.</param>
 		/// <param name="ctx">Extra information about the current load process.</param>

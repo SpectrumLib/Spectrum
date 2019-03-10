@@ -289,7 +289,7 @@ namespace Spectrum.Content
 				}
 				finally
 				{
-					stream?.Free();
+					stream?.Dispose();
 				}
 			}
 			else
@@ -317,7 +317,7 @@ namespace Spectrum.Content
 					}
 					finally
 					{
-						stream?.Free();
+						stream?.Dispose();
 					}
 				}
 			}
@@ -352,7 +352,7 @@ namespace Spectrum.Content
 				}
 				finally
 				{
-					stream?.Free();
+					stream?.Dispose();
 				}
 
 				if (loadedObj == null)
@@ -392,7 +392,7 @@ namespace Spectrum.Content
 						}
 						finally
 						{
-							stream?.Free();
+							stream?.Dispose();
 						}
 
 						if (loadedObj == null)
