@@ -110,11 +110,42 @@ namespace Spectrum.Content
 			{
 				if (o != SeekOrigin.Current || offset < 0)
 					throw new InvalidOperationException("Cannot seek a compressed ContentStream other than to skip forward from the current position.");
+				if ((_pos + offset) > UCSize)
+					throw new InvalidOperationException("Cannot seek past the end of the content file data.");
 				while (offset-- > 0)
 					_decompressor.ReadByte();
+				_pos = (uint)(_pos + offset);
 			}
 			else
-				Reader.BaseStream.Seek(offset, o);
+			{
+				if (o == SeekOrigin.Begin)
+				{
+					if (offset < 0)
+						throw new InvalidOperationException("Cannot seek before the beginning of the content file data.");
+					if (offset > UCSize)
+						throw new InvalidOperationException("Cannot seek past the end of the content file data.");
+					Reader.BaseStream.Seek(offset + Offset, SeekOrigin.Begin);
+					_pos = (uint)offset;
+				}
+				else if (o == SeekOrigin.End)
+				{
+					if (offset > 0)
+						throw new InvalidOperationException("Cannot seek past the end of the content file data.");
+					if (offset < -UCSize)
+						throw new InvalidOperationException("Cannot seek before the beginning of the content file data.");
+					Reader.BaseStream.Seek(Offset + UCSize + offset, SeekOrigin.Begin);
+					_pos = (uint)(UCSize + offset);
+				}
+				else
+				{
+					if ((_pos + offset) > UCSize)
+						throw new InvalidOperationException("Cannot seek past the end of the content file data.");
+					if ((_pos + offset) < 0)
+						throw new InvalidOperationException("Cannot seek before the beginning of the content file data.");
+					Reader.BaseStream.Seek(offset, SeekOrigin.Current);
+					_pos = (uint)(_pos + offset);
+				}
+			}
 		}
 
 		/// <summary>

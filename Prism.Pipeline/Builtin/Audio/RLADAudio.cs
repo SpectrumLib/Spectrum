@@ -231,10 +231,10 @@ namespace Prism.Builtin
 					$"M={stl[1]/(float)stc[1]:0.00}   " +
 					$"F={stl[2]/(float)stc[2]:0.00}   " +
 					$"Overall={(stl[0] + stl[1] + stl[2]) / (float)wi:0.00}");
-				logger.Stats($"Chunk Length Extrema:   " +
+				logger.Stats($"Chunk Extrema (min/max):   " +
 					$"S={stmin[0]}/{stmax[0]} ({stmin[0]*100/(float)stc[0]:0.00}%/{stmax[0]*100/(float)stc[0]:0.00}%)   " +
-					$"S={stmin[1]}/{stmax[1]} ({stmin[1]*100/(float)stc[1]:0.00}%/{stmax[1]*100/(float)stc[1]:0.00}%)   " +
-					$"S={stmin[2]}/{stmax[2]} ({stmin[2]*100/(float)stc[2]:0.00}%/{stmax[2]*100/(float)stc[2]:0.00}%)");
+					$"M={stmin[1]}/{stmax[1]} ({stmin[1]*100/(float)stc[1]:0.00}%/{stmax[1]*100/(float)stc[1]:0.00}%)   " +
+					$"F={stmin[2]}/{stmax[2]} ({stmin[2]*100/(float)stc[2]:0.00}%/{stmax[2]*100/(float)stc[2]:0.00}%)");
 				float startSize = realSize * 2 * (raw.Stereo ? 2 : 1);
 				logger.Stats($"Compression Stats:   Ratio={dataLen/startSize:0.0000}   Speed={realSize/timer.Elapsed.TotalSeconds/1024/1024:0.00} MB/s");
 			}

@@ -322,7 +322,7 @@ namespace Spectrum.Audio
 		{
 			Stopwatch timer = Stopwatch.StartNew();
 			uint sCount = Math.Min(BUFF_SIZE, _stream.RemainingFrames);
-			if (_stream.Read(SampleBuffer, sCount) != sCount)
+			if (_stream.ReadFrames(SampleBuffer, sCount) != sCount)
 				throw new InvalidOperationException("Unable to read expected number of samples from stream.");
 			_buffers[_bufferIndex].SetData(SampleBuffer, _stream.Stereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, SampleRate, 0, sCount * (_stream.Stereo ? 2u : 1u));
 			_bufferIndex = 1 - _bufferIndex;

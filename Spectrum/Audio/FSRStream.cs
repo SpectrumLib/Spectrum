@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace Spectrum.Audio
 {
 	// Contains the logic required to decode and stream FSR-encoded audio data from a file
-	internal class FSRStream : IDisposable
+	internal class FSRStream : IDisposable, IAudioStreamer
 	{
 		private const int MAX_FRAC = 127; // Max value encodable in 7 bits
 		private const float MAX_FRAC_F = MAX_FRAC;
@@ -48,7 +48,7 @@ namespace Spectrum.Audio
 		}
 
 		// Reads a number of frames into the array
-		public unsafe uint Read(short[] dst, uint count)
+		public unsafe uint ReadFrames(short[] dst, uint count)
 		{
 			if (count > RemainingFrames)
 				count = RemainingFrames;

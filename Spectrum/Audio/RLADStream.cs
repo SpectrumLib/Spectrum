@@ -1,11 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using Spectrum.Content;
 
 namespace Spectrum.Audio
 {
 	// Contains the logic required to decode and stream RLAD-encoded audio data from a file
-	internal class RLADStream : IDisposable
+	internal class RLADStream : IDisposable, IAudioStreamer
 	{
 		private const uint MAX_BUFFER_SIZE = 512; // Any RLAD chunk can have a maximum of 512 (8 * 64) frames
 		public const int SMALL_TYPE = 0;
@@ -45,7 +46,8 @@ namespace Spectrum.Audio
 			_bufferSize = 0;
 
 			// Get first chunk
-			ReadChunkHeader(stream, out _currChunk);
+			_currChunk = default;
+			ReadChunkHeader(stream, ref _currChunk);
 		}
 		~RLADStream()
 		{
@@ -85,7 +87,7 @@ namespace Spectrum.Audio
 					DecodeChunk(_stream, dstptr + dstOff, ref _currChunk, Stereo);
 					dstOff += (_currChunk.FrameCount * (Stereo ? 2u : 1));
 					rem -= _currChunk.FrameCount;
-					ReadChunkHeader(_stream, out _currChunk);
+					ReadChunkHeader(_stream, ref _currChunk);
 				}
 			}
 
@@ -108,11 +110,22 @@ namespace Spectrum.Audio
 				}
 
 				// Read the chunk for the next call
-				ReadChunkHeader(_stream, out _currChunk);
+				ReadChunkHeader(_stream, ref _currChunk);
 			}
 
 			// Return the number of frames actually read
+			_frameOffset += count;
 			return count;
+		}
+
+		public void Reset()
+		{
+			_stream.Seek(10, SeekOrigin.Begin); // Skip the header
+			_frameOffset = 0;
+			_bufferSize = 0;
+			_bufferOff = 0;
+			_currChunk = default;
+			ReadChunkHeader(_stream, ref _currChunk); // Read in the first chunk as expected
 		}
 
 		#region IDisposable
@@ -133,14 +146,30 @@ namespace Spectrum.Audio
 		}
 		#endregion // IDisposable
 
+		public unsafe static void DecodeAll(ContentStream stream, short* dst, bool stereo, uint fcount)
+		{
+			uint rem = fcount;
+			uint dstOff = 0;
+
+			Chunk c = default;
+			while (rem > 0)
+			{
+				ReadChunkHeader(stream, ref c);
+				if (c.FrameCount > rem) break; // Prevents an accidental infinite loop for malformatted input data
+
+				DecodeChunk(stream, dst + dstOff, ref c, stereo);
+				dstOff += (c.FrameCount * (stereo ? 2u : 1));
+				rem -= c.FrameCount;
+			}
+		}
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private static void ReadChunkHeader(ContentStream stream, out Chunk c)
+		private static void ReadChunkHeader(ContentStream stream, ref Chunk c)
 		{
 			byte header = stream.ReadByte();
 			c.Type = (ushort)((header >> 6) & 0x03);
 			c.Extra = (ushort)(header & 0x3F);
-			c.Channel1 = 0;
-			c.Channel2 = 0;
+			// DO NOT CHANGE THE CHANNEL COMPONENTS
 		}
 
 		// Dst must be large enough to accept up to 512 samples (1024 for stereo)

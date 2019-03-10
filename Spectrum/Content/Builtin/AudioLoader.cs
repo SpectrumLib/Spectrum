@@ -13,13 +13,10 @@ namespace Spectrum.Content
 
 		public unsafe override IAudioSource Load(ContentStream stream, LoaderContext ctx)
 		{
-			uint frameCount = stream.ReadUInt32() - 1;
+			uint frameCount = stream.ReadUInt32();
 			uint sampleRate = stream.ReadUInt32();
 			bool isStereo = stream.ReadBoolean();
 			bool isLossy = stream.ReadBoolean();
-
-			if (!isLossy)
-				throw new NotImplementedException("Loading lossless audio data not yet implemented.");
 
 			if (ctx.ContentType == SOUNDEFFECT_TYPE)
 			{
@@ -28,7 +25,8 @@ namespace Spectrum.Content
 
 				try
 				{
-					FSRStream.ReadSamples(stream.Reader, (short*)data.ToPointer(), frameCount, isStereo);
+					if (isLossy) FSRStream.ReadSamples(stream.Reader, (short*)data.ToPointer(), frameCount - 1, isStereo);
+					else RLADStream.DecodeAll(stream, (short*)data.ToPointer(), isStereo, frameCount);
 
 					var sb = new SoundBuffer();
 					sb.SetData(data, isStereo ? AudioFormat.Stereo16 : AudioFormat.Mono16, sampleRate, fullLen);
@@ -41,6 +39,9 @@ namespace Spectrum.Content
 			}
 			else // Song
 			{
+				if (!isLossy)
+					throw new NotImplementedException($"Cannot use lossless data in Songs (yet).");
+
 				var astream = new FSRStream(stream.FilePath, stream.CurrentOffset, isStereo, frameCount);
 				return new Song(astream, sampleRate);
 			}
