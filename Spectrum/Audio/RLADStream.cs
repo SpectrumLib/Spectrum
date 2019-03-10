@@ -167,12 +167,15 @@ namespace Spectrum.Audio
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static void ReadChunkHeader(ContentStream stream, ref Chunk c)
 		{
-			byte header = stream.ReadByte();
-			c.Type = (ushort)((header >> 6) & 0x03);
-			c.Extra = (ushort)(header & 0x3F);
-			// DO NOT CHANGE THE CHANNEL COMPONENTS
-			if (c.Type == 3)
-				throw new InvalidDataException("Invalid RLAD header size type.");
+			if (stream.Remaining > 0)
+			{
+				byte header = stream.ReadByte();
+				c.Type = (ushort)((header >> 6) & 0x03);
+				c.Extra = (ushort)(header & 0x3F);
+				// DO NOT CHANGE THE CHANNEL COMPONENTS
+				if (c.Type == 3)
+					throw new InvalidDataException("Invalid RLAD header size type."); 
+			}
 		}
 
 		// Dst must be large enough to accept up to 512 samples (1024 for stereo)
