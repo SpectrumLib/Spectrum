@@ -178,7 +178,9 @@ namespace Prism.Build
 				}
 				catch (Exception e)
 				{
-					Engine.Logger.ItemFailed(current, $"Unhandled exception in importer, {e.Message} ({e.GetType().Name})");
+					int pos = e.StackTrace.IndexOf(" at ");
+					string loc = e.StackTrace.Substring(pos + 4).Split('\n')[0];
+					Engine.Logger.ItemFailed(current, $"Unhandled exception in writer, {e.Message} ({e.GetType().Name})\n Source: {loc}");
 					if (e.InnerException != null)
 						Engine.Logger.ItemFailed(current, $"Inner Exception ({e.InnerException.GetType().Name}): {e.InnerException.Message}");
 					continue;
@@ -212,7 +214,9 @@ namespace Prism.Build
 				}
 				catch (Exception e)
 				{
-					Engine.Logger.ItemFailed(current, $"Unhandled exception in processor, {e.Message} ({e.GetType().Name})");
+					int pos = e.StackTrace.IndexOf(" at ");
+					string loc = e.StackTrace.Substring(pos + 4).Split('\n')[0];
+					Engine.Logger.ItemFailed(current, $"Unhandled exception in writer, {e.Message} ({e.GetType().Name})\n Source: {loc}");
 					if (e.InnerException != null)
 						Engine.Logger.ItemFailed(current, $"Inner Exception ({e.InnerException.GetType().Name}): {e.InnerException.Message}");
 					continue;
@@ -253,7 +257,9 @@ namespace Prism.Build
 				}
 				catch (Exception e)
 				{
-					Engine.Logger.ItemFailed(current, $"Unhandled exception in writer, {e.Message} ({e.GetType().Name})");
+					int pos = e.StackTrace.IndexOf(" at ");
+					string loc = e.StackTrace.Substring(pos + 4).Split('\n')[0];
+					Engine.Logger.ItemFailed(current, $"Unhandled exception in writer, {e.Message} ({e.GetType().Name})\n Source: {loc}");
 					if (e.InnerException != null)
 						Engine.Logger.ItemFailed(current, $"Inner Exception ({e.InnerException.GetType().Name}): {e.InnerException.Message}");
 					continue;

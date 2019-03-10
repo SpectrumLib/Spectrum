@@ -8,9 +8,9 @@ namespace Prism.Builtin
 		private const int MAX_CHUNK_SIZE = 64;
 		private const int SMALL_DIFF = 0x7F; // 127 is the largest difference for 8 bits (7 available)
 		private const int MED_DIFF = 0x7FF; // 2047 is the largest difference for 12 bits (11 available)
-		private const int SMALL_TYPE = 0;
-		private const int MED_TYPE = 1;
-		private const int FULL_TYPE = 2;
+		public const int SMALL_TYPE = 0;
+		public const int MED_TYPE = 1;
+		public const int FULL_TYPE = 2;
 
 		#region Fields
 		public override uint FrameCount { get; protected set; }
@@ -199,10 +199,11 @@ namespace Prism.Builtin
 				uint rem = Math.Min(chunkCount - ri, 64);
 
 				uint count = 1;
-				while ((chunks[ri+count].Type == stype) && (count < rem)) ++count;
+				while ((chunks[ri+count].Type == stype) && (count < rem) && ((ri+count) < chunkCount)) ++count;
 
 				chunks[wi  ].Type = stype;
 				chunks[wi++].Extra = (ushort)(count - 1);
+				ri += count;
 
 				if (stats)
 				{
