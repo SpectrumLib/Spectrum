@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Prism.Builtin
 {
@@ -47,6 +48,7 @@ namespace Prism.Builtin
 			byte* dstStart = dstPtr;
 
 			// Generate all of the initial chunks
+			Stopwatch timer = Stopwatch.StartNew();
 			if (raw.Stereo)
 			{
 				// Tracks the running full sample value
@@ -199,7 +201,7 @@ namespace Prism.Builtin
 				uint rem = Math.Min(chunkCount - ri, 64);
 
 				uint count = 1;
-				while ((chunks[ri+count].Type == stype) && (count < rem) && ((ri+count) < chunkCount)) ++count;
+				while ((count < rem) && (chunks[ri+count].Type == stype)) ++count;
 
 				chunks[wi  ].Type = stype;
 				chunks[wi++].Extra = (ushort)(count - 1);
@@ -213,21 +215,24 @@ namespace Prism.Builtin
 			}
 
 			// Report stats
+			uint dataLen = (uint)(dstPtr - dstStart);
 			if (stats)
 			{
 				logger.Stats($"Chunk Size Types:   " +
-					$"S={stc[0]} ({stc[0]/(float)wi:0.000}%)   " +
-					$"M={stc[1]} ({stc[1]/(float)wi:0.000}%)   " +
-					$"F={stc[2]} ({stc[2]/(float)wi:0.000}%)");
+					$"S={stc[0]} ({stc[0]*100/(float)wi:0.000}%)   " +
+					$"M={stc[1]} ({stc[1]*100/(float)wi:0.000}%)   " +
+					$"F={stc[2]} ({stc[2]*100/(float)wi:0.000}%)");
 				logger.Stats($"Average Chunk Run Lengths:   " +
 					$"S={stl[0]/(float)stc[0]:0.00}   " +
 					$"M={stl[1]/(float)stc[1]:0.00}   " +
-					$"F={stl[2]/(float)stc[2]:0.00}");
-				logger.Stats($"Average Overall Run Lengths: {(stl[0]+stl[1]+stl[2])/(float)wi:0.00}");
+					$"F={stl[2]/(float)stc[2]:0.00}   " +
+					$"Overall={(stl[0] + stl[1] + stl[2]) / (float)wi:0.00}");
+				float startSize = realSize * 2 * (raw.Stereo ? 2 : 1);
+				logger.Stats($"Compression Stats:   Ratio={dataLen/startSize:0.0000}   Speed={realSize/timer.Elapsed.TotalSeconds/1024/1024:0.00} MB/s");
 			}
 
 			// Return the object
-			return new RLADAudio(raw, raw.TakeData(), chunkCount * 8, (uint)(dstPtr - dstStart), chunks, wi);
+			return new RLADAudio(raw, raw.TakeData(), chunkCount * 8, dataLen, chunks, wi);
 		}
 
 		// Type for tracking data about an RLAD chunk

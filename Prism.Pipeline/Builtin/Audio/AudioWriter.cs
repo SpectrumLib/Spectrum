@@ -36,7 +36,7 @@ namespace Prism.Builtin
 
 						// First calculate the length assuming one chunk of mono data, then correct for stereo and chunk count
 						len = (stype == RLADAudio.SMALL_TYPE) ? 8u : (stype == RLADAudio.MED_TYPE) ? 12u : 16u;
-						len *= (lmod * (extra + 1u) * 8u);
+						len *= (lmod * (extra + 1u));
 
 						writer.Write(data, len);
 					}
