@@ -191,6 +191,8 @@ namespace Prism.Builtin
 			// Stats values
 			uint* stc = stackalloc uint[3] { 0, 0, 0 };
 			uint* stl = stackalloc uint[3] { 0, 0, 0 };
+			uint* stmin = stackalloc uint[3] { 0, 0, 0 };
+			uint* stmax = stackalloc uint[3] { 0, 0, 0 };
 
 			// Compactify the chunks by combining adjacent ones of the same size type
 			uint wi = 0, // The chunk index to write
@@ -210,7 +212,9 @@ namespace Prism.Builtin
 				if (stats)
 				{
 					stc[stype] += 1;
-					stl[stype] += count; 
+					stl[stype] += count;
+					if (count == 1) stmin[stype] += 1;
+					else if (count == 64) stmax[stype] += 1;
 				}
 			}
 
@@ -227,6 +231,10 @@ namespace Prism.Builtin
 					$"M={stl[1]/(float)stc[1]:0.00}   " +
 					$"F={stl[2]/(float)stc[2]:0.00}   " +
 					$"Overall={(stl[0] + stl[1] + stl[2]) / (float)wi:0.00}");
+				logger.Stats($"Chunk Length Extrema:   " +
+					$"S={stmin[0]}/{stmax[0]} ({stmin[0]*100/(float)stc[0]:0.00}%/{stmax[0]*100/(float)stc[0]:0.00}%)   " +
+					$"S={stmin[1]}/{stmax[1]} ({stmin[1]*100/(float)stc[1]:0.00}%/{stmax[1]*100/(float)stc[1]:0.00}%)   " +
+					$"S={stmin[2]}/{stmax[2]} ({stmin[2]*100/(float)stc[2]:0.00}%/{stmax[2]*100/(float)stc[2]:0.00}%)");
 				float startSize = realSize * 2 * (raw.Stereo ? 2 : 1);
 				logger.Stats($"Compression Stats:   Ratio={dataLen/startSize:0.0000}   Speed={realSize/timer.Elapsed.TotalSeconds/1024/1024:0.00} MB/s");
 			}
