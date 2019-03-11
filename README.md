@@ -12,6 +12,16 @@ The library and associated tools are licensed under the GNU LGPL v3 license. In 
 ## Prism
 Prism is the content building tool used to pre-process and package content files for faster runtime loading and easier application distribution. It is very similar to the content pipeline for Monogame, in that it has a staged pipeline architecture that can be modified to include additional content processing, and can be used in either command line or through a UI. However, it packages the content into large cache files (similar to Unity) so applications can be distributed with a minimal number of files. Its project file format is also written in simple Json, making it easier to understand and manage the project files by hand, if needed/wanted.
 
+## Dependencies
+
+One of the design goals of the Spectrum project is to package all of the required dependencies in the library binary, which greatly reduces the amount of setup required of both developers and end-users. This includes both the native (C/C++) and managed (.NET) binaries. Because of this, the library binary is somewhat larger than it would otherwise be, but it provides a drop-and-play product that just works out of the box.
+
+This is accomplished differently for the binary types. Managed binaries are compiled directly into the assembly using the ILRepack tool (see below). Native binaries are built into the assembly as embedded resources, and are extracted at runtime and loaded dynamically using the host system's dynamic library loading interface (`LoadLibrary` on Windows, and `dlopen` on *nix).
+
+#### Vulkan
+
+Every single dependency used by both Spectrum and Prism are built into the library and tool assemblies, save one: Vulkan. Because the runtime and sdk for Vulkan are both massive, they are not included in the assemblies. Instead, the Vulkan runtime is required on all systems that using Prism and Spectrum (end user and developer), which is simple as the host graphics drivers will provide this. Additionally, developers writing Spectrum applications and/or using Prism will also **require the Vulkan SDK to be installed and in the PATH**.
+
 ## Building from Source
 **TODO**
 
