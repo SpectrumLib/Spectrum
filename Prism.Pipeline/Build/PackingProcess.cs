@@ -66,7 +66,10 @@ namespace Prism.Build
 					writer.Write(CPACK_VERSION);
 
 					// Build flags
-					byte buildFlags = (byte)(Engine.IsRelease ? 0x01 : 0x00);
+					byte buildFlags = (byte)(
+						(Engine.IsRelease ? 0x01 : 0x00) |
+						(Engine.Compress ? 0x02 : 0x00)
+					);
 					writer.Write(buildFlags);
 
 					// The pack size
