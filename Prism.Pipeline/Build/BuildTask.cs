@@ -175,6 +175,13 @@ namespace Prism.Build
 						Engine.Logger.ItemFailed(current, "The importer for the item did not produce any data");
 						continue;
 					}
+
+					// Save the dependencies to the event
+					if (ctx.Dependencies.Count > 0)
+					{
+						foreach (var ed in ctx.Dependencies)
+							current.ExternalDependencies.Add((ed, File.GetLastWriteTimeUtc(ed)));
+					}
 				}
 				catch (Exception e)
 				{

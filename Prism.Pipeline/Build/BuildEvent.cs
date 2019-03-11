@@ -55,8 +55,14 @@ namespace Prism.Build
 		public readonly uint RealSize = 0;
 		// The uncompressed size of the output file (how much data to expect after decompression)
 		public readonly uint UCSize = 0;
+
+		// External dependencies, and when their edit times at the last build (valid for content items AFTER importer only)
+		public List<(string Name, DateTime EditTime)> ExternalDependencies = null;
+		// If the external dependencies have changed (valid for cached builds only)
+		public readonly bool DependenciesDirty = false;
 		#endregion // Fields
 
+		// A build event for an item taken from a content project
 		private BuildEvent(ContentItem item, uint idx, DateTime iTime, DateTime oTime, uint outSize)
 		{
 			Item = item;
@@ -64,9 +70,11 @@ namespace Prism.Build
 			InputTime = iTime;
 			OutputTime = oTime;
 			RealSize = outSize;
+			ExternalDependencies = new List<(string Name, DateTime EditTime)>();
 		}
 
-		private BuildEvent(string c, string s, string o, bool compress, uint ncsize, string i, string p, string args)
+		// A build event for an item loaded from a cache file
+		private BuildEvent(string c, string s, string o, bool compress, uint ncsize, string i, string p, string args, bool depUpdate)
 		{
 			_cachePath = c;
 			_cachedSource = s;
@@ -76,9 +84,11 @@ namespace Prism.Build
 			_cachedImporter = i;
 			_cachedProcessor = p;
 			_cachedArgs = ContentItem.ParseArgs(args);
+			DependenciesDirty = depUpdate;
 		}
 
 		// Compares this event with the potential cached event to see if a rebuild is needed
+		// Can only be called on events from items, never on cached events
 		public bool NeedsBuild(BuildEvent cached, ProcessorInstance processor, bool compress)
 		{
 			// There is no exising build for this file
@@ -95,6 +105,10 @@ namespace Prism.Build
 
 			// If the last build was with a different compression
 			if (compress != cached.Compress)
+				return true;
+
+			// The dependencies have changed
+			if (cached.DependenciesDirty)
 				return true;
 
 			// The parameters have changed since the last build
@@ -147,6 +161,12 @@ namespace Prism.Build
 					writer.Write(ProcessorName);
 					var argStr = String.Join(";", ProcessorArgs.Select(arg => $"{arg.Key}={arg.Value}"));
 					writer.Write(argStr);
+					writer.Write((uint)ExternalDependencies.Count);
+					foreach (var ed in ExternalDependencies)
+					{
+						writer.Write(ed.Name);
+						writer.Write(ed.EditTime.Ticks);
+					}
 				}
 			}
 			catch (Exception e)
@@ -190,11 +210,31 @@ namespace Prism.Build
 						reader.ReadUInt32(),
 						reader.ReadString(),
 						reader.ReadString(),
-						reader.ReadString()
+						reader.ReadString(),
+						DepsChanged(reader)
 					);
 				}
 			}
 			catch { return null; }
+		}
+
+		private static bool DepsChanged(BinaryReader reader)
+		{
+			uint count = reader.ReadUInt32();
+			if (count == 0) return false;
+
+			for (uint i = 0; i < count; ++i)
+			{
+				var name = reader.ReadString();
+				var last = new DateTime(reader.ReadInt64());
+				if (!File.Exists(name))
+					return true; // An old dependency no longer exists, rebuild
+				var curr = File.GetLastWriteTimeUtc(name);
+				if (curr > last)
+					return true; // The dependency has been modified
+			}
+
+			return false; // No changes to the dependencies
 		}
 		#endregion // Creation
 	}
