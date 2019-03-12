@@ -42,6 +42,11 @@ namespace Prism.Build
 		// The list of available tasks
 		private readonly BuildTask[] _tasks;
 
+		// Information relating to temporary build files
+		public readonly string TempFilePath;
+		private readonly object _tmpFileLock = new object();
+		private uint _tmpFileIndex = 0;
+
 		// Tracks if the current process is a clean action
 		private bool _isCleaning = false;
 		#endregion // Fields
@@ -49,6 +54,8 @@ namespace Prism.Build
 		public BuildTaskManager(BuildEngine engine, uint threads)
 		{
 			Engine = engine;
+
+			TempFilePath = Path.Combine(engine.Project.Paths.IntermediateRoot, ".__tmp__");
 
 			_tasks = new BuildTask[threads];
 			for (uint i = 0; i < threads; ++i)
@@ -104,6 +111,15 @@ namespace Prism.Build
 			catch { return true; }
 		}
 
+		// Gets the name of a unique temporary file that can be used by a build pipeline
+		internal string ReserveTempFile()
+		{
+			lock (_tmpFileLock)
+			{
+				return Path.Combine(TempFilePath, $"{_tmpFileIndex++}.tmp");
+			}
+		}
+
 		#region Task Functions
 		// The pipeline control function for build tasks that runs on the separate build thread
 		public void Build(bool rebuild)
@@ -122,11 +138,14 @@ namespace Prism.Build
 				_itemEnumerator = Project.Items.GetEnumerator();
 				_itemIndex = 0;
 
-				// Ensure that the intermediate and output directories exist
+				// Ensure that the intermediate, output, and temp directories exist
 				if (!Directory.Exists(Project.Paths.IntermediateRoot))
 					Directory.CreateDirectory(Project.Paths.IntermediateRoot);
 				if (!Directory.Exists(Project.Paths.OutputRoot))
 					Directory.CreateDirectory(Project.Paths.OutputRoot);
+				if (Directory.Exists(TempFilePath))
+					Directory.Delete(TempFilePath, true);
+				Directory.CreateDirectory(TempFilePath);
 
 				// Launch the build tasks
 				foreach (var task in _tasks)
@@ -135,6 +154,9 @@ namespace Prism.Build
 				// Wait for the tasks to complete
 				foreach (var task in _tasks)
 					task.Join();
+
+				// Clean up the temp files
+				Directory.Delete(TempFilePath, true);
 
 				// Check for exit request before moving on
 				if (ShouldStop)
