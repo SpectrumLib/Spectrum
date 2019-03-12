@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Prism.Build;
 
 namespace Prism
 {
@@ -8,7 +9,7 @@ namespace Prism
 	/// Contains information and objects related to the content importing logic of a <see cref="ContentImporter{Tout}"/>
 	/// instance.
 	/// </summary>
-	public sealed class ImporterContext
+	public sealed class ImporterContext : StageContext
 	{
 		#region Fields
 		private readonly FileInfo _fileInfo;
@@ -37,16 +38,6 @@ namespace Prism
 		/// </summary>
 		public DateTime LastWriteTime => _fileInfo.LastWriteTime;
 
-		/// <summary>
-		/// The logger to use to report messages inside of ContentImporter instances.
-		/// </summary>
-		public readonly PipelineLogger Logger;
-
-		/// <summary>
-		/// If the build has requested statistics.
-		/// </summary>
-		public readonly bool UseStats;
-
 		private readonly List<string> _dependencies;
 		/// <summary>
 		/// The list of file dependencies currently added to this content item.
@@ -54,12 +45,10 @@ namespace Prism
 		public IReadOnlyList<string> Dependencies => _dependencies;
 		#endregion // Fields
 
-		internal ImporterContext(FileInfo finfo, PipelineLogger logger, bool stats)
+		internal ImporterContext(BuildTask task, PipelineLogger logger, FileInfo finfo) :
+			base(task, logger)
 		{
 			_fileInfo = finfo;
-			Logger = logger;
-			UseStats = stats;
-
 			_dependencies = new List<string>();
 		}
 

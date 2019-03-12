@@ -1,28 +1,20 @@
 ﻿using System;
+using Prism.Build;
 
 namespace Prism
 {
 	/// <summary>
 	/// Contains information and objects related to the processing logic of a <see cref="ContentWriter{Tin}"/> instance.
 	/// </summary>
-	public sealed class WriterContext
+	public sealed class WriterContext : StageContext
 	{
 		#region Fields
-		/// <summary>
-		/// The logger to use to report messages inside of ContentWriter instances.
-		/// </summary>
-		public readonly PipelineLogger Logger;
-
-		/// <summary>
-		/// If the build has requested statistics.
-		/// </summary>
-		public readonly bool UseStats;
 		#endregion // Fields
 
-		internal WriterContext(PipelineLogger logger, bool stats)
+		internal WriterContext(BuildTask task, PipelineLogger logger) :
+			base(task, logger)
 		{
-			Logger = logger;
-			UseStats = stats;
+
 		}
 	}
 }
