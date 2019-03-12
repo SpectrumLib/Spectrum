@@ -53,6 +53,9 @@ namespace Prism.Build
 			_tasks = new BuildTask[threads];
 			for (uint i = 0; i < threads; ++i)
 				_tasks[i] = new BuildTask(this);
+
+			// Forces the GLSLV static constructor to run (DO NOT REMOVE THIS)
+			var p = Builtin.GLSLV.TOOL_PATH;
 		}
 
 		// Called by BuildTask instances to get the next available content item to start building
