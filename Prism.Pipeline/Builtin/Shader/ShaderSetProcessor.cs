@@ -8,7 +8,7 @@ namespace Prism.Builtin
 	{
 		public override object Process(PSSFile input, ProcessorContext ctx)
 		{
-			throw new NotImplementedException();
+			return new object();
 		}
 	}
 }

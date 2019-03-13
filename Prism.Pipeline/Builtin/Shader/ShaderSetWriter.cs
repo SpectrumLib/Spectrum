@@ -9,7 +9,7 @@ namespace Prism.Builtin
 
 		public override void Write(object input, ContentStream writer, WriterContext ctx)
 		{
-			throw new NotImplementedException();
+			
 		}
 	}
 }

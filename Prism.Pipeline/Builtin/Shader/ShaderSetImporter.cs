@@ -9,7 +9,23 @@ namespace Prism.Builtin
 	{
 		public override PSSFile Import(FileStream stream, ImporterContext ctx)
 		{
-			throw new NotImplementedException();
+			var lines = File.ReadAllLines(stream.Name);
+			var file = PSSFile.Parse(lines, ctx.Logger);
+			if (file == null)
+				return null;
+
+			// Add the shader files as dependencies
+			foreach (var mod in file.Modules)
+			{
+				if (!ctx.AddDependency(mod.SourceFile))
+				{
+					ctx.LError($"The shader file '{mod.SourceFile}' does not exist.");
+					return null;
+				}
+			}
+
+			// Return the file
+			return file;
 		}
 	}
 }

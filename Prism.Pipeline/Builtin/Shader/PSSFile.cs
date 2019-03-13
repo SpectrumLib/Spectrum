@@ -22,10 +22,10 @@ namespace Prism.Builtin
 		public static PSSFile Parse(string[] fileLines, PipelineLogger logger)
 		{
 			// Sanitize the input
-			var lines = Strip(fileLines);
+			List<(string Line, int LNum)> lines = Strip(fileLines);
 
 			// Make sure the modules are the first thing
-			if (lines[0].Replace(" ", "") != "modules{")
+			if (lines[0].Line.Replace(" ", "") != "modules{")
 			{
 				logger.Error("The modules block must be the first component in a shader set file.");
 				return null;
@@ -33,7 +33,7 @@ namespace Prism.Builtin
 
 			// Parse the modules
 			List<PSSModule> mods = new List<PSSModule>();
-			int endLine = lines.FindIndex(1, line => line == "}");
+			int endLine = lines.FindIndex(1, line => line.Line == "}");
 			if (endLine == -1)
 			{
 				logger.Error("The modules block is not closed in the shader set file.");
@@ -46,7 +46,7 @@ namespace Prism.Builtin
 			}
 			for (int li = 1; li < endLine; ++li)
 			{
-				if (!ParseModule(lines[li], li, logger, out var mod))
+				if (!ParseModule(lines[li].Line, lines[li].LNum, logger, out var mod))
 					return null;
 				if (mods.Any(m => m.Name == mod.Name))
 				{
@@ -55,6 +55,7 @@ namespace Prism.Builtin
 				}
 				mods.Add(mod);
 			}
+			logger.Info($"Found {mods.Count} modules in shader set: {String.Join(", ", mods.Select(m => m.Name))}.");
 
 			// Parse the shaders
 			List<PSSShader> shaders = new List<PSSShader>();
@@ -62,12 +63,12 @@ namespace Prism.Builtin
 			while (lineIndex < lines.Count)
 			{
 				// Get the name
-				if (!ParseShaderHeader(lines[lineIndex], lineIndex, logger, out var name))
+				if (!ParseShaderHeader(lines[lineIndex].Line, lines[lineIndex].LNum, logger, out var name))
 					return null;
 				var shader = new PSSShader { Name = name };
 
 				// Check for validity
-				var sei = lines.FindIndex(lineIndex + 1, line => line == "}");
+				var sei = lines.FindIndex(lineIndex + 1, line => line.Line == "}");
 				if (sei == -1)
 				{
 					logger.Error($"[line {lineIndex}] - the shader '{name}' block does not close before the end of the file.");
@@ -77,7 +78,7 @@ namespace Prism.Builtin
 				// Parse the stages
 				while ((++lineIndex) < sei)
 				{
-					if (!ParseShaderStage(lines[lineIndex], lineIndex, logger, mods, ref shader))
+					if (!ParseShaderStage(lines[lineIndex].Line, lines[lineIndex].LNum, logger, mods, ref shader))
 						return null;
 				}
 
@@ -105,17 +106,25 @@ namespace Prism.Builtin
 				logger.Error($"[line {lineNum}] - could not find module name.");
 				return false;
 			}
-			mod.Name = line.Substring(1, nei - 2).Trim();
+			mod.Name = line.Substring(1, nei - 1).Trim();
 			line = line.Substring(nei + 1).Trim();
 
+			// Check for the equals sign
+			if (line[0] != '=')
+			{
+				logger.Error($"[line {lineNum}] - unable to separate module name from value.");
+				return false;
+			}
+			line = line.Substring(1).Trim();
+
 			// Get the file path
-			var pfe = line.LastIndexOf('"');
+			var pfe = line.IndexOf('"', 1);
 			if ((line[0] != '"') || (pfe == -1) || (pfe == 0) || (pfe == 1))
 			{
 				logger.Error($"[line {lineNum}] - could not find shader file name.");
 				return false;
 			}
-			mod.SourceFile = line.Substring(1, pfe - 2).Trim();
+			mod.SourceFile = line.Substring(1, pfe - 1).Trim();
 			line = line.Substring(pfe + 1).Trim();
 			if (String.IsNullOrWhiteSpace(mod.SourceFile))
 			{
@@ -129,19 +138,21 @@ namespace Prism.Builtin
 			}
 
 			// Get the entry point
-			if (line[0] == '@')
+			if (line[0] != '@')
 			{
 				logger.Error($"[line {lineNum}] - could not find shader entry point.");
 				return false;
 			}
 			var epe = line.IndexOfAny(WS_SEP);
-			if ((epe == -1) || (epe == 1))
+			if (epe == 1)
 			{
 				logger.Error($"[line {lineNum}] - shader entry point was not given, or was empty.");
 				return false;
 			}
+			else if (epe == -1) // End of line
+				epe = line.Length;
 			mod.EntryPoint = line.Substring(1, epe - 1).Trim();
-			line = line.Substring(epe + 1).Trim();
+			line = (epe == line.Length) ? "" : line.Substring(epe + 1).Trim();
 
 			// Get the list of macros
 			if (line.Length > 0)
@@ -158,6 +169,8 @@ namespace Prism.Builtin
 
 					// Get the macro
 					var wsi = line.IndexOfAny(WS_SEP);
+					if (wsi == -1) // End of line
+						wsi = line.Length;
 					var macro = line.Substring(1, wsi - 1);
 
 					// Find and validate any value
@@ -175,7 +188,7 @@ namespace Prism.Builtin
 
 					// Add and move to next
 					ms.Add(macro);
-					line = line.Substring(wsi);
+					line = (wsi == line.Length) ? "" : line.Substring(wsi).Trim();
 				}
 
 				mod.Macros = ms.ToArray();
@@ -309,18 +322,19 @@ namespace Prism.Builtin
 		}
 
 		// Takes the raw file lines, and strips out empty lines and comments, and leading/trailing whitespace
-		private static List<string> Strip(string[] lines)
+		private static List<(string, int)> Strip(string[] lines)
 		{
+			int lnum = 1;
 			return lines
 				.Select(line => {
 					if (String.IsNullOrWhiteSpace(line))
-						return null;
+						return (null, lnum++);
 					var ci = line.IndexOf("//");
 					if (ci != -1)
 						line = line.Substring(0, ci);
-					return line.Trim();
+					return (line.Trim(), lnum++);
 				})
-				.Where(line => !String.IsNullOrWhiteSpace(line))
+				.Where(line => !String.IsNullOrWhiteSpace(line.Item1))
 				.ToList();
 		}
 	}
