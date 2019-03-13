@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Prism.Builtin
 {
@@ -56,6 +59,79 @@ namespace Prism.Builtin
 			}
 			else
 				TOOL_PATH = stdout; // Easy, as it is the only thing in the resulting string
+		}
+
+		public static bool CompileModule(in PSSModule mod, string srcDir, string outFile, PipelineLogger logger)
+		{
+			// Get input file
+			if (!PathUtils.TryGetFullPath(mod.SourceFile, out var fullPath, srcDir))
+			{
+				logger.Error($"The shader file path '{mod.SourceFile}' is not a valid path.");
+				return false;
+			}
+
+			// Build the arguments
+			StringBuilder args = new StringBuilder(256);
+			args.Append("-V -l -q "); // Standard arguments (generate SPIR-V, link to output, echo reflection info)
+			args.Append("-S ");
+			args.Append(mod.Type); // Stage info
+			args.Append(" -o \"");
+			args.Append(outFile); // Output file
+			args.Append("\" ");
+			foreach (var mac in mod.Macros) // Specialization preprocessor macros
+			{
+				args.Append("-D");
+				args.Append(mac);
+				args.Append(' ');
+			}
+			args.Append('\"');
+			args.Append(fullPath);
+			args.Append('\"');
+			logger.Info($"Building with args: {args.ToString()}");
+
+			// Create the process info
+			ProcessStartInfo psi = new ProcessStartInfo {
+				FileName = TOOL_PATH,
+				Arguments = args.ToString(),
+				UseShellExecute = false,
+				CreateNoWindow = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				WindowStyle = ProcessWindowStyle.Hidden
+			};
+
+			// Run the compiler
+			string stdout = null;
+			using (Process proc = new Process())
+			{
+				proc.StartInfo = psi;
+				proc.Start();
+				proc.WaitForExit(5);
+				stdout = proc.StandardOutput.ReadToEnd(); // Contains errors and reflection dump
+			}
+
+			// Report any errors
+			if (stdout.Contains("ERROR:"))
+			{
+				logger.Error($"Unable to compile shader, reason(s):");
+				foreach (var err in ParseError(stdout, mod.SourceFile, fullPath))
+					logger.Error($"     {err}");
+				return false;
+			}
+
+			return true;
+		}
+
+		private static string[] ParseError(string stdout, string file, string path)
+		{
+			var split = stdout.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+				.Where(line => line.StartsWith("ERROR:"))
+				.Select(line => line.Substring(7))
+				.Where(line => line.StartsWith(path))
+				.Select(line => file + line.Substring(path.Length))
+				.ToList();
+
+			return split.Take(split.Count - 1).ToArray(); // Last line is just a report that compilation failed
 		}
 	}
 }

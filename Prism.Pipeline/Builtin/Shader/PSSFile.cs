@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Prism.Builtin
@@ -125,6 +126,12 @@ namespace Prism.Builtin
 				return false;
 			}
 			mod.SourceFile = line.Substring(1, pfe - 1).Trim();
+			mod.Type = Path.GetExtension(mod.SourceFile).Substring(1);
+			if (!VALID_STAGES.Contains(mod.Type))
+			{
+				logger.Error($"[line {lineNum}] - the file extension '.{mod.Type}' does not appear to be a valid shader stage.");
+				return false;
+			}
 			line = line.Substring(pfe + 1).Trim();
 			if (String.IsNullOrWhiteSpace(mod.SourceFile))
 			{
@@ -194,7 +201,7 @@ namespace Prism.Builtin
 				mod.Macros = ms.ToArray();
 			}
 			else
-				mod.Macros = null;
+				mod.Macros = new string[0];
 
 			// Good to go
 			return true;
@@ -343,6 +350,7 @@ namespace Prism.Builtin
 	internal struct PSSModule
 	{
 		public string Name;
+		public string Type;
 		public string SourceFile;
 		public string EntryPoint;
 		public string[] Macros; // In the format "name" or "name=value"
