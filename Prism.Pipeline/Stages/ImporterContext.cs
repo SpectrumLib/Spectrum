@@ -12,32 +12,6 @@ namespace Prism
 	public sealed class ImporterContext : StageContext
 	{
 		#region Fields
-		private readonly FileInfo _fileInfo;
-		/// <summary>
-		/// The name of the current content file (without any directory info).
-		/// </summary>
-		public string FileName => _fileInfo.Name;
-		/// <summary>
-		/// The absolute path to the directory that the content file is in.
-		/// </summary>
-		public string FileDirectory => _fileInfo.DirectoryName;
-		/// <summary>
-		/// The absolute path to the input file.
-		/// </summary>
-		public string FilePath => _fileInfo.FullName;
-		/// <summary>
-		/// The extension of the current content file, with the period.
-		/// </summary>
-		public string FileExtension => _fileInfo.Extension;
-		/// <summary>
-		/// The length of the current content file, in bytes.
-		/// </summary>
-		public uint FileLength => (uint)_fileInfo.Length;
-		/// <summary>
-		/// The date and time that the current content file was last changed.
-		/// </summary>
-		public DateTime LastWriteTime => _fileInfo.LastWriteTime;
-
 		private readonly List<string> _dependencies;
 		/// <summary>
 		/// The list of file dependencies currently added to this content item.
@@ -46,9 +20,8 @@ namespace Prism
 		#endregion // Fields
 
 		internal ImporterContext(BuildTask task, PipelineLogger logger, FileInfo finfo) :
-			base(task, logger)
+			base(task, logger, finfo)
 		{
-			_fileInfo = finfo;
 			_dependencies = new List<string>();
 		}
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Prism.Build;
 
 namespace Prism
@@ -20,6 +21,32 @@ namespace Prism
 		/// </summary>
 		public bool UseStats => Task.Engine.UseStats;
 
+		protected readonly FileInfo FileInfo;
+		/// <summary>
+		/// The name of the current content file (without any directory info).
+		/// </summary>
+		public string FileName => FileInfo.Name;
+		/// <summary>
+		/// The absolute path to the directory that the content file is in.
+		/// </summary>
+		public string FileDirectory => FileInfo.DirectoryName;
+		/// <summary>
+		/// The absolute path to the input file.
+		/// </summary>
+		public string FilePath => FileInfo.FullName;
+		/// <summary>
+		/// The extension of the current content file, with the period.
+		/// </summary>
+		public string FileExtension => FileInfo.Extension;
+		/// <summary>
+		/// The length of the current content file, in bytes.
+		/// </summary>
+		public uint FileLength => (uint)FileInfo.Length;
+		/// <summary>
+		/// The date and time that the current content file was last changed.
+		/// </summary>
+		public DateTime LastWriteTime => FileInfo.LastWriteTime;
+
 		private protected readonly BuildTask Task;
 
 		private readonly List<string> _tempFiles;
@@ -29,10 +56,11 @@ namespace Prism
 		public IReadOnlyList<string> TempFiles => _tempFiles;
 		#endregion // Fields
 
-		private protected StageContext(BuildTask task, PipelineLogger logger)
+		private protected StageContext(BuildTask task, PipelineLogger logger, FileInfo finfo)
 		{
 			Task = task;
 			Logger = logger;
+			FileInfo = finfo;
 			_tempFiles = new List<string>();
 		}
 

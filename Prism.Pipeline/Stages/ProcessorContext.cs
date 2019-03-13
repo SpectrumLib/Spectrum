@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Prism.Build;
 
 namespace Prism
@@ -12,8 +13,8 @@ namespace Prism
 		#region Fields
 		#endregion // Fields
 
-		internal ProcessorContext(BuildTask task, PipelineLogger logger) :
-			base(task, logger)
+		internal ProcessorContext(BuildTask task, PipelineLogger logger, FileInfo finfo) :
+			base(task, logger, finfo)
 		{
 
 		}
