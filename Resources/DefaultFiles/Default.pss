@@ -1,0 +1,11 @@
+// This is the set of shader modules, formatted as "[name] = file @ entry_point"
+modules {
+	[vert] = shader.vert @ main
+	[frag] = shader.frag @ main
+}
+
+// This is the default shader, which references the modules from above
+shader [default] {
+	vert = [vert]
+	frag = [frag]
+}

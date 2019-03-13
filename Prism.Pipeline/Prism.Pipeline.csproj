@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\Resources\DefaultFiles\Default.prism" Link="Resources\Default.prism" />
+    <EmbeddedResource Include="..\Resources\DefaultFiles\Default.pss" Link="Resources\Default.pss" />
   </ItemGroup>
 
   <ItemGroup>
