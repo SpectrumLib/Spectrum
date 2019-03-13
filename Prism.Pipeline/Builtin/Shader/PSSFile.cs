@@ -83,6 +83,13 @@ namespace Prism.Builtin
 						return null;
 				}
 
+				// Check we have the required stage
+				if (shader.Vert == null)
+				{
+					logger.Error($"the shader '{name}' does not have a vertex shader stage.");
+					return null;
+				}
+
 				// Move past the closing brace
 				lineIndex = sei + 1;
 				shaders.Add(shader);
@@ -226,7 +233,7 @@ namespace Prism.Builtin
 				logger.Error($"[line {lineNum}] - unable to find shader name.");
 				return false;
 			}
-			name = line.Substring(1, nei - 2);
+			name = line.Substring(1, nei - 1);
 			line = line.Substring(nei + 1).Trim();
 
 			// Check rest of header
