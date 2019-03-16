@@ -111,6 +111,9 @@ namespace Spectrum.Graphics
 			Vk.ShaderModule[] vkmods = new Vk.ShaderModule[modCount];
 			(string, ShaderStages)[] mods = new (string, ShaderStages)[modCount];
 
+			if (stages.HasStages(ShaderStages.TessControl) != stages.HasStages(ShaderStages.TessEval))
+				throw new InvalidOperationException($"A shader is required to have either neither or both tesselation stages.");
+
 			int mi = 0;
 			if ((stages & ShaderStages.Vertex) > 0)
 			{

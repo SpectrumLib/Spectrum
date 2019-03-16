@@ -83,10 +83,17 @@ namespace Prism.Builtin
 						return null;
 				}
 
-				// Check we have the required stage
+				// Check we have the required vertex stage
 				if (shader.Vert == null)
 				{
 					logger.Error($"the shader '{name}' does not have a vertex shader stage.");
+					return null;
+				}
+
+				// Check for tessellation stage requirements
+				if ((shader.Tesc == null) != (shader.Tese == null))
+				{
+					logger.Error($"the shader '{name}' specified only one tessellation stage (neither or both required).");
 					return null;
 				}
 
