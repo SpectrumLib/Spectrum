@@ -25,20 +25,35 @@ namespace Spectrum.Graphics
 		/// </summary>
 		public readonly IReadOnlyList<(string Name, ShaderStages Stage)> Modules;
 
-		internal readonly Vk.ShaderModule[] VkModules;
+		internal readonly (Vk.ShaderModule Module, string Entry)[] VkModules;
 		#endregion // Fields
 
-		internal PipelineShader(ShaderSet.SSShader shader, Vk.ShaderModule[] vkMods, (string, ShaderStages)[] mods) :
+		internal PipelineShader(ShaderSet.SSShader shader, (Vk.ShaderModule, string)[] vkMods, (string, ShaderStages)[] mods) :
 			this(shader.Name, shader.Stages, vkMods, mods)
 		{ }
 
-		internal PipelineShader(string name, ShaderStages stages, Vk.ShaderModule[] vkMods, (string, ShaderStages)[] mods)
+		internal PipelineShader(string name, ShaderStages stages, (Vk.ShaderModule, string)[] vkMods, (string, ShaderStages)[] mods)
 		{
 			Name = name;
 			Stages = stages;
 
 			VkModules = vkMods;
 			Modules = mods;
+		}
+
+		internal Vk.PipelineShaderStageCreateInfo[] ToCreateInfos()
+		{
+			var scis = new Vk.PipelineShaderStageCreateInfo[VkModules.Length];
+
+			for (int i = 0; i < VkModules.Length; ++i)
+			{
+				scis[i].Name = VkModules[i].Entry;
+				scis[i].Module = VkModules[i].Module;
+				scis[i].SpecializationInfo = null;
+				scis[i].Stage = (Vk.ShaderStages)Modules[i].Stage;
+			}
+
+			return scis;
 		}
 	}
 }

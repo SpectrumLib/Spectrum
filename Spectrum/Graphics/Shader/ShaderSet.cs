@@ -42,38 +42,43 @@ namespace Spectrum.Graphics
 
 			var shader = _shaders[name];
 			var modCount = shader.Stages.StageCount();
-			Vk.ShaderModule[] vkmods = new Vk.ShaderModule[modCount];
+			(Vk.ShaderModule Mod, string Entry)[] vkmods = new (Vk.ShaderModule, string)[modCount];
 			(string, ShaderStages)[] mods = new (string, ShaderStages)[modCount];
 
 			int mi = 0;
 			if (shader.Vert.HasValue)
 			{
 				var mod = _modules[(int)shader.Vert.Value];
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if (shader.Tesc.HasValue)
 			{
 				var mod = _modules[(int)shader.Tesc.Value];
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if (shader.Tese.HasValue)
 			{
 				var mod = _modules[(int)shader.Tese.Value];
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if (shader.Geom.HasValue)
 			{
 				var mod = _modules[(int)shader.Geom.Value];
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if (shader.Frag.HasValue)
 			{
 				var mod = _modules[(int)shader.Frag.Value];
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 
@@ -108,7 +113,7 @@ namespace Spectrum.Graphics
 				(String.IsNullOrEmpty(tese) ? 0 : ShaderStages.TessEval) |
 				(String.IsNullOrEmpty(geom) ? 0 : ShaderStages.Geometry);
 			var modCount = stages.StageCount();
-			Vk.ShaderModule[] vkmods = new Vk.ShaderModule[modCount];
+			(Vk.ShaderModule Mod, string Entry)[] vkmods = new (Vk.ShaderModule, string)[modCount];
 			(string, ShaderStages)[] mods = new (string, ShaderStages)[modCount];
 
 			if (stages.HasStages(ShaderStages.TessControl) != stages.HasStages(ShaderStages.TessEval))
@@ -118,31 +123,36 @@ namespace Spectrum.Graphics
 			if ((stages & ShaderStages.Vertex) > 0)
 			{
 				var mod = getAndValidateModule(vert, ShaderStages.Vertex);
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if ((stages & ShaderStages.TessControl) > 0)
 			{
 				var mod = getAndValidateModule(tesc, ShaderStages.TessControl);
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if ((stages & ShaderStages.TessEval) > 0)
 			{
 				var mod = getAndValidateModule(tese, ShaderStages.TessEval);
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if ((stages & ShaderStages.Geometry) > 0)
 			{
 				var mod = getAndValidateModule(geom, ShaderStages.Geometry);
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 			if ((stages & ShaderStages.Fragment) > 0)
 			{
 				var mod = getAndValidateModule(frag, ShaderStages.Fragment);
-				vkmods[mi] = mod.Module;
+				vkmods[mi].Mod = mod.Module;
+				vkmods[mi].Entry = mod.EntryPoint;
 				mods[mi++] = (mod.Name, mod.Stage);
 			}
 

@@ -65,6 +65,13 @@ namespace Spectrum.Graphics
 		/// If the builder has a specified vertex description.
 		/// </summary>
 		public bool HasVertexDescription => VertexDescription.HasValue;
+
+		public PipelineShader Shader { get; private set; } = null;
+		private Vk.PipelineShaderStageCreateInfo[] _shaderCIs = null;
+		/// <summary>
+		/// If the builder has a specified shader.
+		/// </summary>
+		public bool HasShader => Shader != null;
 		#endregion // Settings
 
 		// Quick reference to the graphics device
@@ -74,7 +81,7 @@ namespace Spectrum.Graphics
 		/// Gets if all of the required pipeline state objects have been specified.
 		/// </summary>
 		public bool IsComplete => ColorBlendState.HasValue && DepthStencilState.HasValue && PrimitiveInput.HasValue &&
-			RasterizerState.HasValue && VertexDescription.HasValue;
+			RasterizerState.HasValue && VertexDescription.HasValue && (Shader != null);
 		#endregion // Fields
 
 		private PipelineBuilder()
@@ -129,7 +136,7 @@ namespace Spectrum.Graphics
 				layout,
 				renderPass.VkRenderPass,
 				spIdx,
-				null, // TODO: shader stages
+				_shaderCIs,
 				_inputAssemblyCI.Value,
 				_vertexInputStateCI.Value,
 				_rasterizationCI.Value,
@@ -247,6 +254,26 @@ namespace Spectrum.Graphics
 			changed = VertexDescription.HasValue;
 			VertexDescription = state;
 			_vertexInputStateCI = state.ToCreateInfo();
+			return this;
+		}
+
+		/// <summary>
+		/// Sets the shader that pipelines from this builder will use.
+		/// </summary>
+		/// <param name="shader">The shader to use.</param>
+		/// <returns>The same builder, to facilitate method chaining.</returns>
+		public PipelineBuilder SetShader(PipelineShader shader) => SetShader(shader, out bool changed);
+		/// <summary>
+		/// Sets the shader that pipelines from this builder will use.
+		/// </summary>
+		/// <param name="shader">The shader to use.</param>
+		/// <param name="changed">If there was an existing shader that was changed by this call.</param>
+		/// <returns>The same builder, to facilitate method chaining.</returns>
+		public PipelineBuilder SetShader(PipelineShader shader, out bool changed)
+		{
+			changed = (Shader != null);
+			Shader = shader ?? throw new ArgumentNullException(nameof(shader));
+			_shaderCIs = Shader.ToCreateInfos();
 			return this;
 		}
 		#endregion // Settings
