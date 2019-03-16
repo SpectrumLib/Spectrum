@@ -20,11 +20,11 @@ namespace Spectrum.Content
 			{
 				shaders[si].Name = stream.ReadString();
 				var st = shaders[si].Stages = (ShaderStages)stream.ReadByte();
-				shaders[si].Vert = (st & ShaderStages.Vertex) > 0 ? stream.ReadUInt32() : 0;
-				shaders[si].Tesc = (st & ShaderStages.TessControl) > 0 ? stream.ReadUInt32() : 0;
-				shaders[si].Tese = (st & ShaderStages.TessEval) > 0 ? stream.ReadUInt32() : 0;
-				shaders[si].Geom = (st & ShaderStages.Geometry) > 0 ? stream.ReadUInt32() : 0;
-				shaders[si].Frag = (st & ShaderStages.Fragment) > 0 ? stream.ReadUInt32() : 0;
+				shaders[si].Vert = (st & ShaderStages.Vertex) > 0 ? stream.ReadUInt32() : (uint?)null;
+				shaders[si].Tesc = (st & ShaderStages.TessControl) > 0 ? stream.ReadUInt32() : (uint?)null;
+				shaders[si].Tese = (st & ShaderStages.TessEval) > 0 ? stream.ReadUInt32() : (uint?)null;
+				shaders[si].Geom = (st & ShaderStages.Geometry) > 0 ? stream.ReadUInt32() : (uint?)null;
+				shaders[si].Frag = (st & ShaderStages.Fragment) > 0 ? stream.ReadUInt32() : (uint?)null;
 			}
 
 			// Read the modules
