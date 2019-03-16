@@ -1,5 +1,6 @@
 ﻿using System;
 using Spectrum.Graphics;
+using Vk = VulkanCore;
 
 namespace Spectrum.Content
 {
@@ -28,16 +29,23 @@ namespace Spectrum.Content
 
 			// Read the modules
 			ShaderSet.SSModule[] mods = new ShaderSet.SSModule[modCount];
+			var ldev = SpectrumApp.Instance.GraphicsDevice.VkDevice;
 			for (uint mi = 0; mi < modCount; ++mi)
 			{
 				mods[mi].Name = stream.ReadString();
+				mods[mi].EntryPoint = stream.ReadString();
+				mods[mi].Stage = (ShaderStage)stream.ReadByte();
+
 				uint len = stream.ReadUInt32();
 				if ((len % 4) != 0)
 					throw new ContentLoadException(ctx.ItemName, $"SPIR-V bytecode must be a multiple of 4 in length.");
-				mods[mi].ByteCode = stream.ReadBytes(len);
+				var code = stream.ReadBytes(len);
+
+				var ci = new Vk.ShaderModuleCreateInfo(code);
+				mods[mi].Module = ldev.CreateShaderModule(ci);
 			}
 
-			return null;
+			return new ShaderSet(shaders, mods);
 		}
 	}
 }

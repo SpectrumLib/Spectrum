@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +8,10 @@ namespace Prism.Builtin
 	// Writer type for shader set (.pss) files
 	internal class ShaderSetWriter : ContentWriter<PSSInfo>
 	{
+		private static readonly Dictionary<string, byte> TYPE_MAP = new Dictionary<string, byte>() {
+			{ "vert", 0x01 }, { "tesc", 0x02 }, { "tese", 0x04 }, { "geom", 0x08 }, { "frag", 0x10 }
+		};
+
 		public override string LoaderName => "Spectrum:ShaderSetLoader";
 
 		public override void Write(PSSInfo input, ContentStream writer, WriterContext ctx)
@@ -46,6 +50,8 @@ namespace Prism.Builtin
 			{
 				FileInfo fi = new FileInfo(input.AsmFiles[i]);
 				writer.Write(input.File.Modules[i].Name);
+				writer.Write(input.File.Modules[i].EntryPoint);
+				writer.Write(TYPE_MAP[input.File.Modules[i].Type]);
 				writer.Write((uint)fi.Length);
 
 				// Copy the bytecode into the output file
