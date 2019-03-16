@@ -6,7 +6,7 @@ namespace Spectrum.Graphics
 	/// Represents the different shader stages for graphics shaders. Can be used as a set of flags.
 	/// </summary>
 	[Flags]
-	public enum ShaderStage : byte
+	public enum ShaderStages : byte
 	{
 		/// <summary>
 		/// Vertex shader stage.
