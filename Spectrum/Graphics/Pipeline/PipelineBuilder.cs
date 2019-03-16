@@ -111,7 +111,8 @@ namespace Spectrum.Graphics
 		/// <summary>
 		/// Using the specified settings, create a new named pipeline object. <see cref="IsComplete"/> must be true
 		/// when this function is called, or an exception will be thrown. This version of the function is used to
-		/// facilitate chaining.
+		/// facilitate chaining. This function also checks the pipeline settings against the enabled features on the
+		/// graphics device.
 		/// </summary>
 		/// <param name="name">The name of the new pipeline.</param>
 		/// <param name="renderPass">The render pass containing the subpass that the built pipeline will be compatible with.</param>
@@ -127,6 +128,18 @@ namespace Spectrum.Graphics
 			int spIdx = renderPass.SubpassNames.IndexOf(subpass);
 			if (spIdx == -1)
 				throw new ArgumentException($"The render pass specified to create the pipeline with does not contain a subpass with the name '{subpass}'", nameof(subpass));
+
+			// Feature checking
+			if (Shader.Stages.HasStages(ShaderStages.Geometry) && !Device.Features.GeometryShaders)
+				throw new InvalidOperationException("Cannot create pipeline, geometry shaders are not enabled on the graphics device.");
+			if (Shader.Stages.HasStages(ShaderStages.TessControl | ShaderStages.TessEval) && !Device.Features.TessellationShaders)
+				throw new InvalidOperationException("Cannot create pipeline, tessellation shaders are not enabled on the graphics device.");
+			if ((RasterizerState.Value.FillMode != FillMode.Solid) && !Device.Features.FillModeNonSolid)
+				throw new InvalidOperationException("Cannot create pipeline, non-solid fill modes are not enabled on the graphics device.");
+			if (RasterizerState.Value.LineWidth.HasValue && (RasterizerState.Value.LineWidth.Value != 1) && !Device.Features.WideLines)
+				throw new InvalidOperationException("Cannot create pipeline, wide lines are not enabled on the graphics device.");
+			if (RasterizerState.Value.DepthClampEnable && !Device.Features.DepthClamp)
+				throw new InvalidOperationException("Cannot create pipeline, depth clamping is not enabled on the graphics device.");
 
 			var lci = new Vk.PipelineLayoutCreateInfo(null, null);
 			var layout = Device.VkDevice.CreatePipelineLayout(lci);

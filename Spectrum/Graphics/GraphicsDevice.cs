@@ -133,6 +133,8 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public struct DeviceFeatures
 	{
+		// NOTE: the openVulkanDevice function must be updated whenever this one is
+
 		/// <summary>
 		/// If the device supports rendering in line or point fill mode.
 		/// </summary>
@@ -149,6 +151,14 @@ namespace Spectrum.Graphics
 		/// If the device supports anisotropic filtering for image samplers.
 		/// </summary>
 		public bool AnisotropicFiltering;
+		/// <summary>
+		/// If the device supports geometry shader stages.
+		/// </summary>
+		public bool GeometryShaders;
+		/// <summary>
+		/// If the device supports tessellation control and evaluation shader stages.
+		/// </summary>
+		public bool TessellationShaders;
 	}
 
 	/// <summary>
@@ -156,6 +166,8 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public struct DeviceLimits
 	{
+		// NOTE: the openVulkanDevice function must be updated whenever this one is
+
 		/// <summary>
 		/// The maximum dimensions for a 1D texture.
 		/// </summary>
@@ -179,6 +191,8 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public struct DeviceInfo
 	{
+		// NOTE: the openVulkanDevice function must be updated whenever this one is
+
 		/// <summary>
 		/// The human-readable name of the device.
 		/// </summary>
