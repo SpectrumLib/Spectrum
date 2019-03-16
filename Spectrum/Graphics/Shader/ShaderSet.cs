@@ -81,6 +81,96 @@ namespace Spectrum.Graphics
 		}
 
 		/// <summary>
+		/// Builds a new shader by combing multiple modules. Note that no validity checking is made for the set of
+		/// modules, outside of ensuring that it at least has a vertex shader. If any of the modules specified do not
+		/// exist in the shader set, an exception is thrown. Any null module is not included in the shader.
+		/// </summary>
+		/// <param name="name">The name of the new shader.</param>
+		/// <param name="vert">The name of the module to use as the vertex shader stage. Cannot be null.</param>
+		/// <param name="frag">The name of the module to use as the fragment shader stage. Can be null.</param>
+		/// <param name="tesc">The name of the module to use as the tessellation control stage. Can be null.</param>
+		/// <param name="tese">The name of the module to use as the tesselation evaluation stage. Can be null.</param>
+		/// <param name="geom">The name of the module to use as the geometry shader stage. Can be null.</param>
+		/// <param name="cache">If this shader set should cache this new shader for later use.</param>
+		/// <returns>An object describing the new shader that should be used with <see cref="PipelineBuilder"/> instances.</returns>
+		public PipelineShader CreateShader(string name, string vert, string frag, string tesc = null, string tese = null, string geom = null, bool cache = false)
+		{
+			if (cache && String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException($"A shader cannot have a name that is empty or whitespace.", nameof(name));
+			if (cache && _shaders.ContainsKey(name))
+				throw new ArgumentException($"A shader with the name '{name}' already exists in this shader set.", nameof(name));
+			if (String.IsNullOrEmpty(vert))
+				throw new ArgumentException($"A shader is required to have a vertex shading stage.", nameof(vert));
+
+			ShaderStages stages = ShaderStages.Vertex |
+				(String.IsNullOrEmpty(frag) ? 0 : ShaderStages.Fragment) |
+				(String.IsNullOrEmpty(tesc) ? 0 : ShaderStages.TessControl) |
+				(String.IsNullOrEmpty(tese) ? 0 : ShaderStages.TessEval) |
+				(String.IsNullOrEmpty(geom) ? 0 : ShaderStages.Geometry);
+			var modCount = stages.StageCount();
+			Vk.ShaderModule[] vkmods = new Vk.ShaderModule[modCount];
+			(string, ShaderStages)[] mods = new (string, ShaderStages)[modCount];
+
+			int mi = 0;
+			if ((stages & ShaderStages.Vertex) > 0)
+			{
+				var mod = getAndValidateModule(vert, ShaderStages.Vertex);
+				vkmods[mi] = mod.Module;
+				mods[mi++] = (mod.Name, mod.Stage);
+			}
+			if ((stages & ShaderStages.TessControl) > 0)
+			{
+				var mod = getAndValidateModule(tesc, ShaderStages.TessControl);
+				vkmods[mi] = mod.Module;
+				mods[mi++] = (mod.Name, mod.Stage);
+			}
+			if ((stages & ShaderStages.TessEval) > 0)
+			{
+				var mod = getAndValidateModule(tese, ShaderStages.TessEval);
+				vkmods[mi] = mod.Module;
+				mods[mi++] = (mod.Name, mod.Stage);
+			}
+			if ((stages & ShaderStages.Geometry) > 0)
+			{
+				var mod = getAndValidateModule(geom, ShaderStages.Geometry);
+				vkmods[mi] = mod.Module;
+				mods[mi++] = (mod.Name, mod.Stage);
+			}
+			if ((stages & ShaderStages.Fragment) > 0)
+			{
+				var mod = getAndValidateModule(frag, ShaderStages.Fragment);
+				vkmods[mi] = mod.Module;
+				mods[mi++] = (mod.Name, mod.Stage);
+			}
+
+			if (cache)
+			{
+				_shaders.Add(name, new SSShader {
+					Name = name,
+					Stages = stages,
+					Vert = stages.HasStages(ShaderStages.Vertex) ? (uint)_modules.FindIndex(md => md.Name == vert) : (uint?)null,
+					Tesc = stages.HasStages(ShaderStages.TessControl) ? (uint)_modules.FindIndex(md => md.Name == tesc) : (uint?)null,
+					Tese = stages.HasStages(ShaderStages.TessEval) ? (uint)_modules.FindIndex(md => md.Name == tese) : (uint?)null,
+					Geom = stages.HasStages(ShaderStages.Geometry) ? (uint)_modules.FindIndex(md => md.Name == geom) : (uint?)null,
+					Frag = stages.HasStages(ShaderStages.Fragment) ? (uint)_modules.FindIndex(md => md.Name == frag) : (uint?)null
+				});
+			}
+
+			return new PipelineShader(name, stages, vkmods, mods);
+		}
+
+		private SSModule getAndValidateModule(string name, ShaderStages stage)
+		{
+			var idx = _modules.FindIndex(md => md.Name == name);
+			if (idx == -1)
+				throw new ArgumentException($"A module with the name '{name}' does not exist in this shader set.");
+			var mod = _modules[idx];
+			if (mod.Stage != stage)
+				throw new ArgumentException($"The module '{name}' cannot be used as a {stage} stage.");
+			return mod;
+		}
+
+		/// <summary>
 		/// Checks if this shader set contains a shader with the given name.
 		/// </summary>
 		/// <param name="name">The shader name to check for.</param>

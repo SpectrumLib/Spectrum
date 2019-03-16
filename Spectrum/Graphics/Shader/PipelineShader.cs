@@ -28,10 +28,14 @@ namespace Spectrum.Graphics
 		internal readonly Vk.ShaderModule[] VkModules;
 		#endregion // Fields
 
-		internal PipelineShader(ShaderSet.SSShader shader, Vk.ShaderModule[] vkMods, (string, ShaderStages)[] mods)
+		internal PipelineShader(ShaderSet.SSShader shader, Vk.ShaderModule[] vkMods, (string, ShaderStages)[] mods) :
+			this(shader.Name, shader.Stages, vkMods, mods)
+		{ }
+
+		internal PipelineShader(string name, ShaderStages stages, Vk.ShaderModule[] vkMods, (string, ShaderStages)[] mods)
 		{
-			Name = shader.Name;
-			Stages = shader.Stages;
+			Name = name;
+			Stages = stages;
 
 			VkModules = vkMods;
 			Modules = mods;
