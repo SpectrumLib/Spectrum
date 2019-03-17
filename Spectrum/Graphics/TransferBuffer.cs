@@ -1,4 +1,3 @@
-using Spectrum.Utilities;
 using System;
 using Vk = VulkanCore;
 
