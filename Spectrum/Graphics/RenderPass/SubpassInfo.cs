@@ -30,15 +30,18 @@ namespace Spectrum.Graphics
 		/// Creates a new named subpass with no attachments specified.
 		/// </summary>
 		/// <param name="name">The name of the subpass.</param>
-		public SubpassInfo(string name)
+		/// <param name="color">The names of the color attachments to use in this subpass.</param>
+		/// <param name="depthStencil">The name of the depth-stencil attachment to use in this subpass.</param>
+		/// <param name="input">The names of the input attachments to use in this subpass.</param>
+		public SubpassInfo(string name, string[] color = null, string depthStencil = null, string[] input = null)
 		{
 			if (String.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("A subpass name cannot be null or empty", nameof(name));
 
 			Name = name;
-			InputAttachments = null;
-			ColorAttachments = null;
-			DepthStencilAttachment = null;
+			InputAttachments = input;
+			ColorAttachments = color;
+			DepthStencilAttachment = depthStencil;
 		}
 	}
 }

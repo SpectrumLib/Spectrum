@@ -67,6 +67,7 @@ namespace Spectrum.Graphics
 		internal void InitializeResources()
 		{
 			TransferBuffer.CreateResources();
+			ShaderBuffer.CreateResources();
 		}
 
 		#region Frame Functions
@@ -116,6 +117,7 @@ namespace Spectrum.Graphics
 			{
 				// Resources scattered thorughout the library
 				Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
+				ShaderBuffer.Cleanup();
 				TransferBuffer.Cleanup();
 
 				// Base objects
