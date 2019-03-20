@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -61,8 +62,11 @@ namespace Prism.Builtin
 				TOOL_PATH = stdout; // Easy, as it is the only thing in the resulting string
 		}
 
-		public static bool CompileModule(in PSSModule mod, string srcDir, string outFile, PipelineLogger logger)
+		public static bool CompileModule(in PSSModule mod, string srcDir, string outFile, PipelineLogger logger, out string[] reflect, out string[] spirv)
 		{
+			reflect = null;
+			spirv = null;
+
 			// Get input file
 			if (!PathUtils.TryGetFullPath(mod.SourceFile, out var fullPath, srcDir))
 			{
@@ -72,7 +76,7 @@ namespace Prism.Builtin
 
 			// Build the arguments
 			StringBuilder args = new StringBuilder(256);
-			args.Append("-V -l -q "); // Standard arguments (generate SPIR-V, link to output, echo reflection info)
+			args.Append("-V -l -q -H "); // Standard arguments (generate SPIR-V, link to output, echo reflection info, echo SPIRV disassembly)
 			args.Append("-S ");
 			args.Append(mod.Type); // Stage info
 			args.Append(" -o \"");
@@ -107,24 +111,50 @@ namespace Prism.Builtin
 				proc.StartInfo = psi;
 				proc.Start();
 				proc.WaitForExit(5);
-				stdout = proc.StandardOutput.ReadToEnd(); // Contains errors and reflection dump
+				stdout = proc.StandardOutput.ReadToEnd(); // Contains errors and reflection/spirv dump
 			}
+
+			// Convert the output into a list of the lines
+			var lines = stdout.Split(new [] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+				.Select(line => line.Trim())
+				.Where(line => !String.IsNullOrEmpty(line))
+				.ToList();
 
 			// Report any errors
 			if (stdout.Contains("ERROR:"))
 			{
 				logger.Error($"Unable to compile shader, reason(s):");
-				foreach (var err in ParseError(stdout, mod.SourceFile, fullPath))
+				foreach (var err in ParseError(lines, mod.SourceFile, fullPath))
 					logger.Error($"     {err}");
 				return false;
 			}
 
+			// Split the output into the reflection dump and spirv dump
+			var reflStart = lines.FindIndex(line => line.StartsWith("Uniform reflection:"));
+			if (reflStart == -1)
+			{
+				logger.Error($"Unable to parse reflection dump for shader module '{mod.Name}'.");
+				return false;
+			}
+			var spirvStart = lines.FindIndex(line => line.StartsWith("// Id's are bound by "));
+			if (spirvStart == -1)
+			{
+				logger.Error($"Unable to parse disassembly dump for shader module '{mod.Name}'.");
+				return false;
+			}
+			var reflEnd = spirvStart - 2; // Skip the comments giving metadata info
+			spirvStart += 1; // Adjust to the real first line
+			reflect = new string[reflEnd - reflStart];
+			spirv = new string[lines.Count - spirvStart];
+			lines.CopyTo(reflStart, reflect, 0, reflEnd - reflStart);
+			lines.CopyTo(spirvStart, spirv, 0, lines.Count - spirvStart);
+
 			return true;
 		}
 
-		private static string[] ParseError(string stdout, string file, string path)
+		private static string[] ParseError(List<string> lines, string file, string path)
 		{
-			var split = stdout.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+			var split = lines
 				.Where(line => line.StartsWith("ERROR:"))
 				.Select(line => line.Substring(7))
 				.Where(line => line.StartsWith(path))

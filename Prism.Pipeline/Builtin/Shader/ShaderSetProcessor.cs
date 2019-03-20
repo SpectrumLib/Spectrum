@@ -11,12 +11,16 @@ namespace Prism.Builtin
 		{
 			// Compile the modules
 			List<string> asmFiles = new List<string>();
+			List<string[]> reflect = new List<string[]>();
+			List<string[]> spirv = new List<string[]>();
 			foreach (var mod in input.Modules)
 			{
 				string of = ctx.GetTempFile();
 				asmFiles.Add(of);
-				if (!GLSLV.CompileModule(mod, ctx.FileDirectory, of, ctx.Logger))
+				if (!GLSLV.CompileModule(mod, ctx.FileDirectory, of, ctx.Logger, out string[] refl, out string[] sprv))
 					return null;
+				reflect.Add(refl);
+				spirv.Add(sprv);
 			}
 
 			return new PSSInfo { File = input, AsmFiles = asmFiles };
