@@ -253,18 +253,18 @@ namespace Prism
 			if (direct)
 			{
 				if (count == srem)
-					stream.CopyTo(_file);
+					stream.CopyTo(Compress ? (Stream)_compressor : (Stream)_file);
 				else
 				{
 					// Use the memory buffer as the temp buffer
 					while (count > 0)
 					{
 						var amt = stream.Read(_memBuffer, 0, (int)MEM_MB);
-						_file.Write(_memBuffer, 0, amt);
+						(Compress ? (Stream)_compressor : (Stream)_file).Write(_memBuffer, 0, amt);
 						count -= (uint)amt;
 					}
 				}
-				_file.Flush();
+				(Compress ? (Stream)_compressor : (Stream)_file).Flush();
 			}
 			else
 			{
