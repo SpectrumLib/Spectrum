@@ -55,7 +55,7 @@ namespace Prism.Builtin
 				{
 					ctx.LStats($"Module '{input.Modules[i].Name}':    {input.Modules[i].Type} @{input.Modules[i].EntryPoint}");
 					ctx.LStats($"    > Vertex Attrs:  {String.Join(",  ", atts.Select(att => $"{att.Name} (t={att.Type:X} l={att.Location})"))}");
-					ctx.LStats($"    > Uniforms:  {String.Join(",  ", unis.Select(uni => $"{uni.Name} (t={uni.Type:X}[{uni.Size}] o={uni.Offset} b={uni.Binding})"))}");
+					ctx.LStats($"    > Uniforms:  {String.Join(",  ", unis.Select(uni => $"{uni.Name} (t={uni.Type:X}[{uni.ArraySize}] o={uni.Offset} b={uni.Binding})"))}");
 					ctx.LStats($"    > Bindings:  {String.Join(",  ", binds.Select(bnd => $"{bnd.Name} (t={bnd.Type:X} s={bnd.Size} b={bnd.Binding}"))})");
 				}
 			}
@@ -268,7 +268,7 @@ namespace Prism.Builtin
 				var type = UInt32.Parse(usplit[2].Substring(usplit[2].IndexOf(' ', 1)), NumberStyles.HexNumber);
 				var size = UInt32.Parse(usplit[3].Substring(usplit[3].IndexOf(' ', 1)));
 				var binding = Int32.Parse(usplit[5].Substring(usplit[5].IndexOf(' ', 1)));
-				unis[ui] = new Uniform { Name = name, Type = type, Offset = offset, Binding = binding, Size = size, Block = null };
+				unis[ui] = new Uniform { Name = name, Type = type, Offset = offset, Binding = binding, ArraySize = size, Block = null };
 
 				// If it is in a block, we need to find the binding point for the block
 				if (binding == -1)
@@ -329,7 +329,7 @@ namespace Prism.Builtin
 				if (found.ContainsKey(u.Name))
 				{
 					var other = found[u.Name];
-					if (other.U.Binding != u.Binding || other.U.Type != u.Type || other.U.Offset != u.Offset || other.U.Size != u.Size)
+					if (other.U.Binding != u.Binding || other.U.Type != u.Type || other.U.Offset != u.Offset || other.U.ArraySize != u.ArraySize)
 					{
 						logger.Error($"The shader '{sname}' has incompatible uniforms with the name '{u.Name}' (stages {other.S}, {stage}).");
 						logger.Error($"    Shaders can only share uniforms across modules if the uniforms match in binding, type, size, and offset.");
@@ -368,7 +368,7 @@ namespace Prism.Builtin
 		public uint Type;
 		public int Offset; // Offset into block, for opaque handles this will be -1
 		public int Binding; // Binding index, this will be the standard index for opaque handles, and the block binding for others
-		public uint Size; // Array size
+		public uint ArraySize; // Array size
 		public string Block; // The name of the block, if it is part of one
 	}
 

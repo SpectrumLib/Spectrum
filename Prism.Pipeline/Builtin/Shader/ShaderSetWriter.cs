@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Prism.Builtin
@@ -44,12 +43,36 @@ namespace Prism.Builtin
 					writer.Write(modMap[shader.Frag]);
 			}
 
-			// For each module, write the bytecode length, and then copy the compiled bytecode in from the temp files
+			// For each module
 			for (int i = 0; i < input.File.Modules.Count; ++i)
 			{
+				// Write the meta info
 				writer.Write(input.File.Modules[i].Name);
 				writer.Write(input.File.Modules[i].EntryPoint);
 				writer.Write(TYPE_MAP[input.File.Modules[i].Type]);
+
+				// Write the uniform info
+				writer.Write((uint)input.Uniforms[i].Length);
+				foreach (var u in input.Uniforms[i])
+				{
+					writer.Write(u.Name);
+					writer.Write(u.Type);
+					writer.Write(u.ArraySize);
+					writer.Write((uint)u.Binding);
+					writer.Write(u.Offset);
+				}
+
+				// Write the binding info
+				writer.Write((uint)input.Bindings[i].Length);
+				foreach (var b in input.Bindings[i])
+				{
+					writer.Write(b.Name);
+					writer.Write(b.Type);
+					writer.Write(b.Binding);
+					writer.Write(b.Size);
+				}
+
+				// Copy the spirv bytecode
 				writer.CopyFrom(input.AsmFiles[i], writeLen: true);
 			}
 		}
