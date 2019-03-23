@@ -45,26 +45,12 @@ namespace Prism.Builtin
 			}
 
 			// For each module, write the bytecode length, and then copy the compiled bytecode in from the temp files
-			byte[] tmp = new byte[8192];
 			for (int i = 0; i < input.File.Modules.Count; ++i)
 			{
-				FileInfo fi = new FileInfo(input.AsmFiles[i]);
 				writer.Write(input.File.Modules[i].Name);
 				writer.Write(input.File.Modules[i].EntryPoint);
 				writer.Write(TYPE_MAP[input.File.Modules[i].Type]);
-				writer.Write((uint)fi.Length);
-
-				// Copy the bytecode into the output file
-				int rem = (int)fi.Length;
-				using (var reader = fi.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
-				{
-					while (rem > 0)
-					{
-						int amt = reader.Read(tmp, 0, Math.Min(tmp.Length, rem));
-						writer.Write(tmp, 0, (uint)amt);
-						rem -= amt;
-					}
-				}
+				writer.CopyFrom(input.AsmFiles[i], writeLen: true);
 			}
 		}
 	}
