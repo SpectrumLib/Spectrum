@@ -60,7 +60,34 @@ namespace Prism.Builtin
 				}
 			}
 
-			return new PSSInfo { File = input, AsmFiles = asmFiles };
+			// Validate the bindings for each shader
+			foreach (var shdr in input.Shaders)
+			{
+				// Get the module indices
+				var vert = (shdr.Vert != null) ? input.Modules.FindIndex(mod => mod.Name == shdr.Vert) : -1;
+				var tesc = (shdr.Tesc != null) ? input.Modules.FindIndex(mod => mod.Name == shdr.Tesc) : -1;
+				var tese = (shdr.Tese != null) ? input.Modules.FindIndex(mod => mod.Name == shdr.Tese) : -1;
+				var geom = (shdr.Geom != null) ? input.Modules.FindIndex(mod => mod.Name == shdr.Geom) : -1;
+				var frag = (shdr.Frag != null) ? input.Modules.FindIndex(mod => mod.Name == shdr.Frag) : -1;
+
+				// Check the bindings for compatibility
+				Dictionary<uint, (UniformBinding B, string S)> bfound = new Dictionary<uint, (UniformBinding, string)>();
+				if (vert != -1 && !CheckBindings(shdr.Name, bfound, bindings[vert], "vert", ctx.Logger)) return null;
+				if (tesc != -1 && !CheckBindings(shdr.Name, bfound, bindings[tesc], "tesc", ctx.Logger)) return null;
+				if (tese != -1 && !CheckBindings(shdr.Name, bfound, bindings[tese], "tese", ctx.Logger)) return null;
+				if (geom != -1 && !CheckBindings(shdr.Name, bfound, bindings[geom], "geom", ctx.Logger)) return null;
+				if (frag != -1 && !CheckBindings(shdr.Name, bfound, bindings[frag], "frag", ctx.Logger)) return null;
+
+				// Check the uniforms for compatibility
+				Dictionary<string, (Uniform U, string S)> ufound = new Dictionary<string, (Uniform, string)>();
+				if (vert != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[vert], "vert", ctx.Logger)) return null;
+				if (tesc != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[tesc], "tesc", ctx.Logger)) return null;
+				if (tese != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[tese], "tese", ctx.Logger)) return null;
+				if (geom != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[geom], "geom", ctx.Logger)) return null;
+				if (frag != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[frag], "frag", ctx.Logger)) return null;
+			}
+
+			return new PSSInfo { File = input, AsmFiles = asmFiles, Attribs = attrs, Uniforms = unifs, Bindings = bindings };
 		}
 
 		private static bool ValidateEntryPoint(in PSSModule mod, string[] spirv, PipelineLogger logger)
@@ -274,6 +301,46 @@ namespace Prism.Builtin
 
 			return true;
 		}
+
+		private static bool CheckBindings(string sname, Dictionary<uint, (UniformBinding B, string S)> found, UniformBinding[] binds, string stage, PipelineLogger logger)
+		{
+			foreach (var ub in binds)
+			{
+				if (found.ContainsKey(ub.Binding))
+				{
+					var other = found[ub.Binding];
+					if (other.B.Name != ub.Name || other.B.Size != ub.Size || other.B.Type != ub.Type)
+					{
+						logger.Error($"The shader '{sname}' is binding two incompatible uniforms to the same index ({other.S}:{other.B.Name}, {stage}:{ub.Name}).");
+						logger.Error($"    Shaders can only bind two uniforms to the same index if they match in name, size, and type.");
+						return false;
+					}
+				}
+				else
+					found.Add(ub.Binding, (ub, stage));
+			}
+			return true;
+		}
+
+		private static bool CheckUniformNames(string sname, Dictionary<string, (Uniform U, string S)> found, Uniform[] unis, string stage, PipelineLogger logger)
+		{
+			foreach (var u in unis)
+			{
+				if (found.ContainsKey(u.Name))
+				{
+					var other = found[u.Name];
+					if (other.U.Binding != u.Binding || other.U.Type != u.Type || other.U.Offset != u.Offset || other.U.Size != u.Size)
+					{
+						logger.Error($"The shader '{sname}' has incompatible uniforms with the name '{u.Name}' (stages {other.S}, {stage}).");
+						logger.Error($"    Shaders can only share uniforms across modules if the uniforms match in binding, type, size, and offset.");
+						return false;
+					}
+				}
+				else
+					found.Add(u.Name, (u, stage));
+			}
+			return true;
+		}
 	}
 
 	// Used to pass processed info to the shader writer
@@ -281,6 +348,9 @@ namespace Prism.Builtin
 	{
 		public PSSFile File;
 		public List<string> AsmFiles;
+		public List<VertexAttrib[]> Attribs;
+		public List<Uniform[]> Uniforms;
+		public List<UniformBinding[]> Bindings;
 	}
 
 	// Holds information relating to a vertex attribute
