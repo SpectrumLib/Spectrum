@@ -43,19 +43,19 @@ namespace Spectrum.Graphics
 		Int4 = Vk.Format.R32G32B32A32SInt,
 
 		/// <summary>
-		/// A single 32-bit signed integer (GLSL `int`).
+		/// A single 32-bit signed integer (GLSL `uint`).
 		/// </summary>
 		UInt = Vk.Format.R32UInt,
 		/// <summary>
-		/// A 2-component 32-bit signed integer vector (GLSL `ivec2`).
+		/// A 2-component 32-bit signed integer vector (GLSL `uvec2`).
 		/// </summary>
 		UInt2 = Vk.Format.R32G32UInt,
 		/// <summary>
-		/// A 3-component 32-bit signed integer vector (GLSL `ivec3`).
+		/// A 3-component 32-bit signed integer vector (GLSL `uvec3`).
 		/// </summary>
 		UInt3 = Vk.Format.R32G32B32UInt,
 		/// <summary>
-		/// A 4-component 32-bit signed integer vector (GLSL `ivec4`).
+		/// A 4-component 32-bit signed integer vector (GLSL `uvec4`).
 		/// </summary>
 		UInt4 = Vk.Format.R32G32B32A32UInt
 	}
