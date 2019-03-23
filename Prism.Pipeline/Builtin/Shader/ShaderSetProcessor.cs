@@ -85,6 +85,12 @@ namespace Prism.Builtin
 				if (tese != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[tese], "tese", ctx.Logger)) return null;
 				if (geom != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[geom], "geom", ctx.Logger)) return null;
 				if (frag != -1 && !CheckUniformNames(shdr.Name, ufound, unifs[frag], "frag", ctx.Logger)) return null;
+
+				// Warn about non-contiguous bindings (not an error, just sub-optimal)
+				var maxb = bfound.Keys.Max();
+				var missb = Enumerable.Range(0, (int)maxb + 1).Where(bi => !bfound.ContainsKey((uint)bi)).ToArray();
+				if (missb.Length > 0)
+					ctx.LWarn($"The shader '{shdr.Name}' does not have contiguous bindings ({String.Join(", ", missb)}).");
 			}
 
 			return new PSSInfo { File = input, AsmFiles = asmFiles, Attribs = attrs, Uniforms = unifs, Bindings = bindings };
