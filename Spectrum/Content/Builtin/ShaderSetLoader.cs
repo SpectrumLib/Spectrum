@@ -27,6 +27,7 @@ namespace Spectrum.Content
 				shaders[si].Tese = (st & ShaderStages.TessEval) > 0    ? stream.ReadUInt32() : (uint?)null;
 				shaders[si].Geom = (st & ShaderStages.Geometry) > 0    ? stream.ReadUInt32() : (uint?)null;
 				shaders[si].Frag = (st & ShaderStages.Fragment) > 0    ? stream.ReadUInt32() : (uint?)null;
+				shaders[si].Uniforms = null;
 			}
 
 			// Read the modules
@@ -117,6 +118,7 @@ namespace Spectrum.Content
 
 				// Build the uniforms set
 				var uset = BuildShaderUniformSet(shdr, sunis, sbnds);
+				shaders[si].Uniforms = uset;
 			}
 
 			return new ShaderSet(shaders, mods);
@@ -124,11 +126,20 @@ namespace Spectrum.Content
 
 		private static UniformSet BuildShaderUniformSet(in ShaderSet.SSShader shdr, List<Unif> uniforms, List<Bind> bindings)
 		{
-			var maxb = bindings.Max(b => b.Binding);
+			// Assign offsets into the buffer for each block
+			uint bsize = 0;
+			var blocks = bindings
+				.Where(b => b.IsBlock)
+				.OrderBy(b => b.Binding)
+				.Select(b => {
+					bsize += b.Size;
+					return new UniformSet.Block { Name = b.Name, Binding = b.Binding, Offset = bsize - b.Size, Size = b.Size };
+				})
+				.ToArray();
 
-			// Get the bindings in order
-			var sbinds = new UniformSet.Binding[maxb];
-			return null;
+			
+
+			return new UniformSet(blocks);
 		}
 
 		// Temp type for storing read uniform data

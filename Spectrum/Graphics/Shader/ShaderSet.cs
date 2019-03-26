@@ -270,6 +270,7 @@ namespace Spectrum.Graphics
 			public uint? Tese;
 			public uint? Geom;
 			public uint? Frag;
+			public UniformSet Uniforms;
 		}
 
 		// Holds information about a module
