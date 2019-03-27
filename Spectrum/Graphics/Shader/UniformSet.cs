@@ -1,4 +1,5 @@
 ﻿using System;
+using Vk = VulkanCore;
 
 namespace Spectrum.Graphics
 {
@@ -9,13 +10,15 @@ namespace Spectrum.Graphics
 		public readonly Block[] Blocks;
 		public readonly uint BufferSize;
 		public readonly Uniform[] Uniforms;
+		public readonly Vk.DescriptorSetLayout Layout;
 		#endregion // Fields
 
-		public UniformSet(Block[] blocks, uint bsize, Uniform[] uniforms)
+		public UniformSet(Block[] blocks, uint bsize, Uniform[] uniforms, Vk.DescriptorSetLayout layout)
 		{
 			Blocks = blocks;
 			BufferSize = bsize;
 			Uniforms = uniforms;
+			Layout = layout;
 		}
 
 		public bool TryGetBlock(string name, out Block block)

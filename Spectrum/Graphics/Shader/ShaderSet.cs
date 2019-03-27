@@ -253,6 +253,8 @@ namespace Spectrum.Graphics
 		{
 			if (!IsDisposed && disposing)
 			{
+				foreach (var shdr in _shaders)
+					shdr.Value.Uniforms.Layout.Dispose();
 				foreach (var mod in _modules)
 					mod.Module.Dispose();
 			}

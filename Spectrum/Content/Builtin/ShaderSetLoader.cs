@@ -158,8 +158,23 @@ namespace Spectrum.Content
 				unis[ui].Offset += bi.Offset;
 			}
 
+			// Create the vulkan binding infos
+			var bis = bindings
+				.Select(b => new Vk.DescriptorSetLayoutBinding(
+					(int)b.Binding,
+					Vk.DescriptorType.UniformBuffer, // TODO: THIS IS INCORRECT, NEED GOOD TYPE REFLECTION NEXT
+					b.IsBlock ? 1 : (int)b.Size,
+					stageFlags: Vk.ShaderStages.AllGraphics, // TODO: ALSO INCORRECT, WE NEED TO FIX THE BINDINGS FOR THIS
+					immutableSamplers: null
+				))
+				.ToArray();
+
+			// Create the vulkan layout
+			var lci = new Vk.DescriptorSetLayoutCreateInfo(bis, flags: Vk.DescriptorSetLayoutCreateFlags.None);
+			var layout = SpectrumApp.Instance.GraphicsDevice.VkDevice.CreateDescriptorSetLayout(lci);
+
 			// Return values needed for use at runtime
-			return new UniformSet(blocks, bsize, unis);
+			return new UniformSet(blocks, bsize, unis, layout);
 		}
 
 		// Temp type for storing read uniform data
