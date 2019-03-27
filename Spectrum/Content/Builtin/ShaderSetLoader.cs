@@ -137,9 +137,29 @@ namespace Spectrum.Content
 				})
 				.ToArray();
 
-			
+			// Create the initial uniforms
+			var unis = uniforms
+				.Select(u => new UniformSet.Uniform {
+					Name = u.Name,
+					Binding = u.Binding,
+					Offset = (u.Offset < 0) ? 0 : (uint)u.Offset,
+					BlockOffset = (u.Offset < 0) ? 0 : (uint)u.Offset,
+					IsHandle = (u.Offset == -1)
+				})
+				.ToArray();
+				
+			// Calculate the correct offsets for the block uniforms
+			for (int ui = 0; ui < unis.Length; ++ui)
+			{
+				if (unis[ui].IsHandle)
+					continue;
 
-			return new UniformSet(blocks);
+				var bi = Array.Find(blocks, b => b.Binding == unis[ui].Binding);
+				unis[ui].Offset += bi.Offset;
+			}
+
+			// Return values needed for use at runtime
+			return new UniformSet(blocks, bsize, unis);
 		}
 
 		// Temp type for storing read uniform data

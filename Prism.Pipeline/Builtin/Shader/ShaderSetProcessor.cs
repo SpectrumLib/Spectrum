@@ -30,6 +30,16 @@ namespace Prism.Builtin
 				spirv.Add(sprv);
 			}
 
+			// Validate the versions
+			for (int i = 0; i < spirv.Count; ++i)
+			{
+				if (!spirv[i].Contains("Source GLSL 450"))
+				{
+					ctx.LError($"The module '{input.Modules[i].Name}' must be declared with '#version 450'.");
+					return null;
+				}
+			}
+
 			// Validate the entry points
 			for (int i = 0; i < spirv.Count; ++i)
 			{
