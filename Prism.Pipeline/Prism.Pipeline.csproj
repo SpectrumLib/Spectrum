@@ -50,6 +50,10 @@
       <HintPath>..\Dependencies\Managed\LZ4.dll</HintPath>
     </Reference>
   </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Builtin\Shader\" />
+  </ItemGroup>
 
   <PropertyGroup>
     <IsTravisCI>true</IsTravisCI>

@@ -65,13 +65,6 @@ namespace Spectrum.Graphics
 		/// If the builder has a specified vertex description.
 		/// </summary>
 		public bool HasVertexDescription => VertexDescription.HasValue;
-
-		public PipelineShader Shader { get; private set; } = null;
-		private Vk.PipelineShaderStageCreateInfo[] _shaderCIs = null;
-		/// <summary>
-		/// If the builder has a specified shader.
-		/// </summary>
-		public bool HasShader => Shader != null;
 		#endregion // Settings
 
 		// Quick reference to the graphics device
@@ -81,7 +74,7 @@ namespace Spectrum.Graphics
 		/// Gets if all of the required pipeline state objects have been specified.
 		/// </summary>
 		public bool IsComplete => ColorBlendState.HasValue && DepthStencilState.HasValue && PrimitiveInput.HasValue &&
-			RasterizerState.HasValue && VertexDescription.HasValue && (Shader != null);
+			RasterizerState.HasValue && VertexDescription.HasValue;
 		#endregion // Fields
 
 		private PipelineBuilder()
@@ -130,10 +123,6 @@ namespace Spectrum.Graphics
 				throw new ArgumentException($"The render pass specified to create the pipeline with does not contain a subpass with the name '{subpass}'", nameof(subpass));
 
 			// Feature checking
-			if (Shader.Stages.HasStages(ShaderStages.Geometry) && !Device.Features.GeometryShaders)
-				throw new InvalidOperationException("Cannot create pipeline, geometry shaders are not enabled on the graphics device.");
-			if (Shader.Stages.HasStages(ShaderStages.TessControl | ShaderStages.TessEval) && !Device.Features.TessellationShaders)
-				throw new InvalidOperationException("Cannot create pipeline, tessellation shaders are not enabled on the graphics device.");
 			if ((RasterizerState.Value.FillMode != FillMode.Solid) && !Device.Features.FillModeNonSolid)
 				throw new InvalidOperationException("Cannot create pipeline, non-solid fill modes are not enabled on the graphics device.");
 			if (RasterizerState.Value.LineWidth.HasValue && (RasterizerState.Value.LineWidth.Value != 1) && !Device.Features.WideLines)
@@ -149,7 +138,7 @@ namespace Spectrum.Graphics
 				layout,
 				renderPass.VkRenderPass,
 				spIdx,
-				_shaderCIs,
+				null,
 				_inputAssemblyCI.Value,
 				_vertexInputStateCI.Value,
 				_rasterizationCI.Value,
@@ -267,26 +256,6 @@ namespace Spectrum.Graphics
 			changed = VertexDescription.HasValue;
 			VertexDescription = state;
 			_vertexInputStateCI = state.ToCreateInfo();
-			return this;
-		}
-
-		/// <summary>
-		/// Sets the shader that pipelines from this builder will use.
-		/// </summary>
-		/// <param name="shader">The shader to use.</param>
-		/// <returns>The same builder, to facilitate method chaining.</returns>
-		public PipelineBuilder SetShader(PipelineShader shader) => SetShader(shader, out bool changed);
-		/// <summary>
-		/// Sets the shader that pipelines from this builder will use.
-		/// </summary>
-		/// <param name="shader">The shader to use.</param>
-		/// <param name="changed">If there was an existing shader that was changed by this call.</param>
-		/// <returns>The same builder, to facilitate method chaining.</returns>
-		public PipelineBuilder SetShader(PipelineShader shader, out bool changed)
-		{
-			changed = (Shader != null);
-			Shader = shader ?? throw new ArgumentNullException(nameof(shader));
-			_shaderCIs = Shader.ToCreateInfos();
 			return this;
 		}
 		#endregion // Settings

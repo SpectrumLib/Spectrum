@@ -41,6 +41,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Graphics\Shader\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <IsTravisCI>true</IsTravisCI>
     <IsTravisCI Condition="'$(OS)' != 'Unix' or !Exists('/home/travis/build/SpectrumLib/Spectrum/Spectrum.sln')">false</IsTravisCI>
