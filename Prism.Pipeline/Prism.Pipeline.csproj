@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -34,7 +34,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\Resources\DefaultFiles\Default.prism" Link="Resources\Default.prism" />
-    <EmbeddedResource Include="..\Resources\DefaultFiles\Default.pss" Link="Resources\Default.pss" />
   </ItemGroup>
 
   <ItemGroup>
