@@ -13,8 +13,6 @@ namespace Spectrum.Graphics
 		private Vk.Fence _scratchFence;
 		private Vk.CommandBufferAllocateInfo _scratchAllocInfo;
 		private Vk.CommandBufferBeginInfo _scratchBeginInfo;
-
-		private Texture2D _tex;
 		#endregion // Fields
 
 		// Initializes the various graphics resources found throughout the library
@@ -29,30 +27,6 @@ namespace Spectrum.Graphics
 
 			// Resources throughout the library
 			TransferBuffer.CreateResources();
-
-			_tex = new Texture2D(4, 4);
-			_tex.SetData(new Color[] {
-				Color.Blue, Color.Green, Color.Blue, Color.Green,
-				Color.Green, Color.Blue, Color.Green, Color.Blue,
-				Color.Green, Color.Blue, Color.Green, Color.Blue,
-				Color.Blue, Color.Green, Color.Blue, Color.Green
-			});
-
-			// TEMPORARY
-			var pool = VkDevice.CreateCommandPool(new Vk.CommandPoolCreateInfo(Queues.Graphics.FamilyIndex, Vk.CommandPoolCreateFlags.Transient | Vk.CommandPoolCreateFlags.ResetCommandBuffer));
-			var buff = pool.AllocateBuffers(new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 1))[0];
-			buff.Begin();
-			buff.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands, imageMemoryBarriers: new[] { new Vk.ImageMemoryBarrier(
-				_tex.VkImage, new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1), Vk.Accesses.None, Vk.Accesses.TransferRead,
-				Vk.ImageLayout.Undefined, Vk.ImageLayout.TransferSrcOptimal
-			)});
-			buff.End();
-			var fence = VkDevice.CreateFence();
-			Queues.Graphics.Submit(null, Vk.PipelineStages.AllCommands, buff, null, fence);
-			fence.Wait();
-			fence.Reset();
-			fence.Dispose();
-			pool.Dispose();
 		}
 
 		private void cleanResources()
@@ -60,8 +34,6 @@ namespace Spectrum.Graphics
 			// GraphicsDevice internal resources
 			_scratchPool.Dispose();
 			_scratchFence.Dispose();
-
-			_tex.Dispose();
 
 			// Resources scattered thorughout the library
 			Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
@@ -105,6 +77,7 @@ namespace Spectrum.Graphics
 			Queues.Graphics.Submit(waitSem, waitStages, cb, null, _scratchFence);
 			_scratchFence.Wait();
 			_scratchFence.Reset();
+			cb.Dispose();
 		}
 	}
 }

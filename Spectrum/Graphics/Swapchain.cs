@@ -115,11 +115,11 @@ namespace Spectrum.Graphics
 
 			// Prepare the synchronization objects
 			_syncObjects.ImageAvailable = new Vk.Semaphore[MAX_INFLIGHT_FRAMES];
-			_syncObjects.RenderComplete = new Vk.Semaphore[MAX_INFLIGHT_FRAMES];
+			_syncObjects.BlitComplete = new Vk.Semaphore[MAX_INFLIGHT_FRAMES];
 			for (int i = 0; i < MAX_INFLIGHT_FRAMES; ++i)
 			{
 				_syncObjects.ImageAvailable[i] = device.CreateSemaphore();
-				_syncObjects.RenderComplete[i] = device.CreateSemaphore();
+				_syncObjects.BlitComplete[i] = device.CreateSemaphore();
 			}
 
 			// Setup the command buffers
@@ -128,7 +128,7 @@ namespace Spectrum.Graphics
 			_commandPool = device.CreateCommandPool(cpci);
 			var cbai = new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 1);
 			_commandBuffer = _commandPool.AllocateBuffers(cbai)[0];
-			_blitFence = device.CreateFence();
+			_blitFence = device.CreateFence(); // Do NOT start this signalled, as it is needed in rebuildSwapchain() below
 
 			// Build the swapchain
 			rebuildSwapchain();
@@ -214,8 +214,7 @@ namespace Spectrum.Graphics
 				imageMemoryBarriers: _swapChainImages.Select(sci => { imb.Image = sci.Image; return imb; }).ToArray());
 			_commandBuffer.End();
 			_presentQueue.Submit(new Vk.SubmitInfo(commandBuffers: new[] { _commandBuffer }), _blitFence);
-			_blitFence.Wait();
-			_blitFence.Reset();
+			_blitFence.Wait(); // Do not reset
 				
 			// Report
 			LDEBUG($"Presentation swapchain rebuilt @ {Extent} " +
@@ -232,6 +231,11 @@ namespace Spectrum.Graphics
 		// Acquires the next image to render to, and recreates the swapchain if needed
 		public void BeginFrame()
 		{
+			// Make sure the blit command from the last frame is finished, so we have access to the source image
+			// This is a modified version of the classic Vulkan CPU-GPU swapchain synchronization
+			_blitFence.Wait();
+			_blitFence.Reset();
+
 			// Rebuild if needed
 		try_rebuild:
 			if (Dirty)
@@ -265,7 +269,7 @@ namespace Spectrum.Graphics
 			try
 			{
 				// Do not need to wait on the image to be ready, as there is synchonization in blitImage()
-				VkKhr.QueueExtensions.PresentKhr(_presentQueue, null, _swapChain, _syncObjects.CurrentImage);
+				VkKhr.QueueExtensions.PresentKhr(_presentQueue, _syncObjects.CurrentBlitComplete, _swapChain, _syncObjects.CurrentImage);
 			}
 			catch (Vk.VulkanException e)
 				when (e.Result == Vk.Result.ErrorOutOfDateKhr || e.Result == Vk.Result.SuboptimalKhr)
@@ -291,17 +295,32 @@ namespace Spectrum.Graphics
 			// Blit the image
 			if (src != null)
 			{
-				var blit = new Vk.ImageBlit
+				if (size != Extent) // We need to do a filtered blit because of the size mismatch
 				{
-					SrcOffset1 = BLIT_ZERO,
-					SrcOffset2 = new Vk.Offset3D(size.X, size.Y, 1),
-					SrcSubresource = BLIT_SUBRESOURCE,
-					DstOffset1 = BLIT_ZERO,
-					DstOffset2 = new Vk.Offset3D(Extent.X, Extent.Y, 1),
-					DstSubresource = BLIT_SUBRESOURCE
-				};
-				_commandBuffer.CmdBlitImage(src, Vk.ImageLayout.TransferSrcOptimal, cimg.Image.Handle, Vk.ImageLayout.TransferDstOptimal,
-					new[] { blit }, Vk.Filter.Linear); 
+					var blit = new Vk.ImageBlit
+					{
+						SrcOffset1 = BLIT_ZERO,
+						SrcOffset2 = new Vk.Offset3D(size.X, size.Y, 1),
+						SrcSubresource = BLIT_SUBRESOURCE,
+						DstOffset1 = BLIT_ZERO,
+						DstOffset2 = new Vk.Offset3D(Extent.X, Extent.Y, 1),
+						DstSubresource = BLIT_SUBRESOURCE
+					};
+					_commandBuffer.CmdBlitImage(src, Vk.ImageLayout.TransferSrcOptimal, cimg.Image.Handle, Vk.ImageLayout.TransferDstOptimal,
+						new[] { blit }, Vk.Filter.Linear);  
+				}
+				else // Same size, we can do a much faster direct image copy
+				{
+					var copy = new Vk.ImageCopy
+					{
+						SrcOffset = BLIT_ZERO,
+						SrcSubresource = BLIT_SUBRESOURCE,
+						DstOffset = BLIT_ZERO,
+						DstSubresource = BLIT_SUBRESOURCE,
+						Extent = new Vk.Extent3D(size.X, size.Y, 1)
+					};
+					_commandBuffer.CmdCopyImage(src, Vk.ImageLayout.TransferSrcOptimal, cimg.Image, Vk.ImageLayout.TransferDstOptimal, new[] { copy });
+				}
 			}
 
 			// Transition the swapchain image back to present layout
@@ -309,15 +328,11 @@ namespace Spectrum.Graphics
 				imageMemoryBarriers: new[] { cimg.PresentBarrier });
 
 			// End the buffer, submit, and wait for the blit to complete
-			// This performs two synchonrizations:
-			//   1. GPU-GPU: Waits for the swapchain image to be available before blitting
-			//   2. CPU-GPU: Blocks until the blit is complete, so we can re-use the source image for the blit immediately
+			// This performs GPU-GPU synchonrization by waiting for the swapchain image to be available before blitting
 			_commandBuffer.End();
 			var si = new Vk.SubmitInfo(waitDstStageMask: new[] { Vk.PipelineStages.Transfer }, waitSemaphores: new[] { _syncObjects.CurrentImageAvailable }, 
-				commandBuffers: new[] { _commandBuffer });
+				commandBuffers: new[] { _commandBuffer }, signalSemaphores: new[] { _syncObjects.CurrentBlitComplete });
 			_presentQueue.Submit(si, _blitFence);
-			_blitFence.Wait();
-			_blitFence.Reset();
 		}
 
 		#region IDisposable
@@ -336,7 +351,7 @@ namespace Spectrum.Graphics
 
 				// Clean the sync objects
 				_syncObjects.ImageAvailable.ForEach(s => s.Dispose());
-				_syncObjects.RenderComplete.ForEach(s => s.Dispose());
+				_syncObjects.BlitComplete.ForEach(s => s.Dispose());
 
 				// Clean the blit objects
 				_blitFence.Dispose();
@@ -374,11 +389,11 @@ namespace Spectrum.Graphics
 			public int CurrentImage;
 			// Semaphores for coordinating when an image is available
 			public Vk.Semaphore[] ImageAvailable;
-			// Semaphores for coordinating when frames are finished rendering
-			public Vk.Semaphore[] RenderComplete;
+			// Semaphores for coordinating when an image is done blitting to the swapchain
+			public Vk.Semaphore[] BlitComplete;
 
 			public Vk.Semaphore CurrentImageAvailable => ImageAvailable[SyncIndex];
-			public Vk.Semaphore CurrentRenderComplete => RenderComplete[SyncIndex];
+			public Vk.Semaphore CurrentBlitComplete => BlitComplete[SyncIndex];
 
 			public void MoveNext() => SyncIndex = (SyncIndex + 1) % MaxInflightFrames;
 		}

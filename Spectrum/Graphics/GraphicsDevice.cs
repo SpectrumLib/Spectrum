@@ -73,7 +73,7 @@ namespace Spectrum.Graphics
 		// Called at the end of a render frame to present the frame
 		internal void EndFrame()
 		{
-			Swapchain.EndFrame(_tex.VkImage, new Point((int)_tex.Width, (int)_tex.Height));
+			Swapchain.EndFrame(null, Point.Zero);
 		}
 		#endregion // Frame Functions
 
