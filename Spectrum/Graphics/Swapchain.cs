@@ -294,10 +294,10 @@ namespace Spectrum.Graphics
 				var blit = new Vk.ImageBlit
 				{
 					SrcOffset1 = BLIT_ZERO,
-					SrcOffset2 = new Vk.Offset3D(size.X, size.Y, 0),
+					SrcOffset2 = new Vk.Offset3D(size.X, size.Y, 1),
 					SrcSubresource = BLIT_SUBRESOURCE,
 					DstOffset1 = BLIT_ZERO,
-					DstOffset2 = new Vk.Offset3D(Extent.X, Extent.Y, 0),
+					DstOffset2 = new Vk.Offset3D(Extent.X, Extent.Y, 1),
 					DstSubresource = BLIT_SUBRESOURCE
 				};
 				_commandBuffer.CmdBlitImage(src, Vk.ImageLayout.TransferSrcOptimal, cimg.Image.Handle, Vk.ImageLayout.TransferDstOptimal,

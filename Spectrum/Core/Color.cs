@@ -1,23 +1,26 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Spectrum
 {
 	/// <summary>
 	/// Represents a 32-bit RGBA color, with 8 bits per channel.
 	/// </summary>
+	[StructLayout(LayoutKind.Explicit, Size = sizeof(uint))]
 	public struct Color : IEquatable<Color>
 	{
-		private const uint R_MASK_I = 0x00FFFFFF;
-		private const uint G_MASK_I = 0xFF00FFFF;
-		private const uint B_MASK_I = 0xFFFF00FF;
-		private const uint A_MASK_I = 0xFFFFFF00;
-		private const int R_SHIFT = 24;
-		private const int G_SHIFT = 16;
-		private const int B_SHIFT = 8;
+		private const uint A_MASK_I = 0x00FFFFFF;
+		private const uint B_MASK_I = 0xFF00FFFF;
+		private const uint G_MASK_I = 0xFFFF00FF;
+		private const uint R_MASK_I = 0xFFFFFF00;
+		private const int A_SHIFT = 24;
+		private const int B_SHIFT = 16;
+		private const int G_SHIFT = 8;
 
 		#region Fields
-		// The backing value containing the color channels packed as a 32-bit integer as 0xRRGGBBAA
+		// The backing value containing the color channels packed as a 32-bit integer as 0xAABBGGRR
+		[FieldOffset(0)]
 		private uint _value;
 
 		/// <summary>
@@ -26,9 +29,9 @@ namespace Spectrum
 		public byte R
 		{
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => (byte)((_value >> R_SHIFT) & 0xFF);
+			get => (byte)(_value & 0xFF);
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			set => _value = (_value & R_MASK_I) | ((uint)value << R_SHIFT);
+			set => _value = (_value & R_MASK_I) | value;
 		}
 		/// <summary>
 		/// The value of the green channel, in the range [0, 255].
@@ -56,15 +59,15 @@ namespace Spectrum
 		public byte A
 		{
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			get => (byte)(_value & 0xFF);
+			get => (byte)((_value >> A_SHIFT) & 0xFF);
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			set => _value = (_value & A_MASK_I) | value;
+			set => _value = (_value & A_MASK_I) | ((uint)value << A_SHIFT);
 		}
 
 		/// <summary>
 		/// The value of the red channel, in the range [0, 1].
 		/// </summary>
-		public float RFloat => ((_value >> R_SHIFT) & 0xFF) / 255f;
+		public float RFloat => (_value & 0xFF) / 255f;
 		/// <summary>
 		/// The value of the green channel, in the range [0, 1].
 		/// </summary>
@@ -76,7 +79,7 @@ namespace Spectrum
 		/// <summary>
 		/// The value of the alpha channel, in the range [0, 1].
 		/// </summary>
-		public float AFloat => (_value & 0xFF) / 255f;
+		public float AFloat => ((_value >> A_SHIFT) & 0xFF) / 255f;
 		#endregion // Fields
 
 		#region Constructors
@@ -98,11 +101,10 @@ namespace Spectrum
 		/// <param name="a">The alpha channel value.</param>
 		public Color(byte r, byte g, byte b, byte a = 0xFF)
 		{
-			_value =
-				(uint)(r << R_SHIFT) |
+			_value = r | 
 				(uint)(g << G_SHIFT) |
 				(uint)(b << B_SHIFT) |
-				a;
+				(uint)(a << A_SHIFT);
 		}
 
 		/// <summary>
@@ -119,11 +121,10 @@ namespace Spectrum
 				 bc = (uint)(Mathf.UnitClamp(b) * 0xFF),
 				 ac = (uint)(Mathf.UnitClamp(a) * 0xFF);
 
-			_value =
-				(rc << R_SHIFT) |
+			_value = rc |
 				(gc << G_SHIFT) |
 				(bc << B_SHIFT) |
-				ac;
+				(ac << A_SHIFT);
 		}
 
 		/// <summary>
@@ -133,11 +134,10 @@ namespace Spectrum
 		/// <param name="a">The alpha channel value.</param>
 		public Color(byte val, byte a = 0xFF)
 		{
-			_value =
-				(uint)(val << R_SHIFT) |
+			_value = val |
 				(uint)(val << G_SHIFT) |
 				(uint)(val << B_SHIFT) |
-				a;
+				(uint)(a << A_SHIFT);
 		}
 
 		/// <summary>
@@ -150,11 +150,10 @@ namespace Spectrum
 			uint vc = (uint)(Mathf.UnitClamp(val) * 0xFF),
 				 ac = (uint)(Mathf.UnitClamp(a) * 0xFF);
 
-			_value =
-				(vc << R_SHIFT) |
+			_value = vc |
 				(vc << G_SHIFT) |
 				(vc << B_SHIFT) |
-				ac;
+				(ac << A_SHIFT);
 		}
 
 		/// <summary>
@@ -247,29 +246,29 @@ namespace Spectrum
 
 		#region Predefined Colors
 		// Standard colors
-		public static readonly Color Black = new Color(0x000000FF);
+		public static readonly Color Black = new Color(0xFF000000);
 		public static readonly Color TransparentBlack = new Color(0x00000000);
 		public static readonly Color White = new Color(0xFFFFFFFF);
-		public static readonly Color TransparentWhite = new Color(0xFFFFFF00);
+		public static readonly Color TransparentWhite = new Color(0x00FFFFFF);
 		public static readonly Color Red = new Color(0xFF0000FF);
-		public static readonly Color Green = new Color(0x00FF00FF);
-		public static readonly Color Blue = new Color(0x0000FFFF);
-		public static readonly Color Yellow = new Color(0xFFFF00FF);
-		public static readonly Color Magenta = new Color(0xFF00FFFF);
-		public static readonly Color Cyan = new Color(0x00FFFFFF);
+		public static readonly Color Green = new Color(0xFF00FF00);
+		public static readonly Color Blue = new Color(0xFFFF0000);
+		public static readonly Color Yellow = new Color(0xFF00FFFF);
+		public static readonly Color Magenta = new Color(0xFFFF00FF);
+		public static readonly Color Cyan = new Color(0xFFFFFF00);
 		// Shades of gray
-		public static readonly Color DarkGray = new Color(0x222222FF);
-		public static readonly Color Gray = new Color(0x555555FF);
-		public static readonly Color LightGray = new Color(0x999999FF);
+		public static readonly Color DarkGray = new Color(0xFF222222);
+		public static readonly Color Gray = new Color(0xFF555555);
+		public static readonly Color LightGray = new Color(0xFF999999);
 		// Spectrum logo colors
-		public static readonly Color SpectrumRed = new Color(0xDA271CFF);
-		public static readonly Color SpectrumOrange = new Color(0xFF8800FF);
-		public static readonly Color SpectrumGreen = new Color(0x2AA42FFF);
-		public static readonly Color SpectrumBlue = new Color(0x162FD9FF);
-		public static readonly Color SpectrumPurple = new Color(0x5B1C81FF);
-		public static readonly Color SpectrumGray = new Color(0x666666FF);
+		public static readonly Color SpectrumRed = new Color(0xFF1C27DA);
+		public static readonly Color SpectrumOrange = new Color(0xFF0088FF);
+		public static readonly Color SpectrumGreen = new Color(0xFF2FA42A);
+		public static readonly Color SpectrumBlue = new Color(0xFFD92F16);
+		public static readonly Color SpectrumPurple = new Color(0xFF811C5B);
+		public static readonly Color SpectrumGray = new Color(0xFF666666);
 		// Other lib colors
-		public static readonly Color MonoGameOrange = new Color(0xE73C00FF); // Thanks to MonoGame for being an inspiration for this library
+		public static readonly Color MonoGameOrange = new Color(0xFF003CE7); // Thanks to MonoGame for being an inspiration for this library
 		#endregion // Predefined Colors
 	}
 }

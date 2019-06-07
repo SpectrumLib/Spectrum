@@ -1,9 +1,6 @@
-﻿using Spectrum.Utilities;
-using System;
-using System.Linq;
+﻿using System;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
-using VkKhr = VulkanCore.Khr;
 
 namespace Spectrum.Graphics
 {
@@ -63,12 +60,6 @@ namespace Spectrum.Graphics
 			dispose(false);
 		}
 
-		// Initializes the various graphics resources found throughout the library
-		internal void InitializeResources()
-		{
-			TransferBuffer.CreateResources();
-		}
-
 		#region Frame Functions
 		// Called at the beginning of a render frame to prepare the render subsystem
 		internal void BeginFrame()
@@ -82,26 +73,9 @@ namespace Spectrum.Graphics
 		// Called at the end of a render frame to present the frame
 		internal void EndFrame()
 		{
-			Swapchain.EndFrame(null, Point.Zero);
+			Swapchain.EndFrame(_tex.VkImage, new Point((int)_tex.Width, (int)_tex.Height));
 		}
 		#endregion // Frame Functions
-
-		// Finds the best type of memory for the given constraints
-		// TODO: In the future, we will probably cache the best indices for all common property flag combinations,
-		//       and check against that and make sure the memory types are valid, before performing the expensive
-		//       calculation to find the best
-		internal int FindMemoryTypeIndex(int bits, Vk.MemoryProperties props)
-		{
-			int? index = null;
-			Memory.MemoryTypes.ForEach((type, idx) => {
-				// If: (not already found) AND (valid memory type) AND (all required properties are present)
-				if (!index.HasValue && (bits & (0x1 << idx)) > 0 && (type.PropertyFlags & props) == props)
-				{
-					index = idx;
-				}
-			});
-			return index.HasValue ? index.Value : -1;
-		}
 
 		#region IDisposable
 		public void Dispose()
@@ -114,9 +88,11 @@ namespace Spectrum.Graphics
 		{
 			if (!IsDisposed && disposing)
 			{
-				// Resources scattered thorughout the library
-				Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
-				TransferBuffer.Cleanup();
+				// Wait for all current GPU processes to complete
+				VkDevice.WaitIdle();
+
+				// Clean the internal resources
+				cleanResources();
 
 				// Base objects
 				Swapchain.Dispose();

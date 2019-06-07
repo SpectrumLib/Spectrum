@@ -103,8 +103,8 @@ namespace Spectrum.Graphics
 				ArrayLayers = (int)layers,
 				Format = Vk.Format.R8G8B8A8UNorm,
 				Tiling = Vk.ImageTiling.Optimal,
-				InitialLayout = Vk.ImageLayout.ShaderReadOnlyOptimal,
-				Usage = Vk.ImageUsages.TransferDst | Vk.ImageUsages.Sampled,
+				InitialLayout = Vk.ImageLayout.Undefined,
+				Usage = Vk.ImageUsages.TransferDst | Vk.ImageUsages.Sampled | Vk.ImageUsages.TransferSrc,
 				SharingMode = Vk.SharingMode.Exclusive,
 				Samples = Vk.SampleCounts.Count1,
 				Flags = Vk.ImageCreateFlags.None
@@ -128,6 +128,15 @@ namespace Spectrum.Graphics
 				viewType: GetViewType(Type, layers)
 			);
 			VkView = VkImage.CreateView(vci);
+
+			// Make the initial layout transition
+			Device.SubmitScratchCommand(buf =>
+			{
+				buf.CmdPipelineBarrier(Vk.PipelineStages.AllGraphics, Vk.PipelineStages.AllGraphics, imageMemoryBarriers: new[] { new Vk.ImageMemoryBarrier(
+					VkImage, new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1), Vk.Accesses.None, Vk.Accesses.ShaderRead,
+					Vk.ImageLayout.Undefined, Vk.ImageLayout.ShaderReadOnlyOptimal
+				)});
+			});
 		}
 		~Texture()
 		{
