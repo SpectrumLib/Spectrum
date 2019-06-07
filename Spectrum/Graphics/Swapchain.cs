@@ -69,6 +69,11 @@ namespace Spectrum.Graphics
 			long surfHandle = Glfw.CreateWindowSurface(instance, _window.Handle);
 			Vk.AllocationCallbacks? acb = null;
 			Surface = new VkKhr.SurfaceKhr(instance, ref acb, surfHandle);
+			if (VkKhr.PhysicalDeviceExtensions.GetSurfaceSupportKhr(pDevice, gdevice.Queues.Graphics.FamilyIndex, Surface) == Vk.Constant.False)
+			{
+				LFATAL($"The physical device '{gdevice.Info.Name}' does not support surface presentation.");
+				throw new PlatformNotSupportedException("Physical device does not support surface presentation.");
+			}
 			LINFO("Created Vulkan presentation surface.");
 
 			// Check the surface for swapchain support levels

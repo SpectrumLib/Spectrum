@@ -123,6 +123,13 @@ namespace Spectrum.Graphics
 		/// </summary>
 		Int4 = Vk.Format.R32G32B32A32SInt,
 
+		// ==================================== FOR SIMPLICITY, DEFINE THESE ==========================================
+		/// <summary>
+		/// The format used by <see cref="Texture"/> types, same as <see cref="UNorm4"/>. 8-bit unsigned normalized
+		/// integers. Channels: RGBA.
+		/// </summary>
+		Color = Vk.Format.R8G8B8A8UNorm,
+
 		// =============================== STANDARD COLOR FLOATING POINT FORMATS ======================================
 		/// <summary>
 		/// Each texel is a single-precision 32-bit floating point number. Channels: R.

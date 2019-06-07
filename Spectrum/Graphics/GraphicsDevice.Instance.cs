@@ -183,10 +183,6 @@ namespace Spectrum.Graphics
 				enFeats.DepthClamp = features.DepthClamp = _enableFeature(bestDev.feats.DepthClamp, "DepthClamp");
 			if (rFeats.AnisotropicFiltering)
 				enFeats.SamplerAnisotropy = features.AnisotropicFiltering = _enableFeature(bestDev.feats.SamplerAnisotropy, "AnisotropicFiltering");
-			if (rFeats.GeometryShaders)
-				enFeats.GeometryShader = features.GeometryShaders = _enableFeature(bestDev.feats.GeometryShader, "GeometryShaders");
-			if (rFeats.TessellationShaders)
-				enFeats.TessellationShader = features.TessellationShaders = _enableFeature(bestDev.feats.TessellationShader, "TessellationShaders");
 
 			// Create the device
 			Vk.DeviceCreateInfo dInfo = new Vk.DeviceCreateInfo(

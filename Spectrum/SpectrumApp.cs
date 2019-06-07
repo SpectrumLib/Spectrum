@@ -104,7 +104,7 @@ namespace Spectrum
 		/// </summary>
 		public void Run()
 		{
-			// Initialize the driver
+			// Initialize the driver (this creates the window)
 			Driver.Initialize();
 
 			// Create and assemble all of the graphics components

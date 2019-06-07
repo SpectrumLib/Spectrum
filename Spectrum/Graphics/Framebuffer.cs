@@ -181,7 +181,7 @@ namespace Spectrum.Graphics
 				ArrayLayers = 1,
 				Format = (Vk.Format)info.Format,
 				Tiling = Vk.ImageTiling.Optimal,
-				InitialLayout = info.Format.IsDepthFormat() ? Vk.ImageLayout.DepthStencilAttachmentOptimal : Vk.ImageLayout.ColorAttachmentOptimal,
+				InitialLayout = Vk.ImageLayout.Undefined,
 				Usage = Vk.ImageUsages.TransferSrc | usage,
 				SharingMode = Vk.SharingMode.Exclusive,
 				Samples = Vk.SampleCounts.Count1,

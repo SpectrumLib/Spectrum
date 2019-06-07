@@ -34,7 +34,8 @@ namespace Spectrum.Graphics
 		private static Vk.SubmitInfo s_pullSubmitInfo;
 
 		// Cached values to making the stupid large temp buffers
-		private static int s_bufferFamily;
+		private static int s_pushFamily;
+		private static int s_pullFamily;
 		#endregion // Fields
 
 		#region Host -> Device
@@ -96,7 +97,7 @@ namespace Spectrum.Graphics
 				);
 				buffer = s_device.CreateBuffer(bci);
 				var memReq = buffer.GetMemoryRequirements();
-				var mai = new Vk.MemoryAllocateInfo(memReq.Size, s_bufferFamily);
+				var mai = new Vk.MemoryAllocateInfo(memReq.Size, s_pushFamily);
 				memory = s_device.AllocateMemory(mai);
 				buffer.BindMemory(memory);
 			}
@@ -226,7 +227,7 @@ namespace Spectrum.Graphics
 				);
 				buffer = s_device.CreateBuffer(bci);
 				var memReq = buffer.GetMemoryRequirements();
-				var mai = new Vk.MemoryAllocateInfo(memReq.Size, s_bufferFamily);
+				var mai = new Vk.MemoryAllocateInfo(memReq.Size, s_pullFamily);
 				memory = s_device.AllocateMemory(mai);
 				buffer.BindMemory(memory);
 			}
@@ -321,14 +322,21 @@ namespace Spectrum.Graphics
 			bci.Usage = Vk.BufferUsages.TransferDst;
 			s_pullBuffer = s_device.CreateBuffer(bci);
 
-			// Allocate the staging memories
-			var memReq = s_pushBuffer.GetMemoryRequirements();
-			s_bufferFamily = s_graphicsDevice.FindMemoryTypeIndex(memReq.MemoryTypeBits, Vk.MemoryProperties.HostVisible | Vk.MemoryProperties.HostCoherent);
-			if (s_bufferFamily == -1)
-				throw new InvalidOperationException("Cannot find a memory type that supports host buffers (this means bad or out-of-date hardware)");
-			var mai = new Vk.MemoryAllocateInfo(memReq.Size, s_bufferFamily);
+			// Allocate the push staging memory
+			var pushReq = s_pushBuffer.GetMemoryRequirements();
+			s_pushFamily = s_graphicsDevice.FindMemoryTypeIndex(pushReq.MemoryTypeBits, Vk.MemoryProperties.HostVisible | Vk.MemoryProperties.HostCoherent);
+			if (s_pushFamily == -1)
+				throw new PlatformNotSupportedException("Cannot find a memory type that supports host buffers (this means bad or out-of-date hardware)");
+			var mai = new Vk.MemoryAllocateInfo(pushReq.Size, s_pushFamily);
 			s_pushMemory = s_device.AllocateMemory(mai);
 			s_pushBuffer.BindMemory(s_pushMemory);
+
+			// Allocate the pull staging memory
+			var pullReq = s_pullBuffer.GetMemoryRequirements();
+			s_pullFamily = s_graphicsDevice.FindMemoryTypeIndex(pullReq.MemoryTypeBits, Vk.MemoryProperties.HostVisible | Vk.MemoryProperties.HostCoherent);
+			if (s_pullFamily == -1)
+				throw new PlatformNotSupportedException("Cannot find a memory type that supports host buffers (this means bad or out-of-date hardware)");
+			mai = new Vk.MemoryAllocateInfo(pullReq.Size, s_pullFamily);
 			s_pullMemory = s_device.AllocateMemory(mai);
 			s_pullBuffer.BindMemory(s_pullMemory);
 

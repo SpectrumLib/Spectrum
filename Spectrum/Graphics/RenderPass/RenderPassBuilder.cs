@@ -312,7 +312,7 @@ namespace Spectrum.Graphics
 						Vk.Constant.SubpassExternal,
 						last.input ? Vk.PipelineStages.VertexShader : Vk.PipelineStages.FragmentShader,
 						Vk.PipelineStages.TopOfPipe,
-						last.input ? Vk.Accesses.InputAttachmentRead : (att.Attach.Format.IsDepthFormat() ? Vk.Accesses.DepthStencilAttachmentRead : Vk.Accesses.ColorAttachmentRead),
+						Vk.Accesses.ShaderRead | Vk.Accesses.ShaderWrite,
 						Vk.Accesses.None,
 						dependencyFlags: Vk.Dependencies.ByRegion
 					));

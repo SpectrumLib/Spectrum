@@ -151,14 +151,6 @@ namespace Spectrum.Graphics
 		/// If the device supports anisotropic filtering for image samplers.
 		/// </summary>
 		public bool AnisotropicFiltering;
-		/// <summary>
-		/// If the device supports geometry shader stages.
-		/// </summary>
-		public bool GeometryShaders;
-		/// <summary>
-		/// If the device supports tessellation control and evaluation shader stages.
-		/// </summary>
-		public bool TessellationShaders;
 	}
 
 	/// <summary>
