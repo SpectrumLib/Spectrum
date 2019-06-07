@@ -65,6 +65,16 @@ namespace Spectrum.Graphics
 		/// If the builder has a specified vertex description.
 		/// </summary>
 		public bool HasVertexDescription => VertexDescription.HasValue;
+
+		/// <summary>
+		/// The currently active shader program.
+		/// </summary>
+		public Shader Shader { get; private set; } = null;
+		private Vk.PipelineShaderStageCreateInfo[] _shaderStageCIs = null;
+		/// <summary>
+		/// If the builder has a specified shader.
+		/// </summary>
+		public bool HasShader => (Shader != null);
 		#endregion // Settings
 
 		// Quick reference to the graphics device
@@ -74,7 +84,7 @@ namespace Spectrum.Graphics
 		/// Gets if all of the required pipeline state objects have been specified.
 		/// </summary>
 		public bool IsComplete => ColorBlendState.HasValue && DepthStencilState.HasValue && PrimitiveInput.HasValue &&
-			RasterizerState.HasValue && VertexDescription.HasValue;
+			RasterizerState.HasValue && VertexDescription.HasValue && (Shader != null);
 		#endregion // Fields
 
 		private PipelineBuilder()
@@ -130,6 +140,14 @@ namespace Spectrum.Graphics
 			if (RasterizerState.Value.DepthClampEnable && !Device.Features.DepthClamp)
 				throw new InvalidOperationException("Cannot create pipeline, depth clamping is not enabled on the graphics device.");
 
+			// Non-user-specified create infos
+			var vsci = new Vk.PipelineViewportStateCreateInfo(
+				renderPass.DefaultViewport.ToVulkanNative(),
+				renderPass.DefaultScissor.ToVulkanNative()
+			);
+			var mssci = new Vk.PipelineMultisampleStateCreateInfo(Vk.SampleCounts.Count1); // TODO: derive this from the framebuffer or renderpass
+
+			// Layout
 			var lci = new Vk.PipelineLayoutCreateInfo(null, null);
 			var layout = Device.VkDevice.CreatePipelineLayout(lci);
 
@@ -138,13 +156,13 @@ namespace Spectrum.Graphics
 				layout,
 				renderPass.VkRenderPass,
 				spIdx,
-				null,
+				_shaderStageCIs,
 				_inputAssemblyCI.Value,
 				_vertexInputStateCI.Value,
 				_rasterizationCI.Value,
-				tessellationState: null, // TODO: look into tesselation state and what it controls and requires
-				viewportState: null, // TODO: default viewport state, even though it will be dynamic
-				multisampleState: null, // TODO: enable multisampling eventually, probably drawn from the given render pass
+				tessellationState: null, // TODO: control this once we support tessellation shaders
+				viewportState: vsci,
+				multisampleState: mssci,
 				depthStencilState: _depthStencilCI.Value,
 				colorBlendState: _colorBlendCI.Value,
 				dynamicState: DEFAULT_DYNAMIC_STATE,
@@ -164,7 +182,7 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="state">The state to use.</param>
 		/// <returns>The same builder, to facilitate method chaining.</returns>
-		public PipelineBuilder SetColorBlendState(in ColorBlendState state) => SetColorBlendState(state, out bool changed);
+		public PipelineBuilder SetColorBlendState(in ColorBlendState state) => SetColorBlendState(state, out bool _);
 		/// <summary>
 		/// Sets the color blending state that pipelines from this builder will use.
 		/// </summary>
@@ -184,7 +202,7 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="state">The state to use.</param>
 		/// <returns>The same builder, to facilitate method chaining.</returns>
-		public PipelineBuilder SetDepthStencilState(in DepthStencilState state) => SetDepthStencilState(state, out bool changed);
+		public PipelineBuilder SetDepthStencilState(in DepthStencilState state) => SetDepthStencilState(state, out bool _);
 		/// <summary>
 		/// Sets the depth/stencil state that pipelines from this builder will use.
 		/// </summary>
@@ -204,7 +222,7 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="state">The primitive input layout to use.</param>
 		/// <returns>The same builder, to facilitate method chaining.</returns>
-		public PipelineBuilder SetPrimitiveInput(in PrimitiveInput state) => SetPrimitiveInput(state, out bool changed);
+		public PipelineBuilder SetPrimitiveInput(in PrimitiveInput state) => SetPrimitiveInput(state, out bool _);
 		/// <summary>
 		/// Sets the primitive input layout that pipelines from this builder will use.
 		/// </summary>
@@ -224,7 +242,7 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="state">The state to use.</param>
 		/// <returns>The same builder, to facilitate method chaining.</returns>
-		public PipelineBuilder SetRasterizerState(in RasterizerState state) => SetRasterizerState(state, out bool changed);
+		public PipelineBuilder SetRasterizerState(in RasterizerState state) => SetRasterizerState(state, out bool _);
 		/// <summary>
 		/// Sets the rasterizer state that pipelines from this builder will use.
 		/// </summary>
@@ -244,7 +262,7 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="state">The state to use.</param>
 		/// <returns>The same builder, to facilitate method chaining.</returns>
-		public PipelineBuilder SetVertexDescription(in VertexDescription state) => SetVertexDescription(state, out bool changed);
+		public PipelineBuilder SetVertexDescription(in VertexDescription state) => SetVertexDescription(state, out bool _);
 		/// <summary>
 		/// Sets the color blending state that pipelines from this builder will use.
 		/// </summary>
@@ -256,6 +274,26 @@ namespace Spectrum.Graphics
 			changed = VertexDescription.HasValue;
 			VertexDescription = state;
 			_vertexInputStateCI = state.ToCreateInfo();
+			return this;
+		}
+
+		/// <summary>
+		/// Sets the shader program that pipelines from this builder will use.
+		/// </summary>
+		/// <param name="shader">The shader to use.</param>
+		/// <returns>The same builder, to facilitate method chaining.</returns>
+		public PipelineBuilder SetShader(Shader shader) => SetShader(shader, out bool _);
+		/// <summary>
+		/// Sets the shader program that pipelines from this builder will use.
+		/// </summary>
+		/// <param name="shader">The shader to use.</param>
+		/// <param name="changed">If there was an existing shader that was changed by this call.</param>
+		/// <returns>The same builder, to facilitate method chaining.</returns>
+		public PipelineBuilder SetShader(Shader shader, out bool changed)
+		{
+			changed = (Shader != null);
+			Shader = shader ?? throw new ArgumentNullException(nameof(shader));
+			_shaderStageCIs = Shader.CreateInfo;
 			return this;
 		}
 		#endregion // Settings

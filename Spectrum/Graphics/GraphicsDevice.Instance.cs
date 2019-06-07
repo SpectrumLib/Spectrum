@@ -60,7 +60,7 @@ namespace Spectrum.Graphics
 				{
 					var availLay = Vk.Instance.EnumerateLayerProperties().Select(layer => layer.LayerName).ToArray();
 
-					hasDebug = availLay.Contains(Vk.Constant.InstanceLayer.LunarGStandardValidation);
+					hasDebug = availLay.Contains("VK_LAYER_KHRONOS_validation");
 					if (hasDebug)
 						reqExt.Add(Vk.Constant.InstanceExtension.ExtDebugReport);
 					else
@@ -73,7 +73,7 @@ namespace Spectrum.Graphics
 			// Create the instance
 			Vk.InstanceCreateInfo iInfo = new Vk.InstanceCreateInfo(
 				aInfo,
-				hasDebug ? new[] { Vk.Constant.InstanceLayer.LunarGStandardValidation } : null,
+				hasDebug ? new[] { "VK_LAYER_KHRONOS_validation" } : null,
 				reqExt.ToArray(),
 				IntPtr.Zero
 			);
@@ -255,7 +255,10 @@ namespace Spectrum.Graphics
 		// The debug report callback
 		private static bool _DebugReportCallback(VkExt.DebugReportCallbackInfo info)
 		{
-			LINFO("Called debug report.");
+			if (info.Flags == VkExt.DebugReportFlagsExt.Error)
+				LERROR($"Vulkan: {info.Message}");
+			else
+				LWARN($"Vulkan: {info.Message}");
 			return false;
 		}
 	}
