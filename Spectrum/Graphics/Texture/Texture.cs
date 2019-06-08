@@ -130,8 +130,7 @@ namespace Spectrum.Graphics
 			VkView = VkImage.CreateView(vci);
 
 			// Make the initial layout transition
-			Device.SubmitScratchCommand(buf =>
-			{
+			Device.SubmitScratchCommand(buf => {
 				buf.CmdPipelineBarrier(Vk.PipelineStages.AllGraphics, Vk.PipelineStages.AllGraphics, imageMemoryBarriers: new[] { new Vk.ImageMemoryBarrier(
 					VkImage, new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1), Vk.Accesses.None, Vk.Accesses.ShaderRead,
 					Vk.ImageLayout.Undefined, Vk.ImageLayout.ShaderReadOnlyOptimal
