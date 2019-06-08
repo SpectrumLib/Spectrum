@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Vk = VulkanCore;
 
 namespace Spectrum.Graphics
@@ -25,8 +27,12 @@ namespace Spectrum.Graphics
 
 		// The pipeline objects
 		internal readonly Vk.Pipeline VkPipeline;
-		internal readonly Vk.PipelineLayout VkPipelineLayout;
+		internal readonly Vk.PipelineLayout VkLayout;
 		internal readonly Vk.RenderPass VkRenderPass;
+		internal readonly Vk.Framebuffer VkFramebuffer;
+
+		// List of render targets used in this pipeline
+		private List<RenderTarget> _renderTargets = new List<RenderTarget>();
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -60,9 +66,10 @@ namespace Spectrum.Graphics
 			if (!desc.CheckRenderTargetSizes())
 				throw new InvalidOperationException("Pipeline render targets must all be the same size.");
 
-			// Create the layout
-			var lci = new Vk.PipelineLayoutCreateInfo(null, null);
-			VkPipelineLayout = Device.VkDevice.CreatePipelineLayout(lci);
+			// Create the renderpass, framebuffer, and layout
+			VkRenderPass = CreateRenderPass(Device.VkDevice, desc, _renderTargets);
+			VkFramebuffer = CreateFramebuffer(VkRenderPass, _renderTargets, desc.TargetSize);
+			VkLayout = CreateLayout(Device.VkDevice);
 
 			// Non-user-specified create infos
 			var vsci = new Vk.PipelineViewportStateCreateInfo(
@@ -73,8 +80,8 @@ namespace Spectrum.Graphics
 
 			// Pipeline creation
 			var gpci = new Vk.GraphicsPipelineCreateInfo(
-				VkPipelineLayout,
-				null, // TODO
+				VkLayout,
+				VkRenderPass,
 				0,
 				desc._shaderCIs,
 				desc._piCI.Value,
@@ -108,11 +115,82 @@ namespace Spectrum.Graphics
 		{
 			if (disposing && !_isDisposed)
 			{
+				// Destroy the Vulkan objects
 				VkPipeline.Dispose();
-				VkPipelineLayout.Dispose();
+				VkLayout.Dispose();
+				VkRenderPass.Dispose();
+				VkFramebuffer.Dispose();
+
+				// Decrement the render target ref counts
+				foreach (var rt in _renderTargets)
+					rt.DecRefCount();
 			}
 			_isDisposed = true;
 		}
 		#endregion // IDisposable
+
+		// Helper function to create a renderpass (and fill a list) from a set of render targets
+		// The color attachments will always come first, in the order they are specified
+		private static Vk.RenderPass CreateRenderPass(Vk.Device device, PipelineDescription desc, List<RenderTarget> rts)
+		{
+			// Fill the list
+			rts.Clear();
+			if (desc.HasColorTargets)
+				rts.AddRange(desc.ColorTargets);
+			if (desc.HasDepthTarget)
+				rts.Add(desc.DepthTarget);
+
+			// Collect the attachment descriptions and create the references
+			Vk.AttachmentDescription[] atts = new Vk.AttachmentDescription[desc.TargetCount];
+			Vk.AttachmentReference[] crefs = new Vk.AttachmentReference[desc.TargetCount - (desc.HasDepthTarget ? 1 : 0)];
+			if (desc.HasColorTargets)
+			{
+				for (int i = 0; i < desc._colorAIs.Length; ++i)
+				{
+					atts[i] = desc._colorAIs[i];
+					crefs[i] = new Vk.AttachmentReference(i, desc.ColorTargets[i].DefaultImageLayout);
+				}
+			}
+			if (desc.HasDepthTarget)
+				atts[atts.Length - 1] = desc._depthAI.Value;
+
+			// Specify the lone subpass
+			Vk.SubpassDescription subpass = new Vk.SubpassDescription(
+				colorAttachments: crefs,
+				depthStencilAttachment: desc.HasDepthTarget ? 
+					new Vk.AttachmentReference(atts.Length - 1, desc.DepthTarget.DefaultImageLayout) : (Vk.AttachmentReference?)null
+			);
+
+			// Create the renderpass
+			var rpci = new Vk.RenderPassCreateInfo(
+				new[] { subpass },
+				attachments: atts,
+				dependencies: null
+			);
+			return device.CreateRenderPass(rpci);
+		}
+
+		// Helper function to create a framebuffer from a renderpass and set of render targets
+		private static Vk.Framebuffer CreateFramebuffer(Vk.RenderPass rp, List<RenderTarget> rts, Point size)
+		{
+			// Increment the ref count of the render targets as they are now part of a new framebuffer
+			foreach (var rt in rts)
+				rt.IncRefCount();
+
+			// Create the framebuffer
+			var fbci = new Vk.FramebufferCreateInfo(
+				rts.Select(rt => rt.VkView).ToArray(),
+				size.X, size.Y,
+				layers: 1
+			);
+			return rp.CreateFramebuffer(fbci);
+		}
+
+		// Helper function to create a pipeline layout
+		private static Vk.PipelineLayout CreateLayout(Vk.Device device)
+		{
+			var lci = new Vk.PipelineLayoutCreateInfo(null, null); // TODO: Check shader to get layout
+			return device.CreatePipelineLayout(lci);
+		}
 	}
 }

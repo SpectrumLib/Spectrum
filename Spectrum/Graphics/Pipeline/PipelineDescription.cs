@@ -182,6 +182,10 @@ namespace Spectrum.Graphics
 		/// getting the size. Will return <see cref="Point.Zero"/> if there are no render targets.
 		/// </summary>
 		public Point TargetSize => HasColorTargets ? _colorRTs[0].Size : (_depthRT?.Size ?? Point.Zero);
+		/// <summary>
+		/// Gets the number of render targets specified in this description.
+		/// </summary>
+		public uint TargetCount => (HasColorTargets ? (uint)_colorRTs.Length : 0u) + ((_depthRT != null) ? 1u : 0u);
 
 		/// <summary>
 		/// Gets the default viewport for pipelines created with this description. This function does not check for
@@ -208,9 +212,9 @@ namespace Spectrum.Graphics
 			Point sz = TargetSize;
 			if (sz == Point.Zero)
 				return true; // No render targets
-
-			// Dont check depth rt, if it exists it is the one that set the valid size
-			return _colorRTs.Any(rt => rt.Size != sz);
+			if (_depthRT != null && _depthRT.Size != sz)
+				return false;
+			return _colorRTs?.All(rt => rt.Size == sz) ?? true;
 		}
 	}
 }
