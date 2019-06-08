@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Vk = VulkanCore;
 
 namespace Spectrum.Graphics
@@ -54,11 +55,21 @@ namespace Spectrum.Graphics
 		/// </summary>
 		protected GraphicsDevice Device => SpectrumApp.Instance.GraphicsDevice;
 
+		/// <summary>
+		/// Gets the default viewport to access the entire render target.
+		/// </summary>
+		public Viewport DefaultViewport => new Viewport(0, 0, Width, Height);
+		/// <summary>
+		/// Gets the default scissor to access the entire render target.
+		/// </summary>
+		public Scissor DefaultScissor => new Scissor(0, 0, Width, Height);
+
 		// Vulkan objects
 		internal Vk.Image VkImage { get; private set; } = null;
 		internal Vk.DeviceMemory VkMemory { get; private set; } = null;
 		internal Vk.ImageView VkView { get; private set; } = null;
 		internal readonly Vk.ImageAspects VkAspects;
+		internal readonly Vk.ImageLayout DefaultImageLayout;
 
 		// Reference counting
 		private uint _refCount = 0;
@@ -90,6 +101,7 @@ namespace Spectrum.Graphics
 				throw new ArgumentException($"Cannot create a render target larger than the image size limits ({width}x{height} > {Device.Limits.MaxTextureSize2D})");
 			Format = format;
 			VkAspects = HasDepth ? (Vk.ImageAspects.Depth | (HasStencil ? Vk.ImageAspects.Stencil : 0)) : Vk.ImageAspects.Color;
+			DefaultImageLayout = HasDepth ? Vk.ImageLayout.DepthStencilAttachmentOptimal : Vk.ImageLayout.ColorAttachmentOptimal;
 			Name = name;
 
 			Rebuild(width, height);
@@ -130,7 +142,7 @@ namespace Spectrum.Graphics
 				Usage = Vk.ImageUsages.Sampled | Vk.ImageUsages.TransferSrc | Vk.ImageUsages.InputAttachment |
 					(HasDepth ? Vk.ImageUsages.DepthStencilAttachment : Vk.ImageUsages.ColorAttachment),
 				SharingMode = Vk.SharingMode.Exclusive,
-				Samples = Vk.SampleCounts.Count1,
+				Samples = Vk.SampleCounts.Count1, // TODO: Change when we support multisampling
 				Flags = Vk.ImageCreateFlags.None
 			};
 			VkImage = Device.VkDevice.CreateImage(ici);
@@ -157,7 +169,7 @@ namespace Spectrum.Graphics
 			Device.SubmitScratchCommand(buf => {
 				buf.CmdPipelineBarrier(Vk.PipelineStages.AllGraphics, Vk.PipelineStages.AllGraphics, imageMemoryBarriers: new[] { new Vk.ImageMemoryBarrier(
 					VkImage, new Vk.ImageSubresourceRange(VkAspects, 0, 1, 0, 1), Vk.Accesses.None, Vk.Accesses.None,
-					Vk.ImageLayout.Undefined, (HasDepth ? Vk.ImageLayout.DepthStencilAttachmentOptimal : Vk.ImageLayout.ColorAttachmentOptimal)
+					Vk.ImageLayout.Undefined, DefaultImageLayout
 				)});
 			});
 		}
@@ -171,6 +183,25 @@ namespace Spectrum.Graphics
 		internal void DecRefCount()
 		{
 			lock (_refLock) { if (_refCount > 0) _refCount -= 1; }
+		}
+
+		// Gets the default attachment description for this render target
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal Vk.AttachmentDescription GetDescription()
+		{
+			return new Vk.AttachmentDescription(
+				Vk.AttachmentDescriptions.MayAlias,
+				(Vk.Format)Format,
+				Vk.SampleCounts.Count1, // TODO: change when we support multisampling
+				// All pipelines will preserve attachments when loading and storing
+				// This is not the most efficient, but its too complex to support otherwise (for now)
+				Vk.AttachmentLoadOp.Load,
+				Vk.AttachmentStoreOp.Store,
+				Vk.AttachmentLoadOp.Load,
+				Vk.AttachmentStoreOp.Store,
+				DefaultImageLayout,
+				DefaultImageLayout
+			);
 		}
 
 		#region IDisposable

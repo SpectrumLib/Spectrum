@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Vk = VulkanCore;
 
 namespace Spectrum.Graphics
@@ -16,6 +17,8 @@ namespace Spectrum.Graphics
 		private RasterizerState? _rasterizerState = null;
 		private VertexDescription? _vertexDescription = null;
 		private Shader _shader = null;
+		private RenderTarget _depthRT = null;
+		private RenderTarget[] _colorRTs = null;
 
 		// Vulkan pipeline create infos
 		internal Vk.PipelineColorBlendStateCreateInfo? _cbsCI = null;
@@ -24,67 +27,105 @@ namespace Spectrum.Graphics
 		internal Vk.PipelineRasterizationStateCreateInfo? _rsCI = null;
 		internal Vk.PipelineVertexInputStateCreateInfo? _vdCI = null;
 		internal Vk.PipelineShaderStageCreateInfo[] _shaderCIs = null;
+		internal Vk.AttachmentDescription? _depthAI = null;
+		internal Vk.AttachmentDescription[] _colorAIs = null;
 		#endregion // Backing Fields
 
 		#region Public Settings
-
+		/// <summary>
+		/// The specified color blend state, if any.
+		/// </summary>
 		public ColorBlendState? ColorBlendState
 		{
-			get { return _colorBlendState; }
+			get => _colorBlendState;
 			set
 			{
 				_colorBlendState = value;
 				_cbsCI = value.HasValue ? value.Value.ToCreateInfo() : (Vk.PipelineColorBlendStateCreateInfo?)null;
 			}
 		}
-
+		/// <summary>
+		/// The specified depth stencil state, if any.
+		/// </summary>
 		public DepthStencilState? DepthStencilState
 		{
-			get { return _depthStencilState; }
+			get => _depthStencilState;
 			set
 			{
 				_depthStencilState = value;
 				_dssCI = value.HasValue ? value.Value.ToCreateInfo() : (Vk.PipelineDepthStencilStateCreateInfo?)null;
 			}
 		}
-
+		/// <summary>
+		/// The specified primitive input style, if any.
+		/// </summary>
 		public PrimitiveInput? PrimitiveInput
 		{
-			get { return _primitiveInput; }
+			get => _primitiveInput;
 			set
 			{
 				_primitiveInput = value;
 				_piCI = value.HasValue ? value.Value.ToCreateInfo() : (Vk.PipelineInputAssemblyStateCreateInfo?)null;
 			}
 		}
-
+		/// <summary>
+		/// The specified rasterizer state, if any.
+		/// </summary>
 		public RasterizerState? RasterizerState
 		{
-			get { return _rasterizerState; }
+			get => _rasterizerState;
 			set
 			{
 				_rasterizerState = value;
 				_rsCI = value.HasValue ? value.Value.ToCreateInfo() : (Vk.PipelineRasterizationStateCreateInfo?)null;
 			}
 		}
-
+		/// <summary>
+		/// The specified vertex input description, if any.
+		/// </summary>
 		public VertexDescription? VertexDescription
 		{
-			get { return _vertexDescription; }
+			get => _vertexDescription;
 			set
 			{
 				_vertexDescription = value;
 				_vdCI = value.HasValue ? value.Value.ToCreateInfo() : (Vk.PipelineVertexInputStateCreateInfo?)null;
 			}
 		}
-
+		/// <summary>
+		/// The specified shader.
+		/// </summary>
 		public Shader Shader
 		{
-			get { return _shader; }
+			get => _shader;
 			set
 			{
-				_shader = value;
+				_shader = value ?? throw new InvalidOperationException("Cannot use a null shader in a pipeline description");
 				_shaderCIs = value.CreateInfo;
+			}
+		}
+		/// <summary>
+		/// The specified depth/stencil render target.
+		/// </summary>
+		public RenderTarget DepthTarget
+		{
+			get => _depthRT;
+			set
+			{
+				_depthRT = value;
+				_depthAI = value?.GetDescription();
+			}
+		}
+		/// <summary>
+		/// The specified color render targets. The order must match the desired order of fragment shader outputs.
+		/// </summary>
+		public RenderTarget[] ColorTargets
+		{
+			get => _colorRTs;
+			set
+			{
+				_colorRTs = value;
+				_colorAIs = value?.Select(rt => rt.GetDescription()).ToArray();
 			}
 		}
 		#endregion // Public Settings
@@ -114,15 +155,62 @@ namespace Spectrum.Graphics
 		/// Gets if the descrption has a specified shader.
 		/// </summary>
 		public bool HasShader => (_shader != null);
+		/// <summary>
+		/// Gets if the description has a specified depth render target.
+		/// </summary>
+		public bool HasDepthTarget => (_depthRT != null);
+		/// <summary>
+		/// Gets if the description has one or more specified color render targets.
+		/// </summary>
+		public bool HasColorTargets => (_colorRTs != null) && (_colorRTs.Length > 0);
 
 		/// <summary>
 		/// Gets if this can fully describe a pipeline. If this is <c>false</c>, then attempting to create a
 		/// <see cref="Pipeline"/> instance with this description will fail.
 		/// </summary>
 		public bool IsComplete =>
-			_colorBlendState.HasValue && _depthStencilState.HasValue && _primitiveInput.HasValue && 
-			_rasterizerState.HasValue && _vertexDescription.HasValue && (_shader != null);
+			_colorBlendState.HasValue && _depthStencilState.HasValue && _primitiveInput.HasValue &&
+			_rasterizerState.HasValue && _vertexDescription.HasValue && (_shader != null) && HasTargets;
+		/// <summary>
+		/// Gets if the pipeline description has at least one render target of any type, which is a
+		/// requirement for the description to be considered complete.
+		/// </summary>
+		public bool HasTargets => HasDepthTarget || HasColorTargets;
+
+		/// <summary>
+		/// Gets the size of the render targets for this description. Does not check render target validity before
+		/// getting the size. Will return <see cref="Point.Zero"/> if there are no render targets.
+		/// </summary>
+		public Point TargetSize => HasColorTargets ? _colorRTs[0].Size : (_depthRT?.Size ?? Point.Zero);
+
+		/// <summary>
+		/// Gets the default viewport for pipelines created with this description. This function does not check for
+		/// render target validity before creating the viewport.
+		/// </summary>
+		public Viewport? DefaultViewport =>
+			HasColorTargets ? _colorRTs[0].DefaultViewport : _depthRT?.DefaultViewport;
+
+		/// <summary>
+		/// Gets the default scissor for pipelines created with this description. This function does not check for
+		/// render target validity before creating the scissor.
+		/// </summary>
+		public Scissor? DefaultScissor =>
+			HasColorTargets ? _colorRTs[0].DefaultScissor : _depthRT?.DefaultScissor;
 		#endregion // Checking
 		#endregion // Fields
+
+		/// <summary>
+		/// Gets if all of the render targets have the same size (a requirement for a valid pipeline description).
+		/// </summary>
+		/// <returns>If all of the render targets are the same size.</returns>
+		public bool CheckRenderTargetSizes()
+		{
+			Point sz = TargetSize;
+			if (sz == Point.Zero)
+				return true; // No render targets
+
+			// Dont check depth rt, if it exists it is the one that set the valid size
+			return _colorRTs.Any(rt => rt.Size != sz);
+		}
 	}
 }
