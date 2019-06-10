@@ -73,7 +73,7 @@ namespace Spectrum.Graphics
 		// Called at the end of a render frame to present the frame
 		internal void EndFrame()
 		{
-			Swapchain.EndFrame(null);
+			Swapchain.EndFrame(SceneManager.ActiveScene?.Renderer.ColorTarget);
 		}
 		#endregion // Frame Functions
 

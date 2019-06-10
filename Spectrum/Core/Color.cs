@@ -80,6 +80,11 @@ namespace Spectrum
 		/// The value of the alpha channel, in the range [0, 1].
 		/// </summary>
 		public float AFloat => ((_value >> A_SHIFT) & 0xFF) / 255f;
+
+		/// <summary>
+		/// Gets the version of this color with zero transparency.
+		/// </summary>
+		public Color Opaque => new Color(_value | ~A_MASK_I);
 		#endregion // Fields
 
 		#region Constructors
@@ -163,7 +168,7 @@ namespace Spectrum
 		/// <param name="a">The new alpha channel value.</param>
 		public Color(Color c, byte a)
 		{
-			_value = (c._value & A_MASK_I) | a;
+			_value = (c._value & A_MASK_I) | ((uint)a << A_SHIFT);
 		}
 
 		/// <summary>
@@ -174,7 +179,7 @@ namespace Spectrum
 		public Color(Color c, float a)
 		{
 			uint ac = (uint)(Mathf.UnitClamp(a) * 0xFF);
-			_value = (c._value & A_MASK_I) | (ac & 0xFF);
+			_value = (c._value & A_MASK_I) | ((ac & 0xFF) << A_SHIFT);
 		}
 		#endregion // Constructors
 

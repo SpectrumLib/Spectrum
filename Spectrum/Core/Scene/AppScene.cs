@@ -135,6 +135,7 @@ namespace Spectrum
 
 		internal void DoPreRender()
 		{
+			Renderer.Clear();
 			PreRender();
 		}
 

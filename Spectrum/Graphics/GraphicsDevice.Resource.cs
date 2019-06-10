@@ -79,5 +79,15 @@ namespace Spectrum.Graphics
 			_scratchFence.Reset();
 			cb.Dispose();
 		}
+
+		// Quick way to create a new graphics queue command pool
+		internal Vk.CommandPool CreateGraphicsCommandPool(bool reset = true, bool transient = false)
+		{
+			var cpci = new Vk.CommandPoolCreateInfo(
+				Queues.Graphics.FamilyIndex,
+				flags: (reset ? Vk.CommandPoolCreateFlags.ResetCommandBuffer : 0) | (transient ? Vk.CommandPoolCreateFlags.Transient : 0)
+			);
+			return VkDevice.CreateCommandPool(cpci);
+		}
 	}
 }

@@ -139,8 +139,8 @@ namespace Spectrum.Graphics
 				Format = (Vk.Format)Format,
 				Tiling = Vk.ImageTiling.Optimal,
 				InitialLayout = Vk.ImageLayout.Undefined,
-				Usage = Vk.ImageUsages.Sampled | Vk.ImageUsages.TransferSrc | Vk.ImageUsages.InputAttachment |
-					(HasDepth ? Vk.ImageUsages.DepthStencilAttachment : Vk.ImageUsages.ColorAttachment),
+				Usage = Vk.ImageUsages.Sampled | Vk.ImageUsages.TransferSrc | Vk.ImageUsages.TransferDst | 
+					(HasDepth ? Vk.ImageUsages.DepthStencilAttachment : Vk.ImageUsages.ColorAttachment), // No subpassInput support yet, but add it here
 				SharingMode = Vk.SharingMode.Exclusive,
 				Samples = Vk.SampleCounts.Count1, // TODO: Change when we support multisampling
 				Flags = Vk.ImageCreateFlags.None
