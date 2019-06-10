@@ -120,6 +120,9 @@ namespace Spectrum
 			Type sceneType = typeof(T);
 			T scene = null;
 
+			if (sceneType.IsAbstract)
+				throw new InvalidOperationException($"Cannot create instance of abstract scene type '{sceneType.Name}'");
+
 			try
 			{
 				scene = Activator.CreateInstance(sceneType, args) as T;
@@ -134,14 +137,10 @@ namespace Spectrum
 			{
 				throw new InvalidOperationException($"The scene constructor threw an exception: {e.Message}", e);
 			}
-			catch (MethodAccessException e)
+			catch (MemberAccessException e)
 			{
 				throw new InvalidOperationException($"The scene type '{sceneType.Name}' does not have a publically " +
 					$"accessible constructor that matches the given arguments", e);
-			}
-			catch (MemberAccessException e)
-			{
-				throw new InvalidOperationException($"Cannot create instance of abstract scene type '{sceneType.Name}'", e);
 			}
 			finally
 			{

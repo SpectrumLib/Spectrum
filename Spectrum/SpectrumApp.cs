@@ -119,6 +119,7 @@ namespace Spectrum
 
 			GC.Collect(); // Probably not a bad idea after potentially heavy initialization
 
+			doStart();
 			Driver.MainLoop();
 		}
 
@@ -155,6 +156,19 @@ namespace Spectrum
 		/// <c>base.LoadContent()</c>.
 		/// </summary>
 		protected virtual void LoadContent() { }
+
+		// Performs the startup procedure
+		private void doStart()
+		{
+			Start();
+		}
+
+		/// <summary>
+		/// Override in the base class to perform final startup procedures. This function is called immediately before
+		/// the first frame starts. This is where you should set your initial <see cref="AppScene"/>. User code does
+		/// not need to call <c>base.Start()</c>.
+		/// </summary>
+		protected virtual void Start() { }
 		#endregion // Initialization
 
 		#region Main Loop

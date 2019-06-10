@@ -37,6 +37,11 @@ namespace Spectrum
 		public readonly ContentManager Content;
 
 		/// <summary>
+		/// The renderer responsible for this scene.
+		/// </summary>
+		public readonly SceneRenderer Renderer;
+
+		/// <summary>
 		/// If this scene has been disposed.
 		/// </summary>
 		protected bool IsDisposed { get; private set; } = false;
@@ -68,6 +73,7 @@ namespace Spectrum
 
 			Name = name;
 			Content = ContentManager.OpenPackFile(contentPath);
+			Renderer = new SceneRenderer(this);
 		}
 		~AppScene()
 		{
@@ -77,6 +83,8 @@ namespace Spectrum
 		#region Internal Scene Lifecycle
 		internal void Initialize()
 		{
+			Renderer.Rebuild((uint)Application.Window.Size.X, (uint)Application.Window.Size.Y);
+
 			OnInitialize();
 		}
 
@@ -95,6 +103,7 @@ namespace Spectrum
 		{
 			OnRemove();
 			Content.Dispose();
+			Renderer.Dispose();
 			IsActive = false;
 		}
 
