@@ -157,7 +157,7 @@ namespace Spectrum
 			}
 
 			// Check the content settings
-			if (!IsValidFS(GlobalContentPath))
+			if ((GlobalContentPath != null) && !IsValidFS(GlobalContentPath))
 			{
 				throw new AppParameterException(nameof(GlobalContentPath), $"The directory for the global content " +
 					$"'{GlobalContentPath}' contains invalid filesystem characters.");

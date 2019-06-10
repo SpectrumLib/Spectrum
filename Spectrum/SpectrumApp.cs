@@ -59,17 +59,6 @@ namespace Spectrum
 		/// <see cref="AppParameters.GlobalContentPath"/> is not null.
 		/// </summary>
 		public ContentManager GContent { get; private set; } = null;
-
-		#region Events
-		/// <summary>
-		/// Event raised when the application window gains and loses focus.
-		/// </summary>
-		public event ApplicationFocusEvent FocusChanged;
-		/// <summary>
-		/// Event raised when the application window is minimized or restored from minimization.
-		/// </summary>
-		public event ApplicationMinimizeEvent Minimized;
-		#endregion // Events
 		#endregion // Fields
 
 		/// <summary>
@@ -240,10 +229,44 @@ namespace Spectrum
 		protected virtual void PostRender() { }
 		#endregion // Main Loop
 
-		internal static void FocusChangeCallback(bool focused) => Instance.FocusChanged?.Invoke(focused);
+		#region Event Callbacks
+		// Private event handlers
+		internal void DoFocusChange(bool focused)
+		{
+			OnFocusChange(focused);
+		}
+		internal void DoMinimize(bool minimized)
+		{
+			if (minimized) OnMinimize();
+			else OnRestore();
+		}
+		internal void DoBackbufferSizeChange(uint nw, uint nh)
+		{
+			OnBackbufferSizeChange(nw, nh);
+			SceneManager.ActiveScene?.BackbufferResize(nw, nh);
+		}
 
-		internal static void MinimizeCallback(bool minimized) => Instance.Minimized?.Invoke(minimized);
-
+		/// <summary>
+		/// Called when the application window loses or gains focus.
+		/// </summary>
+		/// <param name="focused">If the window is now focused. <c>false</c> implies the window lost focus.</param>
+		protected virtual void OnFocusChange(bool focused) { }
+		/// <summary>
+		/// Called when the application window is minimized to the OS system bar.
+		/// </summary>
+		protected virtual void OnMinimize() { }
+		/// <summary>
+		/// Called when the application window is restored from the OS system bar.
+		/// </summary>
+		protected virtual void OnRestore() { }
+		/// <summary>
+		/// Called when the application window or backbuffer size changes.
+		/// </summary>
+		/// <param name="newWidth">The new width of the window/backbuffer.</param>
+		/// <param name="newHeight">The new height of the window/backbuffer.</param>
+		protected virtual void OnBackbufferSizeChange(uint newWidth, uint newHeight) { }
+		#endregion // Event Callbacks
+		
 		#region IDisposable
 		/// <summary>
 		/// Disposes the application at the end of its execution. Performs a cleanup of all library components.
@@ -289,16 +312,4 @@ namespace Spectrum
 		protected virtual void OnDisposing(bool disposing) { }
 		#endregion // IDisposable
 	}
-
-	/// <summary>
-	/// Callback for application focus change event.
-	/// </summary>
-	/// <param name="focused"><c>true</c> if the window has gained focus, <c>false</c> if it has lost focus.</param>
-	public delegate void ApplicationFocusEvent(bool focused);
-
-	/// <summary>
-	/// Callback for application minimization event.
-	/// </summary>
-	/// <param name="resotred"><c>true</c> if the window has been minimized, <c>false</c> if the window has been restored.</param>
-	public delegate void ApplicationMinimizeEvent(bool minimized);
 }

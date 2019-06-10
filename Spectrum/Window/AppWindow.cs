@@ -181,8 +181,8 @@ namespace Spectrum
 			Glfw.SetWindowSizeCallback(Handle, (window, w, h) => SizeCallback(w, h));
 
 			// Set the app callbacks
-			Glfw.SetWindowFocusCallback(Handle, (window, focus) => SpectrumApp.FocusChangeCallback(focus == Glfw.TRUE));
-			Glfw.SetWindowIconifyCallback(Handle, (window, icon) => SpectrumApp.MinimizeCallback(icon == Glfw.TRUE));
+			Glfw.SetWindowFocusCallback(Handle, (window, focus) => SpectrumApp.Instance.DoFocusChange(focus == Glfw.TRUE));
+			Glfw.SetWindowIconifyCallback(Handle, (window, icon) => SpectrumApp.Instance.DoMinimize(icon == Glfw.TRUE));
 		}
 
 		// Occurs right before the main loop starts
@@ -231,7 +231,10 @@ namespace Spectrum
 			var old = window._cachedSize;
 			window._cachedSize = new Point(w, h);
 			if (old != window._cachedSize)
+			{
+				SpectrumApp.Instance.DoBackbufferSizeChange((uint)w, (uint)h);
 				window.SizeChanged?.Invoke(new WindowSizeEventData(old, window._cachedSize));
+			}
 		}
 		#endregion // GLFW Interop
 

@@ -107,6 +107,17 @@ namespace Spectrum
 			IsActive = false;
 		}
 
+		internal void BackbufferResize(uint nw, uint nh)
+		{
+			if (Renderer.BackbufferSize.X == nw && Renderer.BackbufferSize.Y == nh)
+				return; // Size didnt change
+
+			var oldSize = Renderer.BackbufferSize;
+			Renderer.Rebuild(nw, nh);
+
+			OnBackbufferResize((uint)oldSize.X, (uint)oldSize.Y, nw, nh);
+		}
+
 		internal void DoPreUpdate()
 		{
 			PreUpdate();
@@ -169,6 +180,17 @@ namespace Spectrum
 		/// Called when this scene is removed as the active scene. Resource/content unloading should be done here.
 		/// </summary>
 		protected virtual void OnRemove() { }
+
+		/// <summary>
+		/// Called when the window size changes, and the render targets must be rebuilt to the new size. The
+		/// <see cref="SceneRenderer"/> instance for this scene will be automatically rebuilt, this function is only
+		/// to update user managed graphics resources.
+		/// </summary>
+		/// <param name="oldWidth">The old width of the window/backbuffer.</param>
+		/// <param name="oldHeight">The old height of the window/backbuffer.</param>
+		/// <param name="newWidth">The new width of the window/backbuffer.</param>
+		/// <param name="newHeight">The new height of the window/backbuffer.</param>
+		protected virtual void OnBackbufferResize(uint oldWidth, uint oldHeight, uint newWidth, uint newHeight) { }
 
 		/// <summary>
 		/// Called when this scene is disposed. Should be used to perform any last-minute cleanup, and is the last

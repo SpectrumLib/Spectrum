@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Vk = VulkanCore;
 using VkExt = VulkanCore.Ext;
@@ -366,6 +366,7 @@ namespace Spectrum.Graphics
 			_commandBuffer.End();
 			var si = new Vk.SubmitInfo(waitDstStageMask: new[] { Vk.PipelineStages.Transfer }, waitSemaphores: new[] { _syncObjects.CurrentImageAvailable }, 
 				commandBuffers: new[] { _commandBuffer }, signalSemaphores: new[] { _syncObjects.CurrentBlitComplete });
+			_blitFence.Reset(); // Can need to happen when the swapchain is invalidated or resized
 			_presentQueue.Submit(si, _blitFence);
 		}
 
