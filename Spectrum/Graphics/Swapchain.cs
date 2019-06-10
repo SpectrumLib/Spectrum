@@ -55,6 +55,8 @@ namespace Spectrum.Graphics
 		private Vk.CommandPool _commandPool;
 		private Vk.CommandBuffer _commandBuffer;
 		private Vk.Fence _blitFence;
+		private Vk.ImageMemoryBarrier _rtTransferBarrier;
+		private Vk.ImageMemoryBarrier _rtAttachBarrier;
 		
 		// Current chosen swapchain parameters
 		private VkKhr.SurfaceFormatKhr _surfaceFormat;
@@ -129,6 +131,22 @@ namespace Spectrum.Graphics
 			var cbai = new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 1);
 			_commandBuffer = _commandPool.AllocateBuffers(cbai)[0];
 			_blitFence = device.CreateFence(); // Do NOT start this signalled, as it is needed in rebuildSwapchain() below
+			_rtTransferBarrier = new Vk.ImageMemoryBarrier(
+				null,
+				new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1),
+				Vk.Accesses.ColorAttachmentWrite,
+				Vk.Accesses.TransferRead,
+				Vk.ImageLayout.ColorAttachmentOptimal,
+				Vk.ImageLayout.TransferSrcOptimal
+			);
+			_rtAttachBarrier = new Vk.ImageMemoryBarrier(
+				null,
+				new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1),
+				Vk.Accesses.TransferRead,
+				Vk.Accesses.ColorAttachmentWrite,
+				Vk.ImageLayout.TransferSrcOptimal,
+				Vk.ImageLayout.ColorAttachmentOptimal
+			);
 
 			// Build the swapchain
 			rebuildSwapchain();
@@ -260,15 +278,15 @@ namespace Spectrum.Graphics
 
 		// Submits the currently aquired image to be presented
 		// The passed image will be copied to the current swapchain image, and must be in transfer src layout
-		public void EndFrame(Vk.Image src, in Point size)
+		public void EndFrame(RenderTarget rt)
 		{
 			// Blit the render output into the swapchain image for presentation
-			blitImage(src, size);
+			displayRenderTarget(rt);
 
 			// Present and check for dirty swapchain
 			try
 			{
-				// Do not need to wait on the image to be ready, as there is synchonization in blitImage()
+				// Do not need to wait on the image to be ready, as there is synchonization in displayRenderTarget()
 				VkKhr.QueueExtensions.PresentKhr(_presentQueue, _syncObjects.CurrentBlitComplete, _swapChain, _syncObjects.CurrentImage);
 			}
 			catch (Vk.VulkanException e)
@@ -281,32 +299,32 @@ namespace Spectrum.Graphics
 			_syncObjects.MoveNext();
 		}
 
-		private void blitImage(Vk.Image src, in Point size)
+		private void displayRenderTarget(RenderTarget rt)
 		{
 			var cimg = _swapChainImages[_syncObjects.CurrentImage];
 
 			// Begin recording
 			_commandBuffer.Begin(ONE_TIME_SUBMIT);
 
-			// Transition the swapchain image to transfer dst
-			_commandBuffer.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands, 
-				imageMemoryBarriers: new[] { cimg.TransferBarrier });
-
-			// Blit the image
-			if (src != null)
+			if (rt != null)
 			{
-				if (size != Extent) // We need to do a filtered blit because of the size mismatch
+				// Trasition the rt to transfer src, and the sc image to transfer dst
+				_rtTransferBarrier.Image = rt.VkImage.Handle;
+				_commandBuffer.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands,
+					imageMemoryBarriers: new[] { _rtTransferBarrier, cimg.TransferBarrier });
+
+				if (rt.Size != Extent) // We need to do a filtered blit because of the size mismatch
 				{
 					var blit = new Vk.ImageBlit
 					{
 						SrcOffset1 = BLIT_ZERO,
-						SrcOffset2 = new Vk.Offset3D(size.X, size.Y, 1),
+						SrcOffset2 = new Vk.Offset3D(rt.Size.X, rt.Size.Y, 1),
 						SrcSubresource = BLIT_SUBRESOURCE,
 						DstOffset1 = BLIT_ZERO,
 						DstOffset2 = new Vk.Offset3D(Extent.X, Extent.Y, 1),
 						DstSubresource = BLIT_SUBRESOURCE
 					};
-					_commandBuffer.CmdBlitImage(src, Vk.ImageLayout.TransferSrcOptimal, cimg.Image.Handle, Vk.ImageLayout.TransferDstOptimal,
+					_commandBuffer.CmdBlitImage(rt.VkImage, Vk.ImageLayout.TransferSrcOptimal, cimg.Image.Handle, Vk.ImageLayout.TransferDstOptimal,
 						new[] { blit }, Vk.Filter.Linear);  
 				}
 				else // Same size, we can do a much faster direct image copy
@@ -317,15 +335,31 @@ namespace Spectrum.Graphics
 						SrcSubresource = BLIT_SUBRESOURCE,
 						DstOffset = BLIT_ZERO,
 						DstSubresource = BLIT_SUBRESOURCE,
-						Extent = new Vk.Extent3D(size.X, size.Y, 1)
+						Extent = new Vk.Extent3D(rt.Size.X, rt.Size.Y, 1)
 					};
-					_commandBuffer.CmdCopyImage(src, Vk.ImageLayout.TransferSrcOptimal, cimg.Image, Vk.ImageLayout.TransferDstOptimal, new[] { copy });
+					_commandBuffer.CmdCopyImage(rt.VkImage, Vk.ImageLayout.TransferSrcOptimal, cimg.Image, Vk.ImageLayout.TransferDstOptimal, new[] { copy });
 				}
-			}
 
-			// Transition the swapchain image back to present layout
-			_commandBuffer.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands,
-				imageMemoryBarriers: new[] { cimg.PresentBarrier });
+				// Transition both images back to their standard layouts
+				_rtAttachBarrier.Image = rt.VkImage.Handle;
+				_commandBuffer.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands,
+					imageMemoryBarriers: new[] { _rtAttachBarrier, cimg.PresentBarrier });
+			}
+			else // No render target, valid possibility if there is no active scene
+			{
+				// Trasition the sc image to transfer dst
+				_commandBuffer.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands,
+					imageMemoryBarriers: new[] { cimg.TransferBarrier });
+
+				// Simply clear the swapchain image to black
+				var clear = new Vk.ClearColorValue(0, 0, 0, 1);
+				_commandBuffer.CmdClearColorImage(cimg.Image, Vk.ImageLayout.TransferDstOptimal, clear, 
+					new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1));
+
+				// Transition the image back to its present layout
+				_commandBuffer.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands,
+					imageMemoryBarriers: new[] { cimg.PresentBarrier });
+			}
 
 			// End the buffer, submit, and wait for the blit to complete
 			// This performs GPU-GPU synchonrization by waiting for the swapchain image to be available before blitting

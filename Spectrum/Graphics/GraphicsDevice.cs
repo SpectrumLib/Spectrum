@@ -73,7 +73,7 @@ namespace Spectrum.Graphics
 		// Called at the end of a render frame to present the frame
 		internal void EndFrame()
 		{
-			Swapchain.EndFrame(null, Point.Zero);
+			Swapchain.EndFrame(null);
 		}
 		#endregion // Frame Functions
 
