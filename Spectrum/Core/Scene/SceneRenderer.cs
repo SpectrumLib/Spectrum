@@ -56,10 +56,6 @@ namespace Spectrum
 		private readonly Vk.CommandPool _clearPool;
 		private readonly Vk.CommandBuffer _clearCmd;
 		private readonly Vk.Fence _clearFence;
-		private Vk.ImageMemoryBarrier _colorClearBarrier;
-		private Vk.ImageMemoryBarrier _colorAttachBarrier;
-		private Vk.ImageMemoryBarrier _depthClearBarrier;
-		private Vk.ImageMemoryBarrier _depthAttachBarrier;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -71,22 +67,6 @@ namespace Spectrum
 			_clearPool = Device.CreateGraphicsCommandPool(true, false);
 			_clearCmd = _clearPool.AllocateBuffers(new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 1))[0];
 			_clearFence = Device.VkDevice.CreateFence();
-			_colorClearBarrier = new Vk.ImageMemoryBarrier(
-				null, new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1), Vk.Accesses.ColorAttachmentWrite,
-				Vk.Accesses.TransferRead, Vk.ImageLayout.ColorAttachmentOptimal, Vk.ImageLayout.TransferDstOptimal
-			);
-			_colorAttachBarrier = new Vk.ImageMemoryBarrier(
-				null, new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1), Vk.Accesses.TransferRead,
-				Vk.Accesses.ColorAttachmentWrite, Vk.ImageLayout.TransferDstOptimal, Vk.ImageLayout.ColorAttachmentOptimal
-			);
-			_depthClearBarrier = new Vk.ImageMemoryBarrier(
-				null, new Vk.ImageSubresourceRange(Vk.ImageAspects.Depth | Vk.ImageAspects.Stencil, 0, 1, 0, 1), Vk.Accesses.DepthStencilAttachmentWrite,
-				Vk.Accesses.TransferWrite, Vk.ImageLayout.DepthStencilAttachmentOptimal, Vk.ImageLayout.TransferDstOptimal
-			);
-			_depthAttachBarrier = new Vk.ImageMemoryBarrier(
-				null, new Vk.ImageSubresourceRange(Vk.ImageAspects.Depth | Vk.ImageAspects.Stencil, 0, 1, 0, 1), Vk.Accesses.TransferWrite,
-				Vk.Accesses.DepthStencilAttachmentWrite, Vk.ImageLayout.TransferDstOptimal, Vk.ImageLayout.DepthStencilAttachmentOptimal
-			);
 		}
 		~SceneRenderer()
 		{
@@ -100,6 +80,7 @@ namespace Spectrum
 		public void Clear()
 		{
 			// Submit and wait for the clear commands
+			// Using a combined pre-recorded command buffer is faster than individually calling Clear() on the targets
 			_clearFence.Reset();
 			Device.Queues.Graphics.Submit(new Vk.SubmitInfo(commandBuffers: new[] { _clearCmd }), _clearFence);
 			_clearFence.Wait();
@@ -112,15 +93,11 @@ namespace Spectrum
 			{
 				ColorTarget = new RenderTarget(width, height, TexelFormat.Color, $"{Scene.Name}_Color");
 				DepthTarget = new RenderTarget(width, height, TexelFormat.Depth24Stencil8, $"{Scene.Name}_Depth");
-				_colorClearBarrier.Image = _colorAttachBarrier.Image = ColorTarget.VkImage;
-				_depthClearBarrier.Image = _depthAttachBarrier.Image = DepthTarget.VkImage;
 			}
 			else if (BackbufferSize.X != width || BackbufferSize.Y != height)
 			{
 				ColorTarget.Rebuild(width, height);
 				DepthTarget.Rebuild(width, height);
-				_colorClearBarrier.Image = _colorAttachBarrier.Image = ColorTarget.VkImage;
-				_depthClearBarrier.Image = _depthAttachBarrier.Image = DepthTarget.VkImage;
 			}
 
 			// Record the clear command (this will always happen, either the RTs changed, or the color changed)
@@ -129,21 +106,21 @@ namespace Spectrum
 
 				// Transition the targets to transfer dst for clearing
 				_clearCmd.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands,
-					imageMemoryBarriers: new[] { _depthClearBarrier, _colorClearBarrier });
+					imageMemoryBarriers: new[] { DepthTarget.ClearBarrier, ColorTarget.ClearBarrier });
 
 				// Clear the color target
 				var cclear = new Vk.ClearColorValue(_clearColor.RFloat, _clearColor.GFloat, _clearColor.BFloat, _clearColor.AFloat);
 				_clearCmd.CmdClearColorImage(ColorTarget.VkImage, Vk.ImageLayout.TransferDstOptimal, cclear,
-					new Vk.ImageSubresourceRange(Vk.ImageAspects.Color, 0, 1, 0, 1));
+					new Vk.ImageSubresourceRange(ColorTarget.VkAspects, 0, 1, 0, 1));
 
 				// Clear the depth target
 				var dclear = new Vk.ClearDepthStencilValue(1, 0);
 				_clearCmd.CmdClearDepthStencilImage(DepthTarget.VkImage, Vk.ImageLayout.TransferDstOptimal, dclear,
-					new Vk.ImageSubresourceRange(Vk.ImageAspects.Depth | Vk.ImageAspects.Stencil, 0, 1, 0, 1));
+					new Vk.ImageSubresourceRange(DepthTarget.VkAspects, 0, 1, 0, 1));
 
 				// Transition both images back to their attachment layouts
 				_clearCmd.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands,
-					imageMemoryBarriers: new[] { _depthAttachBarrier, _colorAttachBarrier });
+					imageMemoryBarriers: new[] { DepthTarget.AttachBarrier, ColorTarget.AttachBarrier });
 
 				_clearCmd.End();
 			}

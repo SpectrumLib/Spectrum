@@ -71,6 +71,10 @@ namespace Spectrum.Graphics
 		internal readonly Vk.ImageAspects VkAspects;
 		internal readonly Vk.ImageLayout DefaultImageLayout;
 
+		// Clear objects
+		internal Vk.ImageMemoryBarrier ClearBarrier { get; private set; } // Transition to transfer dst
+		internal Vk.ImageMemoryBarrier AttachBarrier { get; private set; } // Transition to attachment
+
 		// Reference counting
 		private uint _refCount = 0;
 		private readonly object _refLock = new object();
@@ -171,6 +175,53 @@ namespace Spectrum.Graphics
 					VkImage, new Vk.ImageSubresourceRange(VkAspects, 0, 1, 0, 1), Vk.Accesses.None, Vk.Accesses.None,
 					Vk.ImageLayout.Undefined, DefaultImageLayout
 				)});
+			});
+
+			// Build the transitions
+			ClearBarrier = new Vk.ImageMemoryBarrier(
+				VkImage, new Vk.ImageSubresourceRange(VkAspects, 0, 1, 0, 1), Vk.Accesses.None, Vk.Accesses.None,
+				DefaultImageLayout, Vk.ImageLayout.TransferDstOptimal
+			);
+			AttachBarrier = new Vk.ImageMemoryBarrier(
+				VkImage, new Vk.ImageSubresourceRange(VkAspects, 0, 1, 0, 1), Vk.Accesses.None, Vk.Accesses.None,
+				Vk.ImageLayout.TransferDstOptimal, DefaultImageLayout
+			);
+		}
+
+		/// <summary>
+		/// Clears this render target to be all the same color. This is only valid if the render target format is a
+		/// color format, otherwise an exception is thrown.
+		/// </summary>
+		/// <param name="c">The color to clear the render target to.</param>
+		public void ClearColor(Color c)
+		{
+			if (!Format.IsColorFormat())
+				throw new InvalidOperationException("Cannot clear a non-color render target using a color value");
+
+			Device.SubmitScratchCommand(buf => {
+				buf.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands, imageMemoryBarriers: new[] { ClearBarrier });
+				buf.CmdClearColorImage(VkImage, Vk.ImageLayout.TransferDstOptimal, new Vk.ClearColorValue(c.RFloat, c.GFloat, c.BFloat, c.AFloat),
+					new Vk.ImageSubresourceRange(VkAspects, 0, 1, 0, 1));
+				buf.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands, imageMemoryBarriers: new[] { AttachBarrier });
+			});
+		}
+		/// <summary>
+		/// Clears this render target to the specified depth and stencil values. This is only valid if the render
+		/// target format is a depth/stencil format, otherwise an exception is thrown. If the render target does not
+		/// have a stencil component, then the passed stencil value is ignored.
+		/// </summary>
+		/// <param name="depth">The depth value to clear the render target to.</param>
+		/// <param name="stencil">The stencil value to clear the render target to.</param>
+		public void ClearDepth(float depth = 1, byte stencil = 0)
+		{
+			if (!Format.IsDepthFormat())
+				throw new InvalidOperationException("Cannot clear a non-depth render target using a depth/stencil value");
+
+			Device.SubmitScratchCommand(buf => {
+				buf.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands, imageMemoryBarriers: new[] { ClearBarrier });
+				buf.CmdClearDepthStencilImage(VkImage, Vk.ImageLayout.TransferDstOptimal, new Vk.ClearDepthStencilValue(depth, stencil),
+					new Vk.ImageSubresourceRange(VkAspects, 0, 1, 0, 1));
+				buf.CmdPipelineBarrier(Vk.PipelineStages.AllCommands, Vk.PipelineStages.AllCommands, imageMemoryBarriers: new[] { AttachBarrier });
 			});
 		}
 
