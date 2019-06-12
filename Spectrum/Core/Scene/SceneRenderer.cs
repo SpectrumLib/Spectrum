@@ -7,7 +7,7 @@ namespace Spectrum
 	/// <summary>
 	/// Manages the logic and obejcts required to issue rendering commands in an <see cref="AppScene"/> instance.
 	/// </summary>
-	public sealed class SceneRenderer : IDisposable
+	public sealed class SceneRenderer : RenderQueue
 	{
 		#region Fields
 		/// <summary>
@@ -17,7 +17,7 @@ namespace Spectrum
 		/// <summary>
 		/// A reference to the graphics device being used by this renderer.
 		/// </summary>
-		public GraphicsDevice Device => SpectrumApp.Instance.GraphicsDevice;
+		public new GraphicsDevice Device => SpectrumApp.Instance.GraphicsDevice;
 
 		/// <summary>
 		/// The size of the render target for this renderer.
@@ -52,9 +52,6 @@ namespace Spectrum
 		/// </summary>
 		public RenderTarget DepthTarget { get; private set; } = null;
 
-		// The primary render queue for the scene.
-		internal readonly RenderQueue Queue;
-
 		// Target clear objects
 		private readonly Vk.CommandPool _clearPool;
 		private readonly Vk.CommandBuffer _clearCmd;
@@ -70,8 +67,6 @@ namespace Spectrum
 			_clearPool = Device.CreateGraphicsCommandPool(true, false);
 			_clearCmd = _clearPool.AllocateBuffers(new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 1))[0];
 			_clearFence = Device.VkDevice.CreateFence();
-
-			Queue = new RenderQueue();
 		}
 		~SceneRenderer()
 		{
@@ -91,6 +86,14 @@ namespace Spectrum
 			_clearFence.Wait();
 		}
 
+		// Called at the beginning of the frame to reset components of the scene renderer
+		internal new void Reset()
+		{
+			Clear();
+			base.Reset();
+		}
+
+		// Rebuilds the render targets and commands
 		internal void Rebuild(uint width, uint height)
 		{
 			// Rebuild the targets, if needed
@@ -132,7 +135,7 @@ namespace Spectrum
 		}
 
 		#region IDisposable
-		public void Dispose()
+		public new void Dispose()
 		{
 			dispose(true);
 			GC.SuppressFinalize(this);
@@ -147,7 +150,7 @@ namespace Spectrum
 				_clearPool.Dispose();
 				ColorTarget?.Dispose();
 				DepthTarget?.Dispose();
-				Queue.Dispose();
+				base.Dispose();
 			}
 			_isDisposed = true;
 		}

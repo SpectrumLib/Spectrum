@@ -42,6 +42,7 @@ namespace Spectrum.Graphics
 
 		// Cached items in use by the current recording process
 		private Pipeline _currPipeline = null;
+		private uint _currDrawCount = 0;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -105,6 +106,9 @@ namespace Spectrum.Graphics
 			_currentItem.Scissor = scissor.HasValue ? scissor.Value.ToVulkanNative() : pipeline.DefaultScissor;
 			buf.CmdSetViewport(_currentItem.Viewport);
 			buf.CmdSetScissor(_currentItem.Scissor);
+
+			// Update the tracking objects
+			_currDrawCount = 0;
 		}
 
 		/// <summary>
@@ -120,11 +124,14 @@ namespace Spectrum.Graphics
 			buf.CmdEndRenderPass();
 			buf.End();
 
-			// Submit
-			_currentItem.Submit(Device.Queues.Graphics);
+			// Submit (with test to see if anything was actually drawn)
+			if (_currDrawCount != 0)
+			{
+				_currentItem.Submit(Device.Queues.Graphics);
+				++SubmitCount; 
+			}
 
 			_currPipeline = null;
-			++SubmitCount;
 		}
 		#endregion // Begin/End
 
@@ -163,6 +170,8 @@ namespace Spectrum.Graphics
 		// Contains information about a render queue item
 		private class RenderQueueItem
 		{
+			private static readonly Vk.PipelineStages[] ALL_GRAPHICS = { Vk.PipelineStages.AllGraphics };
+
 			// Vulkan Objects
 			public Vk.CommandBuffer Buffer;
 			public Vk.Semaphore Semaphore;
@@ -172,6 +181,8 @@ namespace Spectrum.Graphics
 			public bool IsSubmitted { get; private set; } = false;
 			// If the item had to be waited on the last time WaitAvailable was called
 			public bool Waited { get; private set; } = false;
+			// The total number of times that the item has been submitted in its lifetime
+			public uint SubmitCount { get; private set; } = 0;
 
 			// State information
 			public Vk.Viewport Viewport;
@@ -186,11 +197,8 @@ namespace Spectrum.Graphics
 					return;
 				}
 				Waited = Fence.GetStatus() != Vk.Result.Success;
-				if (Waited)
-				{
-					Fence.Wait();
-					Fence.Reset();
-				}
+				if (Waited) Fence.Wait();
+				Fence.Reset();
 				IsSubmitted = false;
 			}
 
@@ -199,8 +207,10 @@ namespace Spectrum.Graphics
 			{
 				if (IsSubmitted)
 					throw new InvalidOperationException("Cannot submit a queue item that is currently processing");
-				queue.Submit(new Vk.SubmitInfo(commandBuffers: new[] { Buffer }, signalSemaphores: new[] { Semaphore }), Fence);
+				queue.Submit(new Vk.SubmitInfo(waitSemaphores: (SubmitCount > 0) ? new[] { Semaphore } : null, waitDstStageMask: (SubmitCount > 0) ? ALL_GRAPHICS : null,
+					commandBuffers: new[] { Buffer }, signalSemaphores: new[] { Semaphore }), Fence);
 				IsSubmitted = true;
+				++SubmitCount;
 			}
 		}
 	}

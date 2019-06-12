@@ -102,6 +102,7 @@ namespace Spectrum
 		internal void Remove()
 		{
 			OnRemove();
+			Content.Dispose();
 			IsActive = false;
 		}
 
@@ -133,8 +134,7 @@ namespace Spectrum
 
 		internal void DoPreRender()
 		{
-			Renderer.Clear();
-			Renderer.Queue.Reset();
+			Renderer.Reset();
 			PreRender();
 		}
 
@@ -250,7 +250,6 @@ namespace Spectrum
 			{
 				OnDispose(disposing);
 
-				Content.Dispose();
 				Renderer.Dispose();
 
 				SceneManager.RemoveScene(this);

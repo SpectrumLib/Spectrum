@@ -119,6 +119,9 @@ namespace Spectrum.Graphics
 		{
 			if (disposing && !_isDisposed)
 			{
+				// Not the best idea, but we cant dispose this until RenderQueues using it are done
+				Device.Queues.Graphics.WaitIdle();
+
 				// Destroy the Vulkan objects
 				VkPipeline.Dispose();
 				VkLayout.Dispose();
@@ -169,7 +172,15 @@ namespace Spectrum.Graphics
 			var rpci = new Vk.RenderPassCreateInfo(
 				new[] { subpass },
 				attachments: atts,
-				dependencies: null
+				dependencies: new[] { // Create a two dependencies so that the color and depth buffers do not overwrite each other
+									  // TODO: Validate the flags used in these
+					new Vk.SubpassDependency(Vk.Constant.SubpassExternal, 0, Vk.PipelineStages.ColorAttachmentOutput,
+						Vk.PipelineStages.ColorAttachmentOutput, Vk.Accesses.None, Vk.Accesses.ColorAttachmentRead, 
+						Vk.Dependencies.ByRegion),
+					new Vk.SubpassDependency(Vk.Constant.SubpassExternal, 0, Vk.PipelineStages.LateFragmentTests,
+						Vk.PipelineStages.EarlyFragmentTests, Vk.Accesses.None, Vk.Accesses.DepthStencilAttachmentRead,
+						Vk.Dependencies.ByRegion)
+				}
 			);
 			return device.CreateRenderPass(rpci);
 		}
