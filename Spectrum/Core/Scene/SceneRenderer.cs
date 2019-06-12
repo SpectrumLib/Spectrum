@@ -52,6 +52,9 @@ namespace Spectrum
 		/// </summary>
 		public RenderTarget DepthTarget { get; private set; } = null;
 
+		// The primary render queue for the scene.
+		internal readonly RenderQueue Queue;
+
 		// Target clear objects
 		private readonly Vk.CommandPool _clearPool;
 		private readonly Vk.CommandBuffer _clearCmd;
@@ -67,6 +70,8 @@ namespace Spectrum
 			_clearPool = Device.CreateGraphicsCommandPool(true, false);
 			_clearCmd = _clearPool.AllocateBuffers(new Vk.CommandBufferAllocateInfo(Vk.CommandBufferLevel.Primary, 1))[0];
 			_clearFence = Device.VkDevice.CreateFence();
+
+			Queue = new RenderQueue();
 		}
 		~SceneRenderer()
 		{
@@ -142,6 +147,7 @@ namespace Spectrum
 				_clearPool.Dispose();
 				ColorTarget?.Dispose();
 				DepthTarget?.Dispose();
+				Queue.Dispose();
 			}
 			_isDisposed = true;
 		}

@@ -34,6 +34,10 @@ namespace Spectrum.Graphics
 		// List of render targets used in this pipeline
 		private List<RenderTarget> _renderTargets = new List<RenderTarget>();
 
+		// Default objects
+		internal readonly Vk.Viewport DefaultViewport;
+		internal readonly Vk.Rect2D DefaultScissor;
+
 		private bool _isDisposed = false;
 		#endregion // Fields
 
@@ -73,8 +77,8 @@ namespace Spectrum.Graphics
 
 			// Non-user-specified create infos
 			var vsci = new Vk.PipelineViewportStateCreateInfo(
-				desc.DefaultViewport.Value.ToVulkanNative(),
-				desc.DefaultScissor.Value.ToVulkanNative()
+				DefaultViewport = desc.DefaultViewport.Value.ToVulkanNative(),
+				DefaultScissor = desc.DefaultScissor.Value.ToVulkanNative()
 			);
 			var mssci = new Vk.PipelineMultisampleStateCreateInfo(Vk.SampleCounts.Count1); // TODO: derive this from the framebuffer once we support multisampling
 
