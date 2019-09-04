@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Prism": {
-      "commandName": "Project",
-      "commandLineArgs": "build Content.prism /r /s"
-    }
-  }
-}
