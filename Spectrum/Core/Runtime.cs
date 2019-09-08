@@ -4,6 +4,7 @@
  * 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/LGPL-3.0>.
  */
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Spectrum
@@ -72,6 +73,20 @@ namespace Spectrum
 			static CPU()
 			{
 				ProcCount = (uint)Environment.ProcessorCount;
+			}
+		}
+
+		/// <summary>
+		/// Information about the runtime platform physical memory.
+		/// </summary>
+		public static class Memory
+		{
+			#region Fields
+			#endregion // Fields
+
+			static Memory()
+			{
+
 			}
 		}
 	}
