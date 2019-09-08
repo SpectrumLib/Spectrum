@@ -1,4 +1,9 @@
-﻿using System;
+﻿/*
+ * GNU LGPLv3 License - Copyright (c) The Spectrum Team
+ * This file is subject to the terms and conditions of the GNU LGPLv3 license, the text of which can be found in the
+ * 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/LGPL-3.0>.
+ */
+using System;
 using System.Runtime.InteropServices;
 
 namespace Spectrum
