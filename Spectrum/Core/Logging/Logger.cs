@@ -17,6 +17,17 @@ namespace Spectrum
 		// The default logger for the application
 		internal static Logger DefaultLogger { get; private set; } = null;
 
+		#region Fields
+		/// <summary>
+		/// The logger name, unique within all Logger instances in the application.
+		/// </summary>
+		public readonly string Name;
+		/// <summary>
+		/// An 8-character tag for the logger, which will be <see cref="Name"/> truncated, or extended with spaces.
+		/// </summary>
+		public readonly char[] Tag;
+		#endregion // Fields
+
 		#region Logging Functions
 		/// <summary>
 		/// Log a message using <see cref="MessageLevel.Info"/>.
@@ -55,39 +66,27 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="msg">The message text to log.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void INFO(string msg)
-		{
-			Logger.DefaultLogger?.Info(msg);
-		}
+		public static void INFO(string msg) => Logger.DefaultLogger?.Info(msg);
 
 		/// <summary>
 		/// Logs a message to the default logger using <see cref="MessageLevel.Warn"/>.
 		/// </summary>
 		/// <param name="msg">The message text to log.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void WARN(string msg)
-		{
-			Logger.DefaultLogger?.Warn(msg);
-		}
+		public static void WARN(string msg) => Logger.DefaultLogger?.Warn(msg);
 
 		/// <summary>
 		/// Logs a message to the default logger using <see cref="MessageLevel.Error"/>.
 		/// </summary>
 		/// <param name="msg">The message text to log.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void ERROR(string msg)
-		{
-			Logger.DefaultLogger?.Error(msg);
-		}
+		public static void ERROR(string msg) => Logger.DefaultLogger?.Error(msg);
 
 		/// <summary>
 		/// Logs an exception to the default logger.
 		/// </summary>
 		/// <param name="e">The exception to log.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void EXCEPTION(Exception e)
-		{
-			Logger.DefaultLogger?.Exception(e);
-		}
+		public static void EXCEPTION(Exception e) => Logger.DefaultLogger?.Exception(e);
 	}
 }
