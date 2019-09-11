@@ -24,7 +24,7 @@ namespace Spectrum
 		/// <param name="ml">The level of the message.</param>
 		/// <param name="time">A timestamp of when the message was generated.</param>
 		/// <param name="message">The message text.</param>
-		void Format(StringBuilder output, Logger logger, MessageLevel ml, DateTime time, string message);
+		void Format(StringBuilder output, Logger logger, MessageLevel ml, DateTime time, ReadOnlySpan<char> message);
 		/// <summary>
 		/// Format the given exception into a StringBuilder object.
 		/// </summary>
@@ -41,18 +41,20 @@ namespace Spectrum
 	/// </summary>
 	public sealed class DefaultMessageFormatter : IMessageFormatter
 	{
-		// Tag format: 'HH:MM:SS.CC|<L_NAME >|*|  '  - length: 25
+		// Tag format: 'HH:MM:SS.CC|$LOGNAME|*|  '  - length: 25
 
 		private static readonly char[] LEVEL_TAGS = { 'I', 'W', ' ', 'E' };
 		private static readonly string INDENT = Environment.NewLine + new string(' ', 25);
 		private static readonly string TAB_INDENT = INDENT + "    ";
 
+		#region Fields
 		/// <summary>
 		/// Flags if the formatter should log exception stack traces.
 		/// </summary>
 		public bool LogStackTrace = true;
+		#endregion // Fields
 
-		void IMessageFormatter.Format(StringBuilder output, Logger logger, MessageLevel ml, DateTime time, string message)
+		void IMessageFormatter.Format(StringBuilder output, Logger logger, MessageLevel ml, DateTime time, ReadOnlySpan<char> message)
 		{
 			// Build the tag
 			Span<char> tag = stackalloc char[25];
@@ -64,7 +66,7 @@ namespace Spectrum
 			output.Append(tag);
 
 			// Write the lines
-			foreach (var line in message.AsSpan().Split('\n'))
+			foreach (var line in message.Split('\n'))
 			{
 				output.Append(line);
 				output.Append(INDENT);

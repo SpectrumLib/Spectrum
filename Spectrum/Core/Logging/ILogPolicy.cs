@@ -11,7 +11,8 @@ using System.Threading;
 namespace Spectrum
 {
 	/// <summary>
-	/// Describes types that implement logging output operations.
+	/// Describes types that implement logging output operations. They do not have to be externally threadsafe, as
+	/// access to all policies registered with <see cref="Logger"/> are externally locked.
 	/// </summary>
 	public interface ILogPolicy
 	{
@@ -36,11 +37,11 @@ namespace Spectrum
 		/// <param name="logger">The logger that generated the message.</param>
 		/// <param name="ml">The message level for the message.</param>
 		/// <param name="msg">The message text to log.</param>
-		void Write(Logger logger, MessageLevel ml, string msg);
+		void Write(Logger logger, MessageLevel ml, ReadOnlySpan<char> msg);
 	}
 
 	/// <summary>
-	/// 
+	/// Default logging policy, which writes all messages to a log file. Supports optional async writes to file.
 	/// </summary>
 	public sealed class FileLogPolicy : ILogPolicy
 	{
@@ -57,9 +58,10 @@ namespace Spectrum
 		private bool _archive;
 
 		// Threading objects
-		private Thread _thread;
-		private Queue<string> _msgQueue;
-		private readonly object _queueLock;
+		private Thread _thread = null;
+		private Queue<string> _msgQueue = null;
+		private ManualResetEvent _waitEvent = null;
+		private object _queueLock = null;
 		private bool _threadShouldExit;
 		
 		/// <summary>
@@ -92,9 +94,14 @@ namespace Spectrum
 			_archive = archive && File.Exists(FilePath);
 
 			// Prepare the other objects
-			_thread = async ? new Thread(thread_func) : null;
-			_msgQueue = async ? new Queue<string>(QUEUE_SIZE) : null;
-			_queueLock = async ? new object() : null;
+			if (async)
+			{
+				_thread = new Thread(thread_func);
+				_thread.Name = "LoggerThread";
+				_msgQueue = new Queue<string>(QUEUE_SIZE);
+				_waitEvent = new ManualResetEvent(false);
+				_queueLock = new object();
+			}
 		}
 
 		void ILogPolicy.Initialize()
@@ -122,6 +129,7 @@ namespace Spectrum
 		void ILogPolicy.Terminate()
 		{
 			_threadShouldExit = true;
+			_waitEvent?.Set(); // Signal the thread early to wake up and check the exit condition
 			_thread?.Join();
 
 			_fileWriter.Flush();
@@ -129,12 +137,12 @@ namespace Spectrum
 			_fileWriter.Dispose();
 		}
 
-		void ILogPolicy.Write(Logger logger, MessageLevel ml, string msg)
+		void ILogPolicy.Write(Logger logger, MessageLevel ml, ReadOnlySpan<char> msg)
 		{
 			if (_thread != null)
 			{
 				lock (_queueLock)
-					_msgQueue.Enqueue(msg);
+					_msgQueue.Enqueue(msg.ToString());
 			}
 			else
 				_fileWriter.WriteLine(msg);
@@ -164,7 +172,7 @@ namespace Spectrum
 
 			while (!_threadShouldExit)
 			{
-				Thread.Sleep(THREAD_SLEEP);
+				_waitEvent.WaitOne(THREAD_SLEEP);
 				flush();
 			}
 
