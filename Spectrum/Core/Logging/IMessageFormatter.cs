@@ -31,8 +31,17 @@ namespace Spectrum
 		/// <param name="output">The StringBuilder object to format into, will already be cleared.</param>
 		/// <param name="logger">The logger that generated the exception message.</param>
 		/// <param name="time">A timestamp of when the message was generated.</param>
-		/// <param name="message">The exception to format.</param>
+		/// <param name="e">The exception to format.</param>
 		void Format(StringBuilder output, Logger logger, DateTime time, Exception e);
+		/// <summary>
+		/// Format the internal message into a StringBuilder object. This function will never get called if the
+		/// application is not attached to an internal logger.
+		/// </summary>
+		/// <param name="output">The StringBuilder object to format into, will already be cleared.</param>
+		/// <param name="ml">The level of the message.</param>
+		/// <param name="time">A timestamp of when the message was generated.</param>
+		/// <param name="message">The message text.</param>
+		void FormatInternal(StringBuilder output, MessageLevel ml, DateTime time, ReadOnlySpan<char> message);
 	}
 
 	/// <summary>
@@ -46,6 +55,7 @@ namespace Spectrum
 		private static readonly char[] LEVEL_TAGS = { 'I', 'W', ' ', 'E' };
 		private static readonly string INDENT = Environment.NewLine + new string(' ', 25);
 		private static readonly string TAB_INDENT = INDENT + "    ";
+		private static readonly char[] INTERNAL_TAG = { 'S', 'p', 'e', 'c', 't', 'r', 'u', 'm' };
 
 		#region Fields
 		/// <summary>
@@ -112,6 +122,26 @@ namespace Spectrum
 				}
 				output.Length -= INDENT.Length; // Removes the last indent line in a very cheap way
 			}
+		}
+
+		void IMessageFormatter.FormatInternal(StringBuilder output, MessageLevel ml, DateTime time, ReadOnlySpan<char> message)
+		{
+			// Build the tag
+			Span<char> tag = stackalloc char[25];
+			tag[11] = tag[20] = tag[22] = '|';
+			tag[23] = tag[24] = ' ';
+			PutTimestamp(tag, time);
+			INTERNAL_TAG.CopyTo(tag.Slice(12, 8));
+			tag[21] = LEVEL_TAGS[(int)ml - 1];
+			output.Append(tag);
+
+			// Write the lines
+			foreach (var line in message.Split('\n'))
+			{
+				output.Append(line);
+				output.Append(INDENT);
+			}
+			output.Length -= INDENT.Length; // Removes the last indent line in a very cheap way
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

@@ -166,6 +166,18 @@ namespace Spectrum
 				} 
 			}
 		}
+
+		internal static void LogInternal(MessageLevel ml, ReadOnlySpan<char> msg)
+		{
+			lock (_PolicyLock)
+			{
+				foreach (var pol in _Policies)
+				{
+					if ((pol.LevelMask & ml) > 0)
+						pol.WriteInternal(ml, msg);
+				}
+			}
+		}
 		#endregion // Static Logging
 
 		#region Loggers
@@ -293,6 +305,9 @@ namespace Spectrum
 			}
 
 			DefaultLogger = CreateLogger("default", pars.DefaultLoggerTag ?? pars.Name, pars.DefaultMessageFormatter);
+
+			if (pars.UseInternalLogging)
+				InternalLog.Initialize(pars.InternalMessageFormatter);
 		}
 
 		internal static void Terminate()

@@ -66,6 +66,18 @@ namespace Spectrum
 		/// policy is specified in <see cref="DefaultLogPolicy"/>.
 		/// </summary>
 		public bool UseLogFileArchiving = true;
+		/// <summary>
+		/// Sets if the library should attach an internal logger to the application. This optional component will
+		/// slightly slow down execution, but will log internal states and events, which may be very helpful for
+		/// debugging.
+		/// </summary>
+		public bool UseInternalLogging = false;
+		/// <summary>
+		/// The <see cref="IMessageFormatter"/> instance used to format messages generated internally by the library.
+		/// This defaults to the same formatter that the normal logging system uses, with a message tag of "Spectrum".
+		/// Ignored if <see cref="UseInternalLogging"/> is <c>false</c>.
+		/// </summary>
+		public IMessageFormatter InternalMessageFormatter = null;
 		#endregion // Logging
 		#endregion // Fields
 

@@ -47,6 +47,14 @@ namespace Spectrum
 		/// <param name="ml">The message level for the message.</param>
 		/// <param name="msg">The message text to log.</param>
 		public abstract void Write(Logger logger, MessageLevel ml, ReadOnlySpan<char> msg);
+
+		/// <summary>
+		/// Log the internal message to the policy specific output. This function is only called if the application
+		/// has an attached internal logger.
+		/// </summary>
+		/// <param name="ml">The message level for the message.</param>
+		/// <param name="msg">The message text to log.</param>
+		public abstract void WriteInternal(MessageLevel ml, ReadOnlySpan<char> msg);
 	}
 
 	/// <summary>
@@ -208,6 +216,8 @@ namespace Spectrum
 			else
 				_fileWriter.WriteLine(msg);
 		}
+
+		public override void WriteInternal(MessageLevel ml, ReadOnlySpan<char> msg) => Write(null, ml, msg);
 
 		// Wait loop and file flush thread function
 		private void thread_func()
