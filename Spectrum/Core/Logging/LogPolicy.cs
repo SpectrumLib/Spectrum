@@ -6,29 +6,38 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Spectrum
 {
 	/// <summary>
-	/// Describes types that implement logging output operations. They do not have to be externally threadsafe, as
-	/// access to all policies registered with <see cref="Logger"/> are externally locked.
+	/// Base type for implementing logging output operations. They do not have to be externally threadsafe, as access 
+	/// to all policies registered with <see cref="Logger"/> are externally locked.
 	/// </summary>
-	public interface ILogPolicy
+	public abstract class LogPolicy
 	{
+		#region Fields
 		/// <summary>
 		/// The mask of logging levels that this policy should handle.
 		/// </summary>
-		MessageLevel LevelMask => MessageLevel.All;
+		public virtual MessageLevel LevelMask => MessageLevel.All;
+		/// <summary>
+		/// The unique id value assigned to this policy when it is registered with <see cref="Logger"/>. It will be
+		/// a power of two, since it is meant to be used in a bit mask. If it is zero, then the policy has not been
+		/// registered.
+		/// </summary>
+		public uint Id { get; internal set; } = 0;
+		#endregion // Fields
 
 		/// <summary>
 		/// Called before the policy is first used to perform initialization.
 		/// </summary>
-		void Initialize();
+		public abstract void Initialize();
 		/// <summary>
 		/// Called when the policy is being destroyed to perform cleanup.
 		/// </summary>
-		void Terminate();
+		public abstract void Terminate();
 
 		/// <summary>
 		/// Log the provided message to the policy specific output. The level is checked against the mask before this
@@ -37,13 +46,65 @@ namespace Spectrum
 		/// <param name="logger">The logger that generated the message.</param>
 		/// <param name="ml">The message level for the message.</param>
 		/// <param name="msg">The message text to log.</param>
-		void Write(Logger logger, MessageLevel ml, ReadOnlySpan<char> msg);
+		public abstract void Write(Logger logger, MessageLevel ml, ReadOnlySpan<char> msg);
+	}
+
+	/// <summary>
+	/// Represents an id mask of registered <see cref="LogPolicy"/> instances. Supports overloaded bitwise operations.
+	/// </summary>
+	public struct PolicyMask
+	{
+		/// <summary>
+		/// A mask of all available policy ids.
+		/// </summary>
+		public static readonly PolicyMask All = new PolicyMask(~0u);
+
+		/// <summary>
+		/// The mask value.
+		/// </summary>
+		public uint Value { get; private set; }
+
+		/// <summary>
+		/// Creates a new mask from the given mask value.
+		/// </summary>
+		/// <param name="mask">The mask value.</param>
+		public PolicyMask(uint mask)
+		{
+			Value = mask;
+		}
+
+		/// <summary>
+		/// Adds a policy id to the mask.
+		/// </summary>
+		/// <param name="id">The value of <see cref="LogPolicy.Id"/> to add to the mask.</param>
+		public void Add(uint id) => Value |= id;
+
+		/// <summary>
+		/// Removes a policy id from the mask.
+		/// </summary>
+		/// <param name="id">The value of <see cref="LogPolicy.Id"/> to remove from the mask.</param>
+		public void Remove(uint id) => Value &= ~id;
+
+		/// <summary>
+		/// Sets the value of the mask.
+		/// </summary>
+		/// <param name="id">The mask value to set.</param>
+		public void Set(uint id) => Value = id;
+
+		/// <summary>
+		/// Operator to check if the mask contains the id.
+		/// </summary>
+		/// <param name="mask">the mask to check.</param>
+		/// <param name="id">The policy id to check for.</param>
+		/// <returns>If the mask contains the policy id.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool operator & (in PolicyMask mask, uint id) => (mask.Value & id) == id;
 	}
 
 	/// <summary>
 	/// Default logging policy, which writes all messages to a log file. Supports optional async writes to file.
 	/// </summary>
-	public sealed class FileLogPolicy : ILogPolicy
+	public sealed class FileLogPolicy : LogPolicy
 	{
 		private const int THREAD_SLEEP = 100; // 100 ms
 		private const int QUEUE_SIZE = 128;
@@ -51,7 +112,7 @@ namespace Spectrum
 		#region Fields
 		// Logging mask
 		private MessageLevel _mask = MessageLevel.All;
-		MessageLevel ILogPolicy.LevelMask => _mask;
+		public override MessageLevel LevelMask => _mask;
 
 		// File stream
 		private StreamWriter _fileWriter;
@@ -104,7 +165,7 @@ namespace Spectrum
 			}
 		}
 
-		void ILogPolicy.Initialize()
+		public override void Initialize()
 		{
 			if (_fileWriter != null)
 				return;
@@ -126,7 +187,7 @@ namespace Spectrum
 			_thread?.Start();
 		}
 
-		void ILogPolicy.Terminate()
+		public override void Terminate()
 		{
 			_threadShouldExit = true;
 			_waitEvent?.Set(); // Signal the thread early to wake up and check the exit condition
@@ -137,7 +198,7 @@ namespace Spectrum
 			_fileWriter.Dispose();
 		}
 
-		void ILogPolicy.Write(Logger logger, MessageLevel ml, ReadOnlySpan<char> msg)
+		public override void Write(Logger logger, MessageLevel ml, ReadOnlySpan<char> msg)
 		{
 			if (_thread != null)
 			{

@@ -10,7 +10,7 @@ using System.Text;
 namespace Spectrum
 {
 	/// <summary>
-	/// Describes types that format logged messages before they are sent to <see cref="ILogPolicy"/> instances for
+	/// Describes types that format logged messages before they are sent to <see cref="LogPolicy"/> instances for
 	/// output. Types that implement this should be thread-safe unless it is known that only one thread will be
 	/// accessing an instance at a time.
 	/// </summary>

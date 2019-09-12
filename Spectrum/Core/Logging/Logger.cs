@@ -13,14 +13,14 @@ namespace Spectrum
 {
 	/// <summary>
 	/// Represents a named source of messages, with an optional formatter attached. Also statically manages Logger
-	/// instances and message forwarding to <see cref="ILogPolicy"/> instances. Logging policies are given unique
+	/// instances and message forwarding to <see cref="LogPolicy"/> instances. Logging policies are given unique
 	/// integer identifiers to allow for filtering in loggers, and policy zero (0) is the default policy.
 	/// </summary>
 	public sealed class Logger
 	{
 		private static readonly Dictionary<string, Logger> _Loggers = new Dictionary<string, Logger>();
-		private static readonly Dictionary<uint, ILogPolicy> _Policies = new Dictionary<uint, ILogPolicy>();
-		private static uint _PolicyId = 0;
+		private static readonly List<LogPolicy> _Policies = new List<LogPolicy>(32);
+		private static uint _PolicyId = 1;
 		private static readonly object _PolicyLock = new object();
 
 		// The default logger for the application
@@ -40,6 +40,10 @@ namespace Spectrum
 		/// The optional message formatter to use for messages sent through this logger.
 		/// </summary>
 		public readonly IMessageFormatter Formatter;
+		/// <summary>
+		/// The mask of policies to send messages from this logger to. Defaults to all registered policies.
+		/// </summary>
+		public PolicyMask PolicyMask;
 
 		private readonly StringBuilder _buffer = new StringBuilder(256);
 		private bool _attached = true;
@@ -50,6 +54,7 @@ namespace Spectrum
 			Name = name;
 			tag.CopyTo((_tag = new char[8]).AsSpan());
 			Formatter = formatter;
+			PolicyMask = PolicyMask.All;
 		}
 
 		// Marks the logger as being detached (removed) from the logging system
@@ -153,9 +158,9 @@ namespace Spectrum
 		{
 			lock (_PolicyLock)
 			{
-				foreach (var pol in _Policies.Values)
+				foreach (var pol in _Policies)
 				{
-					if ((pol.LevelMask & ml) > 0)
+					if ((logger.PolicyMask & pol.Id) && (pol.LevelMask & ml) > 0)
 						pol.Write(logger, ml, msg);
 				} 
 			}
@@ -224,11 +229,12 @@ namespace Spectrum
 		/// </summary>
 		/// <exception cref="ArgumentException">The arguments do not match any type constructor.</exception>
 		/// <exception cref="InvalidOperationException">The type could not be constructed.</exception>
+		/// <exception cref="InvalidOperationException">There are too many policies already registered.</exception>
 		/// <typeparam name="T">The logging policy type to instantiate.</typeparam>
 		/// <param name="args">The arguments to pass to the policy constructor.</param>
-		/// <returns>A unique identifier for the new policy.</returns>
+		/// <returns>A unique identifier for the new policy, which can act in a bit mask.</returns>
 		public static uint RegisterPolicy<T>(params object[] args)
-			where T: class, ILogPolicy
+			where T : LogPolicy
 		{
 			// Find a valid constructor
 			Type[] argtypes = args.Select(o => o.GetType()).ToArray();
@@ -236,14 +242,14 @@ namespace Spectrum
 			if (cinfo == null)
 			{
 				throw new ArgumentException($"There is no public constructor for the type '{typeof(T).Name}' that " +
-					$"matches the passed argument list.", nameof(args));
+					$"matches the argument list.", nameof(args));
 			}
 
 			// Attempt to call the constructor
-			ILogPolicy pol = null;
+			LogPolicy pol = null;
 			try
 			{
-				pol = cinfo.Invoke(args) as ILogPolicy;
+				pol = cinfo.Invoke(args) as LogPolicy;
 			}
 			catch (Exception e)
 			{
@@ -254,28 +260,13 @@ namespace Spectrum
 			// Initialize and save
 			pol.Initialize();
 			lock (_PolicyLock)
-				_Policies.Add(_PolicyId++, pol);
-			return _PolicyId - 1;
-		}
-
-		/// <summary>
-		/// Removes the logging policy with the passed id.
-		/// </summary>
-		/// <param name="id">The id of the policy to remove.</param>
-		/// <returns>If the policy with the id was found and removed.</returns>
-		public static bool RemovePolicy(uint id)
-		{
-			if (id == 0)
-				return false;
-
-			lock (_PolicyLock)
 			{
-				if (_Policies.Remove(id, out var pol))
-				{
-					pol.Terminate();
-					return true;
-				}
-				return false;
+				if (_PolicyId == 0) // Integer overflow - resets to 0 after 32 policies are registered
+					throw new InvalidOperationException("Cannot register policy, too many are already registered.");
+				_Policies.Add(pol);
+				pol.Id = _PolicyId;
+				_PolicyId <<= 1;
+				return pol.Id;
 			}
 		}
 		#endregion // Policies
