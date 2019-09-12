@@ -138,7 +138,7 @@ namespace Spectrum
 		/// <param name="async">If the policy should use asynchronous file writes.</param>
 		/// <param name="timestamp">If a timestamp should be added to the file name.</param>
 		/// <param name="archive">If an old log file of the same name exists, <c>true</c> will rename and not delete it.</param>
-		public FileLogPolicy(string file, bool async = false, bool timestamp = false, bool archive = true)
+		public FileLogPolicy(string file, bool async = true, bool timestamp = false, bool archive = true)
 		{
 			// Calculate the full path
 			if (!Uri.IsWellFormedUriString(file, UriKind.RelativeOrAbsolute))

@@ -5,6 +5,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -270,6 +271,44 @@ namespace Spectrum
 			}
 		}
 		#endregion // Policies
+
+		#region Lifetime
+		internal static void Initialize(CoreParams pars)
+		{
+			if (pars.DefaultLogPolicy != null)
+			{
+				pars.DefaultLogPolicy.Initialize();
+				pars.DefaultLogPolicy.Id = 1;
+				_Policies.Add(pars.DefaultLogPolicy);
+				_PolicyId <<= 1;
+			}
+			else
+			{
+				RegisterPolicy<FileLogPolicy>(
+					Path.Combine(pars.LogDirectory, pars.LogFileName),
+					pars.UseAsyncLogging,
+					pars.UseLogFileTimestamps,
+					pars.UseLogFileArchiving
+				);
+			}
+
+			DefaultLogger = CreateLogger("default", pars.DefaultLoggerTag ?? pars.Name, pars.DefaultMessageFormatter);
+		}
+
+		internal static void Terminate()
+		{
+			lock (_PolicyLock)
+			{
+				foreach (var l in _Loggers.Values)
+					l.detach();
+				_Loggers.Clear();
+				foreach (var p in _Policies)
+					p.Terminate();
+				_Policies.Clear();
+				DefaultLogger = null;
+			}
+		}
+		#endregion // Lifetime
 	}
 
 	/// <summary>

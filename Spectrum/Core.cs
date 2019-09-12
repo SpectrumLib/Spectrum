@@ -45,6 +45,7 @@ namespace Spectrum
 		/// Performs construction and initialization of most non-graphics library systems.
 		/// </summary>
 		/// <param name="cpar">The parameters to construct the application with.</param>
+		/// <exception cref="InvalidCoreParameterException">The passed parameters contained an invalid value.</exception>
 		protected Core(CoreParams cpar)
 		{
 			if (Instance != null)
@@ -52,6 +53,9 @@ namespace Spectrum
 			Instance = this;
 
 			Params = cpar ?? throw new ArgumentNullException(nameof(cpar), "Cannot pass null parameters to Core.");
+			Params.Validate();
+
+			Logger.Initialize(Params);
 		}
 		~Core()
 		{
@@ -165,7 +169,7 @@ namespace Spectrum
 		{
 			if (!_isDisposed)
 			{
-				
+				Logger.Terminate(); // Should go last to allow logging to the last moment
 			}
 
 			Instance = null;
