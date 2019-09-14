@@ -92,6 +92,7 @@ namespace Spectrum
 
 				// Update the frame
 				CoroutineManager.Tick();
+				Threading.RunActions();
 				Update();
 
 				// Check for early exit
@@ -157,6 +158,11 @@ namespace Spectrum
 		/// Called after the render functionality of the current frame is complete.
 		/// </summary>
 		protected virtual void EndFrame() { }
+		/// <summary>
+		/// Called after <see cref="Scene.EndFrame"/> to perform the very final application-space logic in a frame,
+		/// that may depend on the final frame logic in the active scene.
+		/// </summary>
+		protected virtual void PostFrame() { }
 		#endregion // Core Loop
 
 		#region Dispose
