@@ -91,6 +91,7 @@ namespace Spectrum
 				BeginFrame();
 
 				// Update the frame
+				CoroutineManager.Tick();
 				Update();
 
 				// Check for early exit
@@ -169,6 +170,8 @@ namespace Spectrum
 		{
 			if (!_isDisposed)
 			{
+				CoroutineManager.Terminate();
+
 				Logger.Terminate(); // Should go last to allow logging to the last moment
 			}
 

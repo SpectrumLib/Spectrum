@@ -16,23 +16,37 @@ namespace Spectrum
 
 		#region Impl. Types
 		/// <summary>
-		/// Callback type for functions passed to timers. Return value allows timers to repeat.
+		/// Callback type for functions passed to time-based timers. Return value allows timers to repeat.
 		/// </summary>
 		/// <param name="time">The delay time for the timer that generated the callback.</param>
 		/// <returns><c>true</c> to continue the timer, <c>false</c> to stop.</returns>
-		public delegate bool TimerCallback(float time);
+		public delegate bool TimeCallback(float time);
+
+		/// <summary>
+		/// Callback type for functions passed to frame-based timers. Return value allows timers to repeat.
+		/// </summary>
+		/// <param name="frames">The frame count for the timer delay.</param>
+		/// <returns><c>true</c> to continue the timer, <c>false</c> to stop.</returns>
+		public delegate bool FrameCallback(uint frames);
 
 		// Manages the references to data used by coroutine waiting
 		internal struct WaitObjects
 		{
 			public float Time;
 			public Coroutine Coroutine;
+			public uint Frames;
 		}
 
 		// Internal implementation of the return value for time-waiting functions
 		internal struct WaitForSecondsImpl
 		{
 			public float Time;
+		}
+
+		// Internal implementation of the return value for frame-waiting functions
+		internal struct WaitForFramesImpl
+		{
+			public uint Frames;
 		}
 		#endregion // Impl. Types
 
@@ -52,7 +66,7 @@ namespace Spectrum
 		public bool Running { get; internal set; } = false;
 
 		// Manages the objects that this coroutine can wait on
-		internal WaitObjects WaitObj = new WaitObjects { Time = 0, Coroutine = null };
+		internal WaitObjects WaitObj = new WaitObjects { Time = 0, Coroutine = null, Frames = 0 };
 		#endregion // Fields
 
 		#region Inst. Functions
@@ -92,7 +106,7 @@ namespace Spectrum
 		///			<description>This signifies that the coroutine is done, and will no longer be active.</description>
 		///		</item>
 		///		<item>	
-		///			<term><see cref="Wait(float)"/> or <see cref="Wait(TimeSpan)"/></term>
+		///			<term><see cref="WaitTime(float)"/> or <see cref="WaitTime(TimeSpan)"/></term>
 		///			<description>Either of these will halt the execution of the coroutine for the specified amount of time.</description>
 		///		</item>
 		///		<item>
@@ -110,14 +124,21 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="time">The number of seconds to halt execution for.</param>
 		/// <returns>The object internally representing a coroutine halt.</returns>
-		public static object Wait(float time) => new WaitForSecondsImpl { Time = time };
+		public static object WaitTime(float time) => new WaitForSecondsImpl { Time = time };
 
 		/// <summary>
 		/// Returns an object that causes a coroutine to halt its execution for the given amount of time.
 		/// </summary>
 		/// <param name="time">The amount of time to halt execution for.</param>
 		/// <returns>The object internally representing a coroutine halt.</returns>
-		public static object Wait(TimeSpan time) => new WaitForSecondsImpl { Time = (float)time.TotalSeconds };
+		public static object WaitTime(TimeSpan time) => new WaitForSecondsImpl { Time = (float)time.TotalSeconds };
+
+		/// <summary>
+		/// Returns an object that causes the coroutine to halt its execution for the given number of app frames.
+		/// </summary>
+		/// <param name="frames">The number of frames to wait for.</param>
+		/// <returns>The object internally representing a coroutine halt.</returns>
+		public static object WaitFrames(uint frames) => new WaitForFramesImpl { Frames = frames };
 		#endregion // Wait Methods
 
 		#region Scheduling
@@ -150,7 +171,6 @@ namespace Spectrum
 			CoroutineManager.AddCoroutine(cr);
 			return cr;
 		}
-
 		
 		/// <summary>
 		/// Creates a timer, which executes the passed action after a certain amount of time has passed.
@@ -190,7 +210,7 @@ namespace Spectrum
 		/// <param name="repeat">If the action should be repeated, <c>false</c> to execute only once.</param>
 		/// <param name="unscaled">If the timer should ignore time scaling.</param>
 		/// <returns>The started Coroutine.</returns>
-		public static Coroutine Schedule(float delay, TimerCallback action, bool repeat = false, bool unscaled = false)
+		public static Coroutine Schedule(float delay, TimeCallback action, bool repeat = false, bool unscaled = false)
 		{
 			if (action == null)
 				throw new ArgumentNullException(nameof(action));
@@ -209,8 +229,40 @@ namespace Spectrum
 		/// <param name="repeat">If the action should be repeated, <c>false</c> to execute only once.</param>
 		/// <param name="unscaled">If the timer should ignore time scaling.</param>
 		/// <returns>The started Coroutine.</returns>
-		public static Coroutine Schedule(TimeSpan delay, TimerCallback action, bool repeat = false, bool unscaled = false) =>
+		public static Coroutine Schedule(TimeSpan delay, TimeCallback action, bool repeat = false, bool unscaled = false) =>
 			Schedule((float)delay.TotalSeconds, action, repeat, unscaled);
+
+		/// <summary>
+		/// Creates a timer, which executes the passed action after a certain number of frames have passed.
+		/// </summary>
+		/// <param name="frames">The number of frames to delay before execution.</param>
+		/// <param name="action">The action to execute after the delay.</param>
+		/// <param name="repeat">If the action should be repeated, <c>false</c> to execute only once.</param>
+		/// <returns>The started Coroutine.</returns>
+		public static Coroutine ScheduleFrames(uint frames, Action action, bool repeat = false)
+		{
+			if (action == null)
+				throw new ArgumentNullException(nameof(action));
+			var cr = new FrameCoroutine(frames, repeat, (delay) => { action(); return true; });
+			CoroutineManager.AddCoroutine(cr);
+			return cr;
+		}
+
+		/// <summary>
+		/// Creates a timer, which executes the passed action after a certain number of frames have passed.
+		/// </summary>
+		/// <param name="frames">The number of frames to delay before execution.</param>
+		/// <param name="action">The action to execute after the delay.</param>
+		/// <param name="repeat">If the action should be repeated, <c>false</c> to execute only once.</param>
+		/// <returns>The started Coroutine.</returns>
+		public static Coroutine ScheduleFrames(uint frames, FrameCallback action, bool repeat = false)
+		{
+			if (action == null)
+				throw new ArgumentNullException(nameof(action));
+			var cr = new FrameCoroutine(frames, repeat, action);
+			CoroutineManager.AddCoroutine(cr);
+			return cr;
+		}
 		#endregion // Scheduling
 	}
 
@@ -230,14 +282,14 @@ namespace Spectrum
 		protected internal override object Tick() => _ticker.MoveNext() ? _ticker.Current : END;
 	}
 
-	// Class that internally implements a timer
+	// Class that internally implements a time-based timer
 	internal class TimerCoroutine : EnumeratorCoroutine
 	{
-		public readonly TimerCallback Action;
+		public readonly TimeCallback Action;
 		public readonly float Delay;
 		public readonly bool Repeat;
 
-		public TimerCoroutine(float delay, bool repeat, bool unscaled, TimerCallback action) :
+		public TimerCoroutine(float delay, bool repeat, bool unscaled, TimeCallback action) :
 			base(timer_func(delay, repeat, action), unscaled)
 		{
 			Action = action;
@@ -245,11 +297,36 @@ namespace Spectrum
 			Repeat = repeat;
 		}
 
-		private static IEnumerator timer_func(float delay, bool repeat, TimerCallback action)
+		private static IEnumerator timer_func(float delay, bool repeat, TimeCallback action)
 		{
 			do
 			{
-				yield return Wait(delay);
+				yield return WaitTime(delay);
+			}
+			while (action(delay) && repeat);
+		}
+	}
+
+	// Class that internally implements a frame-based timer
+	internal class FrameCoroutine : EnumeratorCoroutine
+	{
+		public readonly FrameCallback Action;
+		public readonly uint Delay;
+		public readonly bool Repeat;
+
+		public FrameCoroutine(uint delay, bool repeat, FrameCallback action) :
+			base(timer_func(delay, repeat, action), true)
+		{
+			Action = action;
+			Delay = delay;
+			Repeat = repeat;
+		}
+
+		private static IEnumerator timer_func(uint delay, bool repeat, FrameCallback action)
+		{
+			do
+			{
+				yield return WaitFrames(delay);
 			}
 			while (action(delay) && repeat);
 		}

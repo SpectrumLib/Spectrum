@@ -24,16 +24,26 @@ namespace Spectrum
 					return;
 
 				// Update the wait objects
+				bool tick = false;
+				if (cr.WaitObj.Frames > 0)
+				{
+					cr.WaitObj.Frames -= 1;
+					tick = cr.WaitObj.Frames == 0;
+				}
 				if (cr.WaitObj.Time > 0)
 				{
 					float ntime = cr.WaitObj.Time - (cr.UseUnscaledTime ? rdelta : sdelta);
 					cr.WaitObj.Time = Math.Max(ntime, 0);
+					tick = cr.WaitObj.Time <= 0;
 				}
-				if (!cr.WaitObj.Coroutine?.Running ?? true)
+				if (cr.WaitObj.Coroutine != null && !cr.WaitObj.Coroutine.Running)
+				{
 					cr.WaitObj.Coroutine = null;
+					tick = true;
+				}
 
 				// Tick and update based on return value
-				if (cr.WaitObj.Time <= 0 && cr.WaitObj.Coroutine == null)
+				if (tick)
 				{
 					++cr.TickCount;
 					var ret = cr.Tick();
@@ -44,6 +54,8 @@ namespace Spectrum
 						cr.Running = false;
 					else if (ret is Coroutine.WaitForSecondsImpl)
 						cr.WaitObj.Time = ((Coroutine.WaitForSecondsImpl)ret).Time;
+					else if (ret is Coroutine.WaitForFramesImpl)
+						cr.WaitObj.Frames = ((Coroutine.WaitForFramesImpl)ret).Frames;
 					else if (ret is Coroutine)
 						cr.WaitObj.Coroutine = ret as Coroutine;
 					else
@@ -75,7 +87,7 @@ namespace Spectrum
 				_Coroutines.Add(c);
 		}
 
-		public static void Cleanup()
+		public static void Terminate()
 		{
 			_Coroutines.ForEach(cr => cr.OnRemove());
 			_Coroutines.Clear();
