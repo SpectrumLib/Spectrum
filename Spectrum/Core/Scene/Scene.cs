@@ -131,8 +131,6 @@ namespace Spectrum
 			if (!IsDisposed)
 			{
 				OnDispose(disposing);
-
-				//SceneManager.RemoveScene(this);
 			}
 
 			IsDisposed = true;
