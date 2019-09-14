@@ -89,11 +89,13 @@ namespace Spectrum
 
 				// Begin the frame
 				BeginFrame();
+				SceneManager.BeginFrame();
 
 				// Update the frame
 				CoroutineManager.Tick();
 				Threading.RunActions();
 				Update();
+				SceneManager.Update();
 
 				// Check for early exit
 				if (IsExiting)
@@ -101,12 +103,18 @@ namespace Spectrum
 
 				// Midframe
 				MidFrame();
+				SceneManager.MidFrame();
 
 				// Render the frame
 				Render();
+				SceneManager.Render();
 
 				// End the frame
 				EndFrame();
+				SceneManager.EndFrame();
+
+				// Allow final post frame logic
+				PostFrame();
 			}
 		}
 
@@ -176,7 +184,9 @@ namespace Spectrum
 		{
 			if (!_isDisposed)
 			{
+				// Clean up the updating objects
 				CoroutineManager.Terminate();
+				SceneManager.Terminate();
 
 				Logger.Terminate(); // Should go last to allow logging to the last moment
 			}

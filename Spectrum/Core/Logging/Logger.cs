@@ -250,6 +250,8 @@ namespace Spectrum
 			where T : LogPolicy
 		{
 			// Find a valid constructor
+			if (typeof(T).IsAbstract)
+				throw new InvalidOperationException("The policy type cannot be abstract.");
 			Type[] argtypes = args.Select(o => o.GetType()).ToArray();
 			var cinfo = typeof(T).GetConstructor(argtypes);
 			if (cinfo == null)
