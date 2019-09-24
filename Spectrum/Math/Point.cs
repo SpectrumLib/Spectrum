@@ -145,6 +145,9 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static explicit operator Point (in Point3 p) => new Point(p.X, p.Y);
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static explicit operator Point (in Extent e) => new Point((int)e.Width, (int)e.Height);
+
 		// TODO: Casting with other types
 		#endregion // Operators
 
