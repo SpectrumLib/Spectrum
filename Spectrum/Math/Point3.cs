@@ -168,29 +168,29 @@ namespace Spectrum
 		// TODO: Casting with other types
 		#endregion // Operators
 
-		#region Relationals
+		#region Standard Math
 		/// <summary>
-		/// Creates a new point with the minimum components of the two input points.
+		/// Component-wise maximum of the two input points.
 		/// </summary>
 		/// <param name="l">The first point.</param>
 		/// <param name="r">The second point.</param>
 		/// <param name="p">The output value for the minimized point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Min(in Point3 l, in Point3 r, out Point3 p) =>
-			(p.X, p.Y, p.Z) = (l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y, l.Z < r.Z ? l.Z : r.Z);
+		public static void Min(in Point3 l, in Point3 r, out Point3 p) => (p.X, p.Y, p.Z) = 
+			(l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y, l.Z < r.Z ? l.Z : r.Z);
 
 		/// <summary>
-		/// Creates a new point with the maximum components of the two input points.
+		/// Component-wise minimum of the two input points.
 		/// </summary>
 		/// <param name="l">The first point.</param>
 		/// <param name="r">The second point.</param>
 		/// <param name="p">The output value for the maximized point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Max(in Point3 l, in Point3 r, out Point3 p) =>
-			(p.X, p.Y, p.Z) = (l.X > r.X ? l.X : r.X, l.Y > r.Y ? l.Y : r.Y, l.Z > r.Z ? l.Z : r.Z);
+		public static void Max(in Point3 l, in Point3 r, out Point3 p) => (p.X, p.Y, p.Z) =
+			(l.X > r.X ? l.X : r.X, l.Y > r.Y ? l.Y : r.Y, l.Z > r.Z ? l.Z : r.Z);
 
 		/// <summary>
-		/// Creates a new point clamped between the two limiting points.
+		/// Component-wise clamp between of the two limiting points.
 		/// </summary>
 		/// <param name="val">The point to clamp.</param>
 		/// <param name="min">The minimum bounding point.</param>
@@ -199,6 +199,6 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Clamp(in Point3 val, in Point3 min, in Point3 max, out Point3 p) => (p.X, p.Y, p.Z) 
 			= (Math.Clamp(val.X, min.X, max.X), Math.Clamp(val.Y, min.Y, max.Y), Math.Clamp(val.Z, min.Z, max.Z));
-		#endregion // Relationals
+		#endregion // Standard Math
 	}
 }

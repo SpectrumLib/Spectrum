@@ -151,37 +151,37 @@ namespace Spectrum
 		// TODO: Casting with other types
 		#endregion // Operators
 
-		#region Relationals
+		#region Standard Math
 		/// <summary>
-		/// Creates a new point with the minimum components of the two input points.
+		/// Component-wise maximum of the two input points.
 		/// </summary>
 		/// <param name="l">The first point.</param>
 		/// <param name="r">The second point.</param>
 		/// <param name="p">The output value for the minimized point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Min(in Point l, in Point r, out Point p) => 
-			(p.X, p.Y) = (l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y);
+		public static void Min(in Point l, in Point r, out Point p) => (p.X, p.Y) = 
+			(l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y);
 
 		/// <summary>
-		/// Creates a new point with the maximum components of the two input points.
+		/// Component-wise minimum of the two input points.
 		/// </summary>
 		/// <param name="l">The first point.</param>
 		/// <param name="r">The second point.</param>
 		/// <param name="p">The output value for the maximized point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Max(in Point l, in Point r, out Point p) =>
-			(p.X, p.Y) = (l.X > r.X ? l.X : r.X, l.Y > r.Y ? l.Y : r.Y);
+		public static void Max(in Point l, in Point r, out Point p) => (p.X, p.Y) = 
+			(l.X > r.X ? l.X : r.X, l.Y > r.Y ? l.Y : r.Y);
 
 		/// <summary>
-		/// Creates a new point clamped between the two limiting points.
+		/// Component-wise clamp between of the two limiting points.
 		/// </summary>
 		/// <param name="val">The point to clamp.</param>
 		/// <param name="min">The minimum bounding point.</param>
 		/// <param name="max">The maximum bounding point.</param>
 		/// <param name="p">The output clamped point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Clamp(in Point val, in Point min, in Point max, out Point p) =>
-			(p.X, p.Y) = (Math.Clamp(val.X, min.X, max.X), Math.Clamp(val.Y, min.Y, max.Y));
-		#endregion // Relationals
+		public static void Clamp(in Point val, in Point min, in Point max, out Point p) => (p.X, p.Y) =
+			(Math.Clamp(val.X, min.X, max.X), Math.Clamp(val.Y, min.Y, max.Y));
+		#endregion // Standard Math
 	}
 }
