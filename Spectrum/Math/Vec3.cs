@@ -177,12 +177,38 @@ namespace Spectrum
 
 		#region Vector Functions
 		/// <summary>
+		/// Calculates the normalized vector.
+		/// </summary>
+		/// <param name="l">The vector to normalize.</param>
+		/// <param name="o">The normalized vector.</param>
+		public static void Normalize(in Vec3 l, out Vec3 o)
+		{
+			var inv = 1f / l.Length;
+			o.X = l.X * inv;
+			o.Y = l.Y * inv;
+			o.Z = l.Z * inv;
+		}
+
+		/// <summary>
 		/// Calculates the dot product of the two vectors.
 		/// </summary>
 		/// <param name="l">The first vector.</param>
 		/// <param name="r">The second vector.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float Dot(in Vec3 l, in Vec3 r) => l.X * r.X + l.Y * r.Y + l.Z * r.Z;
+
+		/// <summary>
+		/// Calculates the right hand cross product of the vectors.
+		/// </summary>
+		/// <param name="l">The first vector to cross.</param>
+		/// <param name="r">The second vector to cross.</param>
+		/// <param name="o">The cross product.</param>
+		public static void Cross(in Vec3 l, in Vec3 r, out Vec3 o)
+		{
+			o.X = (l.Y * r.Z) - (l.Z * r.Y);
+			o.Y = (l.X * r.Z) - (l.Z * r.X);
+			o.Z = (l.X * r.Y) - (l.Y * r.X);
+		}
 
 		/// <summary>
 		/// Projects the first vector onto the second vector.

@@ -129,6 +129,18 @@ namespace Spectrum
 
 		#region Vector Functions
 		/// <summary>
+		/// Calculates the normalized vector.
+		/// </summary>
+		/// <param name="l">The vector to normalize.</param>
+		/// <param name="o">The normalized vector.</param>
+		public static void Normalize(in Vec2 l, out Vec2 o)
+		{
+			var inv = 1f / l.Length;
+			o.X = l.X * inv;
+			o.Y = l.Y * inv;
+		}
+		
+		/// <summary>
 		/// Calculates the dot product of the two vectors.
 		/// </summary>
 		/// <param name="l">The first vector.</param>
