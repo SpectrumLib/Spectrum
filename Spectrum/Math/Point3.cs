@@ -174,10 +174,30 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first point.</param>
 		/// <param name="r">The second point.</param>
+		/// <returns>The output value for the minimized point.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Point3 Min(in Point3 l, in Point3 r) =>
+			new Point3(l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y, l.Z < r.Z ? l.Z : r.Z);
+
+		/// <summary>
+		/// Component-wise maximum of the two input points.
+		/// </summary>
+		/// <param name="l">The first point.</param>
+		/// <param name="r">The second point.</param>
 		/// <param name="p">The output value for the minimized point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Min(in Point3 l, in Point3 r, out Point3 p) => (p.X, p.Y, p.Z) = 
 			(l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y, l.Z < r.Z ? l.Z : r.Z);
+
+		/// <summary>
+		/// Component-wise minimum of the two input points.
+		/// </summary>
+		/// <param name="l">The first point.</param>
+		/// <param name="r">The second point.</param>
+		/// <returns>The output value for the maximized point.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Point3 Max(in Point3 l, in Point3 r) =>
+			new Point3(l.X > r.X ? l.X : r.X, l.Y > r.Y ? l.Y : r.Y, l.Z > r.Z ? l.Z : r.Z);
 
 		/// <summary>
 		/// Component-wise minimum of the two input points.
@@ -195,10 +215,34 @@ namespace Spectrum
 		/// <param name="val">The point to clamp.</param>
 		/// <param name="min">The minimum bounding point.</param>
 		/// <param name="max">The maximum bounding point.</param>
+		/// <returns>The output clamped point.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Point3 Clamp(in Point3 val, in Point3 min, in Point3 max) =>
+			new Point3(Math.Clamp(val.X, min.X, max.X), Math.Clamp(val.Y, min.Y, max.Y), Math.Clamp(val.Z, min.Z, max.Z));
+
+		/// <summary>
+		/// Component-wise clamp between of the two limiting points.
+		/// </summary>
+		/// <param name="val">The point to clamp.</param>
+		/// <param name="min">The minimum bounding point.</param>
+		/// <param name="max">The maximum bounding point.</param>
 		/// <param name="p">The output clamped point.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Clamp(in Point3 val, in Point3 min, in Point3 max, out Point3 p) => (p.X, p.Y, p.Z) 
 			= (Math.Clamp(val.X, min.X, max.X), Math.Clamp(val.Y, min.Y, max.Y), Math.Clamp(val.Z, min.Z, max.Z));
 		#endregion // Standard Math
+
+		#region Tuples
+		public readonly void Deconstruct(out int x, out int y, out int z)
+		{
+			x = X;
+			y = Y;
+			z = Z;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Point3 (in (int x, int y, int z) tup) =>
+			new Point3(tup.x, tup.y, tup.z);
+		#endregion // Tuples
 	}
 }

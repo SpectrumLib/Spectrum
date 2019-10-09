@@ -183,15 +183,17 @@ namespace Spectrum
 		/// Calculates the normalized vector.
 		/// </summary>
 		/// <param name="l">The vector to normalize.</param>
+		/// <returns>The normalized vector.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Normalize(in Vec4 l) => l.Normalized;
+
+		/// <summary>
+		/// Calculates the normalized vector.
+		/// </summary>
+		/// <param name="l">The vector to normalize.</param>
 		/// <param name="o">The normalized vector.</param>
-		public static void Normalize(in Vec4 l, out Vec4 o)
-		{
-			var inv = 1f / l.Length;
-			o.X = l.X * inv;
-			o.Y = l.Y * inv;
-			o.Z = l.Z * inv;
-			o.W = l.W * inv;
-		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Normalize(in Vec4 l, out Vec4 o) => o = l.Normalized;
 
 		/// <summary>
 		/// Calculates the dot product of the two vectors.
@@ -248,10 +250,30 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The first vector.</param>
 		/// <param name="r">The second vector.</param>
+		/// <returns>The output value for the minimized vector.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Min(in Vec4 l, in Vec4 r) =>
+			new Vec4(l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y, l.Z < r.Z ? l.Z : r.Z, l.W < r.W ? l.W : r.W);
+
+		/// <summary>
+		/// Component-wise maximum of the two input vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
 		/// <param name="p">The output value for the minimized vector.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Min(in Vec4 l, in Vec4 r, out Vec4 p) => p =
 			new Vec4(l.X < r.X ? l.X : r.X, l.Y < r.Y ? l.Y : r.Y, l.Z < r.Z ? l.Z : r.Z, l.W < r.W ? l.W : r.W);
+
+		/// <summary>
+		/// Component-wise minimum of the two input vectors.
+		/// </summary>
+		/// <param name="l">The first vector.</param>
+		/// <param name="r">The second vector.</param>
+		/// <returns>The output value for the maximized vector.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Max(in Vec4 l, in Vec4 r) =>
+			new Vec4(l.X > r.X ? l.X : r.X, l.Y > r.Y ? l.Y : r.Y, l.Z > r.Z ? l.Z : r.Z, l.W > r.W ? l.W : r.W);
 
 		/// <summary>
 		/// Component-wise minimum of the two input vectors.
@@ -269,11 +291,32 @@ namespace Spectrum
 		/// <param name="val">The vector to clamp.</param>
 		/// <param name="min">The minimum bounding vector.</param>
 		/// <param name="max">The maximum bounding vector.</param>
+		/// <returns>The output clamped vector.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Clamp(in Vec4 val, in Vec4 min, in Vec4 max) =>
+			new Vec4(Math.Clamp(val.X, min.X, max.X), Math.Clamp(val.Y, min.Y, max.Y), Math.Clamp(val.Z, min.Z, max.Z),
+					 Math.Clamp(val.W, min.W, max.W));
+
+		/// <summary>
+		/// Component-wise clamp between of the two limiting vectors.
+		/// </summary>
+		/// <param name="val">The vector to clamp.</param>
+		/// <param name="min">The minimum bounding vector.</param>
+		/// <param name="max">The maximum bounding vector.</param>
 		/// <param name="p">The output clamped vector.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Clamp(in Vec4 val, in Vec4 min, in Vec4 max, out Vec4 p) => p =
 			new Vec4(Math.Clamp(val.X, min.X, max.X), Math.Clamp(val.Y, min.Y, max.Y), Math.Clamp(val.Z, min.Z, max.Z),
 					 Math.Clamp(val.W, min.W, max.W));
+
+		/// <summary>
+		/// Component-wise rounding towards positive infinity.
+		/// </summary>
+		/// <param name="v">The vector to round.</param>
+		/// <returns>The output rounded vector.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Ceiling(in Vec4 v) =>
+			new Vec4(MathF.Ceiling(v.X), MathF.Ceiling(v.Y), MathF.Ceiling(v.Z), MathF.Ceiling(v.W));
 
 		/// <summary>
 		/// Component-wise rounding towards positive infinity.
@@ -288,6 +331,15 @@ namespace Spectrum
 		/// Component-wise rounding towards negative infinity.
 		/// </summary>
 		/// <param name="v">The vector to round.</param>
+		/// <returns>The output rounded vector.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec4 Floor(in Vec4 v) =>
+			new Vec4(MathF.Floor(v.X), MathF.Floor(v.Y), MathF.Floor(v.Z), MathF.Floor(v.W));
+
+		/// <summary>
+		/// Component-wise rounding towards negative infinity.
+		/// </summary>
+		/// <param name="v">The vector to round.</param>
 		/// <param name="o">The output rounded vector.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Floor(in Vec4 v, out Vec4 o) => o =
@@ -297,9 +349,31 @@ namespace Spectrum
 		/// Component-wise rounding towards the nearest integer.
 		/// </summary>
 		/// <param name="v">The vector to round.</param>
+		/// <returns>The output rounded vector.</returns>
+		public static Vec4 Round(in Vec4 v) =>
+			new Vec4(MathF.Round(v.X), MathF.Round(v.Y), MathF.Round(v.Z), MathF.Round(v.W));
+
+		/// <summary>
+		/// Component-wise rounding towards the nearest integer.
+		/// </summary>
+		/// <param name="v">The vector to round.</param>
 		/// <param name="o">The output rounded vector.</param>
 		public static void Round(in Vec4 v, out Vec4 o) => o =
 			new Vec4(MathF.Round(v.X), MathF.Round(v.Y), MathF.Round(v.Z), MathF.Round(v.W));
 		#endregion // Standard Math
+
+		#region Tuples
+		public readonly void Deconstruct(out float x, out float y, out float z, out float w)
+		{
+			x = X;
+			y = Y;
+			z = Z;
+			w = W;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Vec4 (in (float x, float y, float z, float w) tup) =>
+			new Vec4(tup.x, tup.y, tup.z, tup.w);
+		#endregion // Tuples
 	}
 }

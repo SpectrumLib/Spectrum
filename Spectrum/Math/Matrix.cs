@@ -1181,5 +1181,26 @@ namespace Spectrum
 			return o;
 		}
 		#endregion // Operators
+
+		public readonly void Deconstruct(out Vec4 r1, out Vec4 r2, out Vec4 r3, out Vec4 r4)
+		{
+			r1.X = M00; r1.Y = M01; r1.Z = M02; r1.W = M03;
+			r2.X = M10; r2.Y = M11; r2.Z = M12; r2.W = M13;
+			r3.X = M20; r3.Y = M21; r3.Z = M22; r3.W = M23;
+			r4.X = M30; r4.Y = M31; r4.Z = M32; r4.W = M33;
+		}
+
+		public readonly void Deconstruct(
+			out float m00, out float m01, out float m02, out float m03,
+			out float m10, out float m11, out float m12, out float m13,
+			out float m20, out float m21, out float m22, out float m23,
+			out float m30, out float m31, out float m32, out float m33
+		)
+		{
+			m00 = M00; m01 = M01; m02 = M02; m03 = M03;
+			m10 = M10; m11 = M11; m12 = M12; m13 = M13;
+			m20 = M20; m21 = M21; m22 = M22; m23 = M23;
+			m30 = M30; m31 = M31; m32 = M32; m33 = M33;
+		}
 	}
 }

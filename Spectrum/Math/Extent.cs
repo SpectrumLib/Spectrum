@@ -88,5 +88,17 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static explicit operator Point (in Extent e) => new Point((int)e.Width, (int)e.Height);
 		#endregion // Operators
+
+		#region Tuples
+		public readonly void Deconstruct(out uint w, out uint h)
+		{
+			w = Width;
+			h = Height;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Extent (in (uint w, uint h) tup) =>
+			new Extent(tup.w, tup.h);
+		#endregion // Tuples
 	}
 }

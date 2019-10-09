@@ -104,7 +104,10 @@ namespace Spectrum
 		/// </summary>
 		public readonly Point Center => new Point(X + (int)(Width / 2), Y + (int)(Height / 2));
 
-		// TODO: Exact center
+		/// <summary>
+		/// The exact center of the rectangle, using floating point coordinates.
+		/// </summary>
+		public readonly Vec2 CenterF => new Vec2(X + (Width / 2f), Y + (Height / 2f));
 		#endregion // Fields
 
 		#region Ctor
@@ -164,6 +167,19 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="r1">The first rectangle.</param>
 		/// <param name="r2">The second rectangle.</param>
+		/// <returns>The output union rectangle.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rect Union(in Rect r1, in Rect r2)
+		{
+			Union(r1, r2, out var o);
+			return o;
+		}
+
+		/// <summary>
+		/// Calculates the minimal rectangular area that completely contains both input rectangles.
+		/// </summary>
+		/// <param name="r1">The first rectangle.</param>
+		/// <param name="r2">The second rectangle.</param>
 		/// <param name="o">The output union rectangle.</param>
 		public static void Union(in Rect r1, in Rect r2, out Rect o)
 		{
@@ -171,6 +187,19 @@ namespace Spectrum
 			o.Y = Math.Min(r1.Y, r2.Y);
 			o.Width = (uint)(Math.Max(r1.Right, r2.Right) - o.X);
 			o.Height = (uint)(Math.Max(r1.Top, r2.Top) - o.Y);
+		}
+
+		/// <summary>
+		/// Calculates the overlap between the two rectangular areas, if any.
+		/// </summary>
+		/// <param name="r1">The first rectangle.</param>
+		/// <param name="r2">The second rectangle.</param>
+		/// <returns>The overlap area, set to <see cref="Empty"/> if there is no overlap.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rect Intersect(in Rect r1, in Rect r2)
+		{
+			Intersect(r1, r2, out var o);
+			return o;
 		}
 
 		/// <summary>
@@ -197,6 +226,19 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="p1">The first point to contain.</param>
 		/// <param name="p2">The second point to contain.</param>
+		/// <returns>The output area.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rect FromCorners(in Point p1, in Point p2)
+		{
+			FromCorners(p1, p2, out var o);
+			return o;
+		}
+
+		/// <summary>
+		/// Constructs the minimal rectangular area that encompasses both passed points as corners.
+		/// </summary>
+		/// <param name="p1">The first point to contain.</param>
+		/// <param name="p2">The second point to contain.</param>
 		/// <param name="o">The output area.</param>
 		public static void FromCorners(in Point p1, in Point p2, out Rect o)
 		{
@@ -204,6 +246,18 @@ namespace Spectrum
 			o.Y = Math.Min(p1.Y, p2.Y);
 			o.Width = (uint)(Math.Max(p1.X, p2.X) - o.X);
 			o.Height = (uint)(Math.Max(p1.Y, p2.Y) - o.Y);
+		}
+
+		/// <summary>
+		/// Constructs the minimal rectangular area that encompasses all of the passed points.
+		/// </summary>
+		/// <param name="pts">The collection of points to encompass.</param>
+		/// <returns>The output area.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Rect FromPoints(params Point[] pts)
+		{
+			FromPoints(out var o, pts);
+			return o;
 		}
 
 		/// <summary>
@@ -234,5 +288,31 @@ namespace Spectrum
 		public static bool operator != (in Rect l, in Rect r) =>
 			(l.X != r.X) || (l.Y != r.Y) || (l.Width != r.Width) || (l.Height != r.Height);
 		#endregion // Operators
+
+		#region Tuples
+		public readonly void Deconstruct(out int x, out int y, out uint w, out uint h)
+		{
+			x = X;
+			y = Y;
+			w = Width;
+			h = Height;
+		}
+
+		public readonly void Deconstruct(out Point pos, out Extent ext)
+		{
+			pos.X = X;
+			pos.Y = Y;
+			ext.Width = Width;
+			ext.Height = Height;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Rect (in (int x, int y, uint w, uint h) tup) =>
+			new Rect(tup.x, tup.y, tup.w, tup.h);
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Rect (in (Point pos, Extent ext) tup) =>
+			new Rect(tup.pos, tup.ext);
+		#endregion // Tuples
 	}
 }
