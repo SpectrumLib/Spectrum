@@ -4,10 +4,10 @@
 
 This branch is specifically for moving the project over from a .NET Standard 2.0 library to a .NET Core 3.0 library.
 
-## Why LGPLv3?
-The authors of the library chose LGPLv3 as the license for the project because it is a weak copyleft library-level license. This license forces direct modifications of the library to be made open source under the same license. However, projects that only link against this library can be made closed source, commercialized, and re-licensed as their authors seem fit. **In short, if you are:**
+## Licensing
 
-* *modifying the Spectrum source directly* - you must open source your modifications under LGPL v3.
-* *writing a library or application using Spectrum* - commercialize/close source/license your project to your heart's content.
+The Spectrum project, with all related code and assets, is licensed under the [Microsoft Public License (Ms-PL)](https://opensource.org/licenses/MS-PL). This is a permissive license similar to the MIT license, but more friendly towards encouraging sharing improvements to the library. The text of the license can be found in the [LICENSE](./LICENSE) file in the repository, or online at the link above.
 
-This ensures that changes to the Spectrum library are available to everyone, but puts almost no restrictions on projects that use the library, including closed source and commercial ones.
+Libraries used by Spectrum are subject to their own licenses and terms. Please see each of those libraries for more details.
+
+Spectrum is Copyright (c) 2018-2019 The Spectrum Team

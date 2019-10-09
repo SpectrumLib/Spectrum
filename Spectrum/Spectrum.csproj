@@ -4,14 +4,15 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <Platforms>x64</Platforms>
     <Version>0.1.0</Version>
-    <Authors>Sean Moss</Authors>
+    <Authors>The Spectrum Team</Authors>
     <Company>N/A</Company>
     <Description>Vulkan powered framework for creating cross-platform performant games and simulations.</Description>
-    <Copyright>2019 Sean Moss</Copyright>
+    <Copyright>2019 The Spectrum Team</Copyright>
     <PackageProjectUrl>https://github.com/SpectrumLib/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/SpectrumLib/SpectrumLib</RepositoryUrl>
     <PackageReleaseNotes></PackageReleaseNotes>
     <PackageTags>Vulkan, Game, Simulation, Graphics, Framework, Engine</PackageTags>
+    <PackageLicenseExpression>Microsoft Public License (Ms-PL)</PackageLicenseExpression>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
