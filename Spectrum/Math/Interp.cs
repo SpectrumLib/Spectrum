@@ -50,6 +50,58 @@ namespace Spectrum
 		/// <param name="val">The output interpolated value.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Lerp(in Vec4 f1, in Vec4 f2, float amt, out Vec4 val) => val = f1 + ((f2 - f1) * amt);
+		/// <summary>
+		/// Component-wise linear interpolation between the matrices.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void Lerp(in Matrix m1, in Matrix m2, float amt, out Matrix o)
+		{
+			o.M00 = m1.M00 + ((m2.M00 - m1.M00) * amt); o.M01 = m1.M01 + ((m2.M01 - m1.M01) * amt);
+			o.M02 = m1.M02 + ((m2.M02 - m1.M02) * amt); o.M03 = m1.M03 + ((m2.M03 - m1.M03) * amt);
+			o.M10 = m1.M10 + ((m2.M10 - m1.M10) * amt); o.M11 = m1.M11 + ((m2.M11 - m1.M11) * amt);
+			o.M12 = m1.M12 + ((m2.M12 - m1.M12) * amt); o.M13 = m1.M13 + ((m2.M13 - m1.M13) * amt);
+			o.M20 = m1.M20 + ((m2.M20 - m1.M20) * amt); o.M21 = m1.M21 + ((m2.M21 - m1.M21) * amt);
+			o.M22 = m1.M22 + ((m2.M22 - m1.M22) * amt); o.M23 = m1.M23 + ((m2.M23 - m1.M23) * amt);
+			o.M30 = m1.M30 + ((m2.M30 - m1.M30) * amt); o.M31 = m1.M31 + ((m2.M31 - m1.M31) * amt);
+			o.M32 = m1.M32 + ((m2.M32 - m1.M32) * amt); o.M33 = m1.M33 + ((m2.M33 - m1.M33) * amt);
+		}
+
+		/// <summary>
+		/// Performs a linear interpolation between the rotations represented by the quaternions.
+		/// </summary>
+		/// <param name="q1">The source quaternion.</param>
+		/// <param name="q2">The destination quaternion.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output quaternion.</param>
+		public static void Lerp(in Quaternion q1, in Quaternion q2, float amt, out Quaternion o)
+		{
+			float a2 = 1 - amt;
+			float dot = (q1.X * q2.X) + (q1.Y * q2.Y) + (q1.Z * q2.Z) + (q1.W * q2.W);
+
+			if (dot >= 0)
+			{
+				o.X = (a2 * q1.X) + (amt * q2.X);
+				o.Y = (a2 * q1.Y) + (amt * q2.Y);
+				o.Z = (a2 * q1.Z) + (amt * q2.Z);
+				o.W = (a2 * q1.W) + (amt * q2.W);
+			}
+			else
+			{
+				o.X = (a2 * q1.X) - (amt * q2.X);
+				o.Y = (a2 * q1.Y) - (amt * q2.Y);
+				o.Z = (a2 * q1.Z) - (amt * q2.Z);
+				o.W = (a2 * q1.W) - (amt * q2.W);
+			}
+
+			dot = MathF.Sqrt((o.X * o.X) + (o.Y * o.Y) + (o.Z * o.Z) + (o.W * o.W));
+			o.X /= dot;
+			o.Y /= dot;
+			o.Z /= dot;
+			o.W /= dot;
+		}
 		#endregion // Lerp
 
 		#region LerpPrecise
@@ -97,6 +149,27 @@ namespace Spectrum
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void LerpPrecise(in Vec4 f1, in Vec4 f2, float amt, out Vec4 val) => val =
 			((1 - amt) * f1) + (f2 * amt);
+
+		/// <summary>
+		/// Component-wise linear interpolation between the matrices, with better edge case handling for values that are
+		/// greatly mismatched in magnitude.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void LerpPrecise(in Matrix m1, in Matrix m2, float amt, out Matrix o)
+		{
+			float amt2 = 1 - amt;
+			o.M00 = (amt2 * m1.M00) + (m2.M00 * amt); o.M01 = (amt2 * m1.M01) + (m2.M01 * amt);
+			o.M02 = (amt2 * m1.M02) + (m2.M02 * amt); o.M03 = (amt2 * m1.M03) + (m2.M03 * amt);
+			o.M10 = (amt2 * m1.M10) + (m2.M10 * amt); o.M11 = (amt2 * m1.M11) + (m2.M11 * amt);
+			o.M12 = (amt2 * m1.M12) + (m2.M12 * amt); o.M13 = (amt2 * m1.M13) + (m2.M13 * amt);
+			o.M20 = (amt2 * m1.M20) + (m2.M20 * amt); o.M21 = (amt2 * m1.M21) + (m2.M21 * amt);
+			o.M22 = (amt2 * m1.M22) + (m2.M22 * amt); o.M23 = (amt2 * m1.M23) + (m2.M23 * amt);
+			o.M30 = (amt2 * m1.M30) + (m2.M30 * amt); o.M31 = (amt2 * m1.M31) + (m2.M31 * amt);
+			o.M32 = (amt2 * m1.M32) + (m2.M32 * amt); o.M33 = (amt2 * m1.M33) + (m2.M33 * amt);
+		}
 		#endregion // LerpPrecise
 
 		#region Barycentric
@@ -344,6 +417,68 @@ namespace Spectrum
 			SmoothLerp(f1.Z, f2.Z, amt, out val.Z);
 			SmoothLerp(f1.W, f2.W, amt, out val.W);
 		}
+
+		/// <summary>
+		/// Performs a smooth cubic-interpolation between the matrices.
+		/// </summary>
+		/// <param name="m1">The source matrix.</param>
+		/// <param name="m2">The destination matrix.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void SmoothLerp(in Matrix m1, in Matrix m2, float amt, out Matrix o)
+		{
+			SmoothLerp(m1.M00, m2.M00, amt, out o.M00);
+			SmoothLerp(m1.M01, m2.M01, amt, out o.M01);
+			SmoothLerp(m1.M02, m2.M02, amt, out o.M02);
+			SmoothLerp(m1.M03, m2.M03, amt, out o.M03);
+			SmoothLerp(m1.M10, m2.M10, amt, out o.M10);
+			SmoothLerp(m1.M11, m2.M11, amt, out o.M11);
+			SmoothLerp(m1.M12, m2.M12, amt, out o.M12);
+			SmoothLerp(m1.M13, m2.M13, amt, out o.M13);
+			SmoothLerp(m1.M20, m2.M20, amt, out o.M20);
+			SmoothLerp(m1.M21, m2.M21, amt, out o.M21);
+			SmoothLerp(m1.M22, m2.M22, amt, out o.M22);
+			SmoothLerp(m1.M23, m2.M23, amt, out o.M23);
+			SmoothLerp(m1.M30, m2.M30, amt, out o.M30);
+			SmoothLerp(m1.M31, m2.M31, amt, out o.M31);
+			SmoothLerp(m1.M32, m2.M32, amt, out o.M32);
+			SmoothLerp(m1.M33, m2.M33, amt, out o.M33);
+		}
 		#endregion // SmoothLerp
+
+		#region Slerp
+		/// <summary>
+		/// Performs a spherical linear interpolation between the rotations represented by the quaternions.
+		/// </summary>
+		/// <param name="q1">The source quaternion.</param>
+		/// <param name="q2">The destination quaternion.</param>
+		/// <param name="amt">The interpolation weight.</param>
+		/// <param name="o">The output quaternion.</param>
+		public static void Slerp(in Quaternion q1, in Quaternion q2, float amt, out Quaternion o)
+		{
+			float dot = (q1.X * q2.X) + (q1.Y * q2.Y) + (q1.Z * q2.Z) + (q1.W * q2.W);
+			bool ltz = (dot < 0);
+			if (ltz) dot = -dot;
+			float a1, a2;
+
+			if (dot >= 1)
+			{
+				a2 = 1 - amt;
+				a1 = ltz ? -amt : amt;
+			}
+			else
+			{
+				float acos = MathF.Acos(dot);
+				float isin = 1 / MathF.Sin(acos);
+				a2 = MathF.Sin((1 - amt) * acos) * isin;
+				a1 = ltz ? (-MathF.Sin(amt * acos) * isin) : (MathF.Sin(amt * acos) * isin);
+			}
+
+			o.X = (a2 * q1.X) + (a1 * q2.X);
+			o.Y = (a2 * q1.Y) + (a1 * q2.Y);
+			o.Z = (a2 * q1.Z) + (a1 * q2.Z);
+			o.W = (a2 * q1.W) + (a1 * q2.W);
+		}
+		#endregion // Slerp
 	}
 }

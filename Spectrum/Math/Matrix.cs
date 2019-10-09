@@ -764,7 +764,67 @@ namespace Spectrum
 			o.M30 =                              0; o.M31 =                              0; o.M32 =                              0; o.M33 = 1;
 		}
 
-		// TODO: Quaternion, YawPitchRoll
+		/// <summary>
+		/// Creates a rotation matrix representing the same rotation as the quaternion.
+		/// </summary>
+		/// <param name="q">The quaternion to convert.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Matrix CreateFromQuaternion(in Quaternion q)
+		{
+			CreateFromQuaternion(q, out Matrix o);
+			return o;
+		}
+
+		/// <summary>
+		/// Creates a rotation matrix representing the same rotation as the quaternion.
+		/// </summary>
+		/// <param name="q">The quaternion to convert.</param>
+		/// <param name="o">The output matrix.</param>
+		public static void CreateFromQuaternion(in Quaternion q, out Matrix o)
+		{
+			float xx = q.X * q.X;
+			float yy = q.Y * q.Y;
+			float zz = q.Z * q.Z;
+			float xy = q.X * q.Y;
+			float xz = q.X * q.Z;
+			float xw = q.X * q.W;
+			float yz = q.Y * q.Z;
+			float yw = q.Y * q.W;
+			float zw = q.Z * q.W;
+			o.M00 = 1 - (2 * (yy + zz)); o.M01 =       2 * (xy + zw); o.M02 =       2 * (xz - yw); o.M03 = 0;
+			o.M10 =       2 * (xy - zw); o.M11 = 1 - (2 * (xx + zz)); o.M12 =       2 * (yz + xw); o.M13 = 0;
+			o.M20 =       2 * (xz + yw); o.M21 =       2 * (yz - xw); o.M22 = 1 - (2 * (xx + yy)); o.M23 = 0;
+			o.M30 =                   0; o.M31 =                   0; o.M32 =                   0; o.M33 = 1;
+		}
+
+		/// <summary>
+		/// Creates a rotation matrix representing the given yaw, pitch, and roll values.
+		/// </summary>
+		/// <param name="yaw">The yaw, in radians.</param>
+		/// <param name="pitch">The pitch, in radians</param>
+		/// <param name="roll">The roll, in radians</param>
+		/// <returns>The rotation matrix.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Matrix CreateYawPitchRoll(float yaw, float pitch, float roll)
+		{
+			Quaternion.CreateYawPitchRoll(yaw, pitch, roll, out var qo);
+			CreateFromQuaternion(qo, out var o);
+			return o;
+		}
+
+		/// <summary>
+		/// Creates a rotation matrix representing the given yaw, pitch, and roll values.
+		/// </summary>
+		/// <param name="yaw">The yaw, in radians.</param>
+		/// <param name="pitch">The pitch, in radians</param>
+		/// <param name="roll">The roll, in radians</param>
+		/// <param name="o">The rotation matrix.</param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void CreateYawPitchRoll(float yaw, float pitch, float roll, out Matrix o)
+		{
+			Quaternion.CreateYawPitchRoll(yaw, pitch, roll, out var qo);
+			CreateFromQuaternion(qo, out o);
+		}
 		#endregion // Rotation
 
 		#region Scale
@@ -1182,6 +1242,7 @@ namespace Spectrum
 		}
 		#endregion // Operators
 
+		#region Tuples
 		public readonly void Deconstruct(out Vec4 r1, out Vec4 r2, out Vec4 r3, out Vec4 r4)
 		{
 			r1.X = M00; r1.Y = M01; r1.Z = M02; r1.W = M03;
@@ -1202,5 +1263,23 @@ namespace Spectrum
 			m20 = M20; m21 = M21; m22 = M22; m23 = M23;
 			m30 = M30; m31 = M31; m32 = M32; m33 = M33;
 		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Matrix (in (Vec4 r1, Vec4 r2, Vec4 r3, Vec4 r4) tup) =>
+			new Matrix(tup.r1, tup.r2, tup.r3, tup.r4);
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Matrix (in (
+			float m00, float m01, float m02, float m03,
+			float m10, float m11, float m12, float m13,
+			float m20, float m21, float m22, float m23,
+			float m30, float m31, float m32, float m33
+		) tup) => new Matrix(
+			tup.m00, tup.m01, tup.m02, tup.m03,
+			tup.m10, tup.m11, tup.m12, tup.m13,
+			tup.m20, tup.m21, tup.m22, tup.m23,
+			tup.m30, tup.m31, tup.m32, tup.m33
+		);
+		#endregion // Tuples
 	}
 }
