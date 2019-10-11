@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.29230.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectrum", "Spectrum\Spectrum.csproj", "{8FBBB1C5-34C4-4212-A87E-859317F309F1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectrum.Native", "Spectrum.Native\Spectrum.Native.csproj", "{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -15,6 +17,10 @@ Global
 		{8FBBB1C5-34C4-4212-A87E-859317F309F1}.Debug|x64.Build.0 = Debug|x64
 		{8FBBB1C5-34C4-4212-A87E-859317F309F1}.Release|x64.ActiveCfg = Release|x64
 		{8FBBB1C5-34C4-4212-A87E-859317F309F1}.Release|x64.Build.0 = Release|x64
+		{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}.Debug|x64.ActiveCfg = Debug|x64
+		{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}.Debug|x64.Build.0 = Debug|x64
+		{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}.Release|x64.ActiveCfg = Release|x64
+		{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
