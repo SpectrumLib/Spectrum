@@ -26,4 +26,9 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\Dependencies\Native\glfw3.m" Link="glfw3.m" />
+    <EmbeddedResource Include="..\Dependencies\Native\glfw3.w" Link="glfw3.w" />
+  </ItemGroup>
+
 </Project>

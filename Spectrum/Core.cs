@@ -191,6 +191,9 @@ namespace Spectrum
 				Logger.Terminate(); // Should go last to allow logging to the last moment
 			}
 
+			// Always free native libraries
+			Native.NativeLoader.FreeAll();
+
 			Instance = null;
 			_isDisposed = true;
 		}
