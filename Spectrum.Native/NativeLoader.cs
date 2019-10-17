@@ -1,4 +1,9 @@
-﻿using System;
+﻿/*
+ * Microsoft Public License (Ms-PL) - Copyright (c) 2018-2019 The Spectrum Team
+ * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
+ * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
+ */
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -38,18 +43,24 @@ namespace Spectrum.Native
 			_LoadedLibraries.Clear();
 		}
 
+		// Frees a single native library if it is managed by this type
+		public static void FreeLibrary(IntPtr ptr)
+		{
+			if (_LoadedLibraries.Remove(ptr))
+				NativeLibrary.Free(ptr);
+		}
+
 		// Loads (after extraction, if needed) the library with the given name
-		public static IntPtr LoadLibrary(string libname)
+		public static IntPtr LoadLibrary(string libname, string linuxname)
 		{
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 			{
-				var fname = $"lib{libname}.so";
-				if (NativeLibrary.TryLoad(fname, out var handle))
+				if (NativeLibrary.TryLoad(linuxname, out var handle))
 				{
 					_LoadedLibraries.Add(handle);
 					return handle;
 				}
-				throw new DllNotFoundException($"The native library '{libname}' could not be loaded.");
+				throw new DllNotFoundException($"The native library '{linuxname}' could not be loaded.");
 			}
 			else // OSX and Windows
 			{
