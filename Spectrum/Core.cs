@@ -31,6 +31,11 @@ namespace Spectrum
 		public Version Version => Params.Version;
 
 		/// <summary>
+		/// The main window for the application.
+		/// </summary>
+		public CoreWindow Window { get; private set; } = null;
+
+		/// <summary>
 		/// Gets if the application is currently flaged to exit at the end of the next frame update loop.
 		/// </summary>
 		public bool IsExiting { get; private set; } = false;
@@ -56,6 +61,9 @@ namespace Spectrum
 			Params.Validate();
 
 			Logger.Initialize(Params);
+
+			// Create (but dont open) the window
+			Window = new CoreWindow();
 		}
 		~Core()
 		{
@@ -68,8 +76,11 @@ namespace Spectrum
 		/// </summary>
 		public void Run()
 		{
-			// User code initialization
-			Initialize();
+			// Initialization code
+			{
+				Window.CreateWindow();
+				Initialize();
+			}
 
 			// Load global content
 			LoadContent();
@@ -82,6 +93,8 @@ namespace Spectrum
 		// Runs the main application loop
 		private void mainLoop()
 		{
+			Window.ShowWindow(); // Show immediately before the loop starts
+
 			while (!IsExiting)
 			{
 				// Update the time
@@ -173,6 +186,41 @@ namespace Spectrum
 		protected virtual void PostFrame() { }
 		#endregion // Core Loop
 
+		#region Event Callbacks
+		// Private event handlers
+		internal void DoFocusChange(bool focused) => OnFocusChange(focused);
+		internal void DoMinimize(bool minimized)
+		{
+			if (minimized) OnMinimize();
+			else OnRestore();
+		}
+		internal void DoBackbufferSizeChange(uint nw, uint nh)
+		{
+			OnBackbufferSizeChange(nw, nh);
+			// TODO: SceneManager.ActiveScene?.BackbufferResize(nw, nh);
+		}
+
+		/// <summary>
+		/// Called when the application window loses or gains focus.
+		/// </summary>
+		/// <param name="focused">If the window is now focused. <c>false</c> implies the window lost focus.</param>
+		protected virtual void OnFocusChange(bool focused) { }
+		/// <summary>
+		/// Called when the application window is minimized to the OS system bar.
+		/// </summary>
+		protected virtual void OnMinimize() { }
+		/// <summary>
+		/// Called when the application window is restored from the OS system bar.
+		/// </summary>
+		protected virtual void OnRestore() { }
+		/// <summary>
+		/// Called when the application window or backbuffer size changes.
+		/// </summary>
+		/// <param name="newWidth">The new width of the window/backbuffer.</param>
+		/// <param name="newHeight">The new height of the window/backbuffer.</param>
+		protected virtual void OnBackbufferSizeChange(uint newWidth, uint newHeight) { }
+		#endregion // Event Callbacks
+
 		#region Dispose
 		public void Dispose()
 		{
@@ -187,6 +235,9 @@ namespace Spectrum
 				// Clean up the updating objects
 				CoroutineManager.Terminate();
 				SceneManager.Terminate();
+
+				// Clean up the window
+				Window.Dispose();
 
 				Logger.Terminate(); // Should go last to allow logging to the last moment
 			}

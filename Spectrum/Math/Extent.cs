@@ -84,9 +84,6 @@ namespace Spectrum
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Extent operator / (in Extent l, uint r) => new Extent(l.Width / r, l.Height / r);
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static explicit operator Point (in Extent e) => new Point((int)e.Width, (int)e.Height);
 		#endregion // Operators
 
 		#region Tuples
