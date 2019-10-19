@@ -300,15 +300,15 @@ namespace Spectrum
 			Action = action;
 			Delay = delay;
 			Repeat = repeat;
+			WaitObj.Time = delay;
 		}
 
 		private static IEnumerator timer_func(float delay, bool repeat, TimeCallback action)
 		{
-			do
+			while (action(delay) && repeat)
 			{
 				yield return WaitTime(delay);
 			}
-			while (action(delay) && repeat);
 		}
 	}
 
@@ -325,15 +325,15 @@ namespace Spectrum
 			Action = action;
 			Delay = delay;
 			Repeat = repeat;
+			WaitObj.Frames = delay;
 		}
 
 		private static IEnumerator timer_func(uint delay, bool repeat, FrameCallback action)
 		{
-			do
+			while (action(delay) && repeat)
 			{
 				yield return WaitFrames(delay);
 			}
-			while (action(delay) && repeat);
 		}
 	}
 }

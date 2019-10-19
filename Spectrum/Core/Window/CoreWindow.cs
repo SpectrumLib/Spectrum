@@ -186,12 +186,11 @@ namespace Spectrum
 				throw new Exception($"Unable to create window, error (0x{err.code:X}): {err.desc}.");
 			}
 
-			// TODO: ALL OF THESE
 			// Set the input callbacks
-			//Glfw.SetMouseButtonCallback(Handle, (window, button, action, mods) => Input.Mouse.ButtonCallback(window, button, action, mods));
-			//Glfw.SetScrollCallback(Handle, (window, xoffset, yoffset) => Input.Mouse.ScrollCallback(window, xoffset, yoffset));
-			//Glfw.SetCursorEnterCallback(Handle, (window, entered) => Input.Mouse.CursorEnterCallback(window, entered));
-			//Glfw.SetKeyCallback(Handle, (window, key, scancode, action, mods) => Input.Keyboard.KeyCallback(window, key, scancode, action, mods));
+			Glfw.SetMouseButtonCallback(Handle, (window, button, action, mods) => Input.Mouse.ButtonCallback(window, button, action, mods));
+			Glfw.SetScrollCallback(Handle, (window, xoffset, yoffset) => Input.Mouse.ScrollCallback(window, xoffset, yoffset));
+			Glfw.SetCursorEnterCallback(Handle, (window, entered) => Input.Mouse.CursorEnterCallback(window, entered));
+			Glfw.SetKeyCallback(Handle, (window, key, scancode, action, mods) => Input.Keyboard.KeyCallback(window, key, scancode, action, mods));
 
 			// Set the window callbacks
 			Glfw.SetWindowPosCallback(Handle, (window, x, y) => PositionCallback(x, y));
@@ -235,7 +234,11 @@ namespace Spectrum
 		// Prepares the input classes for a new frame, and reads pending OS messages to the window
 		internal void PumpEvents()
 		{
+			Input.Mouse.NewFrame();
+			Input.Keyboard.NewFrame();
 			Glfw.PollEvents();
+			Input.Mouse.FireEvents();
+			Input.Keyboard.FireEvents();
 		}
 		#endregion // Window Lifetime
 

@@ -41,11 +41,11 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The type of event.
 		/// </summary>
-		public readonly ButtonEventType Type;
+		public ButtonEventType Type { get; internal set; }
 		/// <summary>
 		/// The button that generated this event.
 		/// </summary>
-		public readonly MouseButton Button;
+		public MouseButton Button { get; internal set; }
 		/// <summary>
 		/// The time (in seconds) associated with the event. This field takes on different meanings based on the event type:
 		/// <list type="bullet">
@@ -63,11 +63,11 @@ namespace Spectrum.Input
 		///		</item>
 		/// </list>
 		/// </summary>
-		public readonly float EventTime;
+		public float EventTime { get; internal set; }
 		/// <summary>
 		/// The application time (in seconds) at which this event was generated.
 		/// </summary>
-		public readonly float TimeStamp;
+		public float TimeStamp { get; internal set; }
 
 		#region Helpers
 		/// <summary>
@@ -140,11 +140,11 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The current position of the mouse, when the event was fired.
 		/// </summary>
-		public readonly Point Current;
+		public Point Current { get; internal set; }
 		/// <summary>
 		/// The position of the mouse in the frame before the event was fired.
 		/// </summary>
-		public readonly Point Last;
+		public Point Last { get; internal set; }
 		/// <summary>
 		/// The change in position of this move event.
 		/// </summary>
@@ -152,11 +152,11 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The mask of buttons that were down during the move event.
 		/// </summary>
-		public readonly MouseButtonMask Buttons;
+		public MouseButtonMask Buttons { get; internal set; }
 		/// <summary>
 		/// The application time (in seconds) at which this event was generated.
 		/// </summary>
-		public readonly float TimeStamp;
+		public float TimeStamp { get; internal set; }
 		#endregion // Fields
 
 		internal MouseMoveEventData(in Point curr, in Point last, in MouseButtonMask buttons)
@@ -177,7 +177,7 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The change in the mouse wheel value in both dimensions.
 		/// </summary>
-		public readonly Point Delta;
+		public Point Delta { get; internal set; }
 		/// <summary>
 		/// The x-value delta of the mouse wheel. This is the standard up/down scroll direction for mice.
 		/// </summary>
@@ -189,7 +189,7 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The application time (in seconds) at which this event was generated.
 		/// </summary>
-		public readonly float TimeStamp;
+		public float TimeStamp { get; internal set; }
 		#endregion // Fields
 
 		internal MouseWheelEventData(in Point delta)
@@ -203,26 +203,26 @@ namespace Spectrum.Input
 	/// Callback for a mouse button event.
 	/// </summary>
 	/// <param name="data">The data describing the event.</param>
-	public delegate void MouseButtonEvent(in MouseButtonEventData data);
+	public delegate void MouseButtonEvent(MouseButtonEventData data);
 
 	/// <summary>
 	/// Callback for a mouse move event.
 	/// </summary>
 	/// <param name="data">The data describing the event.</param>
-	public delegate void MouseMoveEvent(in MouseMoveEventData data);
+	public delegate void MouseMoveEvent(MouseMoveEventData data);
 
 	/// <summary>
 	/// Callback for a mouse wheel event.
 	/// </summary>
 	/// <param name="data">The data describing the event.</param>
-	public delegate void MouseWheelEvent(in MouseWheelEventData data);
+	public delegate void MouseWheelEvent(MouseWheelEventData data);
 
 	/// <summary>
 	/// Callback for when the cursor mode for the mouse is changed.
 	/// </summary>
 	/// <param name="oldMode">The old mouse cursor mode.</param>
 	/// <param name="newMode">The new mouse curosr mode.</param>
-	//public delegate void CursorModeChangedEvent(CursorMode oldMode, CursorMode newMode);
+	public delegate void CursorModeChangedEvent(CursorMode oldMode, CursorMode newMode);
 
 	/// <summary>
 	/// Callback for when the mouse cursor enters or leaves the window.

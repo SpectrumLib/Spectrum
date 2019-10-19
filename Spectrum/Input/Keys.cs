@@ -322,6 +322,11 @@ namespace Spectrum.Input
 						  (rs ? 0x08 : 0x00) | (rc ? 0x10 : 0x00) | (ra ? 0x20 : 0x00));
 		}
 
+		// Sets the mask for the mod key
+		internal readonly ModKeyMask SetModifier(Keys key) => new ModKeyMask(Mask | (byte)(0x01 << (key - Keys.LeftShift)));
+		// Clears the mask for the mod key
+		internal readonly ModKeyMask ClearModifier(Keys key) => new ModKeyMask(Mask & (byte)~(0x01 << (key - Keys.LeftShift)));
+
 		public readonly override bool Equals(object obj) => (obj is ModKeyMask) && ((ModKeyMask)obj).Mask == Mask;
 
 		public readonly override int GetHashCode() => Mask;
@@ -377,5 +382,9 @@ namespace Spectrum.Input
 				   (glfwKey <= Glfw3.KEY_END) ? _Keys[2][glfwKey - Glfw3.KEY_ESCAPE] :
 				   (glfwKey <= Glfw3.KEY_MENU) ? _Keys[3][glfwKey - Glfw3.KEY_CAPS_LOCK] : Keys.Unknown;
 		}
+
+		// Gets if the key is a modifier
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsModKey(this Keys l) => (l >= Keys.LeftShift) && (l <= Keys.RightAlt);
 	}
 }

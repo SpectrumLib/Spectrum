@@ -39,15 +39,15 @@ namespace Spectrum.Input
 		/// <summary>
 		/// The event type.
 		/// </summary>
-		public readonly KeyEventType Type;
+		public KeyEventType Type { get; internal set; }
 		/// <summary>
 		/// The key that generated the event.
 		/// </summary>
-		public readonly Keys Key;
+		public Keys Key { get; internal set; }
 		/// <summary>
 		/// A mask of the modifier keys that were pressed for this event.
 		/// </summary>
-		public readonly ModKeyMask Mods;
+		public ModKeyMask Mods { get; internal set; }
 		/// <summary>
 		/// The time (in seconds) associated with the event. This field takes on different meanings based on the event type:
 		/// <list type="bullet">
@@ -65,11 +65,11 @@ namespace Spectrum.Input
 		///		</item>
 		/// </list>
 		/// </summary>
-		public readonly float EventTime;
+		public float EventTime { get; internal set; }
 		/// <summary>
 		/// The application time (in seconds) at which this event was generated.
 		/// </summary>
-		public readonly float Timestamp;
+		public float Timestamp { get; internal set; }
 		#endregion Fields
 
 		internal KeyEventData(KeyEventType type, Keys key, ModKeyMask mods, float et)
@@ -86,5 +86,5 @@ namespace Spectrum.Input
 	/// Callback for a keyboard key event.
 	/// </summary>
 	/// <param name="data">The event data.</param>
-	public delegate void KeyEvent(in KeyEventData data);
+	public delegate void KeyEvent(KeyEventData data);
 }
