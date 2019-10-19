@@ -34,6 +34,9 @@ namespace Spectrum
 		// Gets if the monitor has been shown yet
 		internal bool IsShown => (Handle != IntPtr.Zero) && (Glfw.GetWindowAttrib(Handle, Glfw3.VISIBLE) == Glfw3.TRUE);
 
+		// Gets if the window should close from an operating system event
+		internal bool ShouldClose => (Handle != IntPtr.Zero) && Glfw.WindowShouldClose(Handle);
+
 		#region Window Parameters
 		// Window parameters come with cached parameters, which are used to store user changes to the window before the
 		//    window is opened. After the window has been opened, the parameters should be set and queried directly
@@ -159,10 +162,17 @@ namespace Spectrum
 			_title = Core.Instance.Name;
 		}
 
+		#region Window Lifetime
 		// This occurs after user code is called, to allow the user to set the initial window parameters
 		internal void CreateWindow()
 		{
-			Glfw.Init();
+			if (!Glfw.Init())
+			{
+				var err = Glfw.LastError;
+				throw new Exception($"Unable to initialize GLFW, error (0x{err.code:X}): {err.desc}.");
+			}
+			if (!Glfw.VulkanSupported())
+				throw new Exception("Vulkan runtime not found on the system.");
 
 			// Prepare the window hints
 			Glfw.WindowHint(Glfw3.CLIENT_API, Glfw3.NO_API);
@@ -221,6 +231,13 @@ namespace Spectrum
 					Glfw.SetWindowPos(Handle, _cachedPos.X, _cachedPos.Y);
 			}
 		}
+
+		// Prepares the input classes for a new frame, and reads pending OS messages to the window
+		internal void PumpEvents()
+		{
+			Glfw.PollEvents();
+		}
+		#endregion // Window Lifetime
 
 		#region GLFW Interop
 		private static void PositionCallback(int x, int y)

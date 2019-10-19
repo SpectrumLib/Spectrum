@@ -26,6 +26,11 @@ namespace Spectrum
 		public const int HAT_LEFT = 8;
 		public const int KEY_UNKNOWN = -1;
 		public const int KEY_SPACE = 32;
+		public const int KEY_APOSTROPHE = 39;
+		public const int KEY_COMMA = 44;
+		public const int KEY_MINUS = 45;
+		public const int KEY_PERIOD = 46;
+		public const int KEY_SLASH = 47;
 		public const int KEY_0 = 48;
 		public const int KEY_1 = 49;
 		public const int KEY_2 = 50;
@@ -36,6 +41,8 @@ namespace Spectrum
 		public const int KEY_7 = 55;
 		public const int KEY_8 = 56;
 		public const int KEY_9 = 57;
+		public const int KEY_SEMICOLON = 59;
+		public const int KEY_EQUAL = 61;
 		public const int KEY_A = 65;
 		public const int KEY_B = 66;
 		public const int KEY_C = 67;
@@ -62,6 +69,12 @@ namespace Spectrum
 		public const int KEY_X = 88;
 		public const int KEY_Y = 89;
 		public const int KEY_Z = 90;
+		public const int KEY_LEFT_BRACKET = 91;
+		public const int KEY_BACKSLASH = 92;
+		public const int KEY_RIGHT_BRACKET = 93;
+		public const int KEY_GRAVE_ACCENT = 96;
+		public const int KEY_WORLD_1 = 161;
+		public const int KEY_WORLD_2 = 162;
 		public const int KEY_ESCAPE = 256;
 		public const int KEY_ENTER = 257;
 		public const int KEY_TAB = 258;

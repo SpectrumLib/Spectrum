@@ -88,6 +88,9 @@ namespace Spectrum
 			// Start and run the main loop
 			Start();
 			mainLoop();
+
+			// End code and pre-disposal
+			End();
 		}
 
 		// Runs the main application loop
@@ -97,8 +100,9 @@ namespace Spectrum
 
 			while (!IsExiting)
 			{
-				// Update the time
+				// Update the time, prepare frame-based classes for a new frame
 				Time.Frame();
+				Window.PumpEvents(); // Also updates the input classes
 
 				// Begin the frame
 				BeginFrame();
@@ -110,8 +114,8 @@ namespace Spectrum
 				Update();
 				SceneManager.Update();
 
-				// Check for early exit
-				if (IsExiting)
+				// Check for early exit, or window self-close
+				if (IsExiting || Window.ShouldClose)
 					break;
 
 				// Midframe
@@ -153,6 +157,10 @@ namespace Spectrum
 		/// initial scene and perform final state setup.
 		/// </summary>
 		public virtual void Start() { }
+		/// <summary>
+		/// Called immediately after the main loop exits, and before application disposable begins.
+		/// </summary>
+		public virtual void End() { }
 		#endregion // Initialization
 
 		#region Core Loop
