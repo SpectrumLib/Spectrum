@@ -10,32 +10,36 @@ using System.Runtime.InteropServices;
 namespace Spectrum
 {
 	/// <summary>
-	/// Describes the size of a rectangular area with integer dimensions.
+	/// Describes the size of a rectangular area. This type does not perform checking for negative dimensions.
 	/// </summary>
-	[StructLayout(LayoutKind.Explicit, Size = 2*sizeof(uint))]
-	public struct Extent : IEquatable<Extent>
+	[StructLayout(LayoutKind.Explicit, Size=2*sizeof(float))]
+	public struct Extentf : IEquatable<Extentf>
 	{
 		/// <summary>
 		/// An area of zero dimension.
 		/// </summary>
-		public static readonly Extent Zero = new Extent(0, 0);
+		public static readonly Extentf Zero = new Extentf(0f, 0f);
 
 		#region Fields
 		/// <summary>
 		/// The width of the area (x-axis dimension).
 		/// </summary>
 		[FieldOffset(0)]
-		public uint Width;
+		public float Width;
 		/// <summary>
 		/// The height of the area (y-axis dimension).
 		/// </summary>
-		[FieldOffset(sizeof(uint))]
-		public uint Height;
+		[FieldOffset(sizeof(float))]
+		public float Height;
 
 		/// <summary>
 		/// The total area of the described dimensions.
 		/// </summary>
-		public readonly uint Area => Width * Height;
+		public readonly float Area => Width * Height;
+		/// <summary>
+		/// Gets if the dimensions of the extent are positive.
+		/// </summary>
+		public readonly bool IsPositive => (Width >= 0f) && (Height >= 0f);
 		#endregion // Fields
 
 		/// <summary>
@@ -43,62 +47,62 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="w">The width of the new area.</param>
 		/// <param name="h">The height of the new area.</param>
-		public Extent(uint w, uint h)
+		public Extentf(float w, float h)
 		{
 			Width = w;
 			Height = h;
 		}
 
 		#region Overrides
-		public readonly override bool Equals(object obj) => (obj is Extent) && ((Extent)obj == this);
+		public readonly override bool Equals(object obj) => (obj is Extentf) && ((Extentf)obj == this);
 
 		public readonly override int GetHashCode()
 		{
 			unchecked
 			{
-				uint hash = 17;
-				hash = (hash * 23) + Width;
-				hash = (hash * 23) + Height;
-				return (int)hash;
+				int hash = 17;
+				hash = (hash * 23) + Width.GetHashCode();
+				hash = (hash * 23) + Height.GetHashCode();
+				return hash;
 			}
 		}
 
 		public readonly override string ToString() => $"{{{Width} {Height}}}";
 
-		readonly bool IEquatable<Extent>.Equals(Extent other) =>
+		readonly bool IEquatable<Extentf>.Equals(Extentf other) =>
 			(Width == other.Width) && (Height == other.Height);
 		#endregion // Overrides
 
 		#region Operators
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool operator == (in Extent l, in Extent r) => (l.Width == r.Width) && (l.Height == r.Height);
+		public static bool operator == (in Extentf l, in Extentf r) => (l.Width == r.Width) && (l.Height == r.Height);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool operator != (in Extent l, in Extent r) => (l.Width != r.Width) || (l.Height != r.Height);
+		public static bool operator != (in Extentf l, in Extentf r) => (l.Width != r.Width) || (l.Height != r.Height);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Extent operator * (in Extent l, uint r) => new Extent(l.Width * r, l.Height * r);
+		public static Extentf operator * (in Extentf l, float r) => new Extentf(l.Width * r, l.Height * r);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Extent operator * (uint l, in Extent r) => new Extent(l * r.Width, l * r.Height);
+		public static Extentf operator * (float l, in Extentf r) => new Extentf(l * r.Width, l * r.Height);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Extent operator / (in Extent l, uint r) => new Extent(l.Width / r, l.Height / r);
+		public static Extentf operator / (in Extentf l, float r) => new Extentf(l.Width / r, l.Height / r);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static explicit operator Extent (in Extentf e) => new Extent((uint)e.Width, (uint)e.Height);
+		public static implicit operator Extentf (in Extent e) => new Extentf(e.Width, e.Height);
 		#endregion // Operators
 
 		#region Tuples
-		public readonly void Deconstruct(out uint w, out uint h)
+		public readonly void Deconstruct(out float w, out float h)
 		{
 			w = Width;
 			h = Height;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static implicit operator Extent (in (uint w, uint h) tup) =>
-			new Extent(tup.w, tup.h);
+		public static implicit operator Extentf(in (float w, float h) tup) =>
+			new Extentf(tup.w, tup.h);
 		#endregion // Tuples
 	}
 }

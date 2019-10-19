@@ -10,140 +10,139 @@ using System.Runtime.InteropServices;
 namespace Spectrum
 {
 	/// <summary>
-	/// Describes a axis-aligned rectangle on a 2D integer cartesian grid. This type is set up to work properly for
-	/// any rectilinear coordinate system, as long as <see cref="Position"/> is taken to be the point with the most
-	/// negative coordinates.
+	/// The floating point version of the <see cref="Rect"/> type, for continuous cartesian space. Note that this type
+	/// does not check for negative size.
 	/// </summary>
-	[StructLayout(LayoutKind.Explicit, Size = 4*sizeof(int))]
-	public struct Rect : IEquatable<Rect>
+	[StructLayout(LayoutKind.Explicit, Size=4*sizeof(float))]
+	public struct Rectf : IEquatable<Rectf>
 	{
 		/// <summary>
 		/// Represents an empty rectangle with zero dimensions.
 		/// </summary>
-		public static readonly Rect Empty = new Rect(0, 0, 0, 0);
+		public static readonly Rectf Empty = new Rectf(0f, 0f, 0f, 0f);
 
 		#region Fields
 		/// <summary>
 		/// The x-coordinate of the left side of the rectangle.
 		/// </summary>
 		[FieldOffset(0)]
-		public int X;
+		public float X;
 		/// <summary>
 		/// The y-coordinate of the bottom side of the rectangle.
 		/// </summary>
-		[FieldOffset(sizeof(int))]
-		public int Y;
+		[FieldOffset(sizeof(float))]
+		public float Y;
 		/// <summary>
 		/// The width of the rectangle (along x-axis).
 		/// </summary>
-		[FieldOffset(2*sizeof(int))]
-		public uint Width;
+		[FieldOffset(2*sizeof(float))]
+		public float Width;
 		/// <summary>
 		/// The height of the rectangle (along y-axis).
 		/// </summary>
-		[FieldOffset(3*sizeof(int))]
-		public uint Height;
+		[FieldOffset(3*sizeof(float))]
+		public float Height;
 
 		/// <summary>
 		/// The bottom left corner of the rectangle.
 		/// </summary>
-		public Point Position
+		public Vec2 Position
 		{
-			readonly get => new Point(X, Y);
+			readonly get => new Vec2(X, Y);
 			set { X = value.X; Y = value.Y; }
 		}
 		/// <summary>
 		/// The dimensions of the rectangle.
 		/// </summary>
-		public Extent Size
+		public Extentf Size
 		{
-			readonly get => new Extent(Width, Height);
+			readonly get => new Extentf(Width, Height);
 			set { Width = value.Width; Height = value.Height; }
 		}
 
 		/// <summary>
 		/// The top-left corner, assuming an up/right coordinate system.
 		/// </summary>
-		public readonly Point TopLeft => new Point(X, Y + (int)Height);
+		public readonly Vec2 TopLeft => new Vec2(X, Y + Height);
 		/// <summary>
 		/// The top-right corner, assuming an up/right coordinate system.
 		/// </summary>
-		public readonly Point TopRight => new Point(X + (int)Width, Y + (int)Height);
+		public readonly Vec2 TopRight => new Vec2(X + Width, Y + Height);
 		/// <summary>
 		/// The bottom-left corner, assuming an up/right coordinate system.
 		/// </summary>
-		public readonly Point BottomLeft => new Point(X, Y);
+		public readonly Vec2 BottomLeft => new Vec2(X, Y);
 		/// <summary>
 		/// The bottom-right corner, assuming an up/right coordinate system.
 		/// </summary>
-		public readonly Point BottomRight => new Point(X + (int)Width, Y);
+		public readonly Vec2 BottomRight => new Vec2(X + Width, Y);
 
 		/// <summary>
 		/// The top-left corner, assuming an down/right coordinate system.
 		/// </summary>
-		public readonly Point TopLeftInv => new Point(X, Y);
+		public readonly Vec2 TopLeftInv => new Vec2(X, Y);
 		/// <summary>
 		/// The top-right corner, assuming an down/right coordinate system.
 		/// </summary>
-		public readonly Point TopRightInv => new Point(X + (int)Width, Y);
+		public readonly Vec2 TopRightInv => new Vec2(X + Width, Y);
 		/// <summary>
 		/// The bottom-left corner, assuming an down/right coordinate system.
 		/// </summary>
-		public readonly Point BottomLeftInv => new Point(X, Y + (int)Height);
+		public readonly Vec2 BottomLeftInv => new Vec2(X, Y + Height);
 		/// <summary>
 		/// The bottom-right corner, assuming an down/right coordinate system.
 		/// </summary>
-		public readonly Point BottomRightInv => new Point(X + (int)Width, Y + (int)Height);
+		public readonly Vec2 BottomRightInv => new Vec2(X + Width, Y + Height);
 
 		/// <summary>
 		/// The x-coordinate of the left edge.
 		/// </summary>
-		public readonly int Left => X;
+		public readonly float Left => X;
 		/// <summary>
 		/// The x-coordinate of the right edge.
 		/// </summary>
-		public readonly int Right => X + (int)Width;
+		public readonly float Right => X + Width;
 		/// <summary>
 		/// The y-coordinate of the top edge, assuming an up/right coordinate system.
 		/// </summary>
-		public readonly int Top => Y + (int)Height;
+		public readonly float Top => Y + Height;
 		/// <summary>
 		/// The y-coordinate of the bottom edge, assuming an up/right coordinate system.
 		/// </summary>
-		public readonly int Bottom => Y;
+		public readonly float Bottom => Y;
 		/// <summary>
 		/// The y-coordinate of the top edge, assuming an down/right coordinate system.
 		/// </summary>
-		public readonly int TopInv => Y;
+		public readonly float TopInv => Y;
 		/// <summary>
 		/// The y-coordinate of the bottom edge, assuming an down/right coordinate system.
 		/// </summary>
-		public readonly int BottomInv => Y + (int)Height;
+		public readonly float BottomInv => Y + Height;
 
 		/// <summary>
 		/// The area of the rectangle interior.
 		/// </summary>
-		public readonly uint Area => Width * Height;
+		public readonly float Area => Width * Height;
 
 		/// <summary>
-		/// The center of the rect area, with rounding towards the top-left when necessary.
+		/// The center of the rectangle.
 		/// </summary>
-		public readonly Point Center => new Point(X + (int)(Width / 2), Y + (int)(Height / 2));
+		public readonly Vec2 Center => new Vec2(X + (Width / 2), Y + (Height / 2));
 
 		/// <summary>
-		/// The exact center of the rectangle, using floating point coordinates.
+		/// Gets if the dimensions of the rectangle are positive.
 		/// </summary>
-		public readonly Vec2 CenterF => new Vec2(X + (Width / 2f), Y + (Height / 2f));
+		public readonly bool IsReal => (Width >= 0) && (Height >= 0);
 
 		/// <summary>
 		/// The range of values covered by this rect on the x-axis.
 		/// </summary>
-		public readonly ValueRange<int> RangeX => new ValueRange<int>(X, X + (int)Width);
+		public readonly ValueRange<float> RangeX => new ValueRange<float>(X, X + Width);
 
 		/// <summary>
 		/// The range of values covered by this rect on the y-axis.
 		/// </summary>
-		public readonly ValueRange<int> RangeY => new ValueRange<int>(Y, Y + (int)Height);
+		public readonly ValueRange<float> RangeY => new ValueRange<float>(Y, Y + Height);
 		#endregion // Fields
 
 		#region Ctor
@@ -154,7 +153,7 @@ namespace Spectrum
 		/// <param name="y">The y-coordinate of the bottom side.</param>
 		/// <param name="w">The width.</param>
 		/// <param name="h">The height.</param>
-		public Rect(int x, int y, uint w, uint h)
+		public Rectf(float x, float y, float w, float h)
 		{
 			X = x;
 			Y = y;
@@ -167,7 +166,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="pos">The rectangle position.</param>
 		/// <param name="ex">The rectangle size.</param>
-		public Rect(in Point pos, in Extent ex)
+		public Rectf(in Vec2 pos, in Extentf ex)
 		{
 			X = pos.X;
 			Y = pos.Y;
@@ -177,19 +176,19 @@ namespace Spectrum
 		#endregion // Ctor
 
 		#region Overrides
-		readonly bool IEquatable<Rect>.Equals(Rect other) => other == this;
+		readonly bool IEquatable<Rectf>.Equals(Rectf other) => other == this;
 
-		public readonly override bool Equals(object obj) => (obj is Rect) && ((Rect)obj == this);
+		public readonly override bool Equals(object obj) => (obj is Rectf) && ((Rectf)obj == this);
 
 		public readonly override int GetHashCode()
 		{
 			unchecked
 			{
 				int hash = 17;
-				hash = (hash * 23) + X;
-				hash = (hash * 23) + Y;
-				hash = (hash * 23) + (int)Width;
-				hash = (hash * 23) + (int)Height;
+				hash = (hash * 23) + X.GetHashCode();
+				hash = (hash * 23) + Y.GetHashCode();
+				hash = (hash * 23) + Width.GetHashCode();
+				hash = (hash * 23) + Height.GetHashCode();
 				return hash;
 			}
 		}
@@ -205,7 +204,7 @@ namespace Spectrum
 		/// <param name="r2">The second rectangle.</param>
 		/// <returns>The output union rectangle.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Rect Union(in Rect r1, in Rect r2)
+		public static Rectf Union(in Rectf r1, in Rectf r2)
 		{
 			Union(r1, r2, out var o);
 			return o;
@@ -217,12 +216,12 @@ namespace Spectrum
 		/// <param name="r1">The first rectangle.</param>
 		/// <param name="r2">The second rectangle.</param>
 		/// <param name="o">The output union rectangle.</param>
-		public static void Union(in Rect r1, in Rect r2, out Rect o)
+		public static void Union(in Rectf r1, in Rectf r2, out Rectf o)
 		{
 			o.X = Math.Min(r1.X, r2.X);
 			o.Y = Math.Min(r1.Y, r2.Y);
-			o.Width = (uint)(Math.Max(r1.X + r1.Width, r2.X + r2.Width) - o.X);
-			o.Height = (uint)(Math.Max(r1.Y + r1.Height, r2.Y + r2.Height) - o.Y);
+			o.Width = Math.Max(r1.X + r1.Width, r2.X + r2.Width) - o.X;
+			o.Height = Math.Max(r1.Y + r1.Height, r2.Y + r2.Height) - o.Y;
 		}
 
 		/// <summary>
@@ -232,7 +231,7 @@ namespace Spectrum
 		/// <param name="r2">The second rectangle.</param>
 		/// <returns>The overlap area, set to <see cref="Empty"/> if there is no overlap.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Rect Intersect(in Rect r1, in Rect r2)
+		public static Rectf Intersect(in Rectf r1, in Rectf r2)
 		{
 			Intersect(r1, r2, out var o);
 			return o;
@@ -244,17 +243,17 @@ namespace Spectrum
 		/// <param name="r1">The first rectangle.</param>
 		/// <param name="r2">The second rectangle.</param>
 		/// <param name="o">The overlap area, set to <see cref="Empty"/> if there is no overlap.</param>
-		public static void Intersect(in Rect r1, in Rect r2, out Rect o)
+		public static void Intersect(in Rectf r1, in Rectf r2, out Rectf o)
 		{
 			if (r1.Intersects(r2))
 			{
 				o.X = Math.Max(r1.X, r2.X);
 				o.Y = Math.Max(r1.Y, r2.Y);
-				o.Width = (uint)(Math.Min(r1.X + r1.Width, r2.X + r2.Width) - o.X);
-				o.Height = (uint)(Math.Min(r1.Y + r1.Height, r2.Y + r2.Height) - o.Y);
+				o.Width = Math.Min(r1.X + r1.Width, r2.X + r2.Width) - o.X;
+				o.Height = Math.Min(r1.Y + r1.Height, r2.Y + r2.Height) - o.Y;
 			}
 			else
-				o = Rect.Empty;
+				o = Rectf.Empty;
 		}
 
 		/// <summary>
@@ -264,7 +263,7 @@ namespace Spectrum
 		/// <param name="p2">The second point to contain.</param>
 		/// <returns>The output area.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Rect FromCorners(in Point p1, in Point p2)
+		public static Rectf FromCorners(in Vec2 p1, in Vec2 p2)
 		{
 			FromCorners(p1, p2, out var o);
 			return o;
@@ -276,12 +275,12 @@ namespace Spectrum
 		/// <param name="p1">The first point to contain.</param>
 		/// <param name="p2">The second point to contain.</param>
 		/// <param name="o">The output area.</param>
-		public static void FromCorners(in Point p1, in Point p2, out Rect o)
+		public static void FromCorners(in Vec2 p1, in Vec2 p2, out Rectf o)
 		{
 			o.X = Math.Min(p1.X, p2.X);
 			o.Y = Math.Min(p1.Y, p2.Y);
-			o.Width = (uint)(Math.Max(p1.X, p2.X) - o.X);
-			o.Height = (uint)(Math.Max(p1.Y, p2.Y) - o.Y);
+			o.Width = Math.Max(p1.X, p2.X) - o.X;
+			o.Height = Math.Max(p1.Y, p2.Y) - o.Y;
 		}
 
 		/// <summary>
@@ -290,7 +289,7 @@ namespace Spectrum
 		/// <param name="pts">The collection of points to encompass.</param>
 		/// <returns>The output area.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Rect FromPoints(params Point[] pts)
+		public static Rectf FromPoints(params Vec2[] pts)
 		{
 			FromPoints(out var o, pts);
 			return o;
@@ -301,10 +300,10 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="o">The output area.</param>
 		/// <param name="pts">The collection of points to encompass.</param>
-		public static void FromPoints(out Rect o, params Point[] pts)
+		public static void FromPoints(out Rectf o, params Vec2[] pts)
 		{
-			int minx = Int32.MaxValue, miny = Int32.MaxValue;
-			int maxx = Int32.MinValue, maxy = Int32.MinValue;
+			float minx = Single.MaxValue, miny = Single.MaxValue;
+			float maxx = Single.MinValue, maxy = Single.MinValue;
 			foreach (var p in pts)
 			{
 				minx = (p.X < minx) ? p.X : minx;
@@ -312,24 +311,24 @@ namespace Spectrum
 				maxx = (p.X > maxx) ? p.X : maxx;
 				maxy = (p.Y > maxy) ? p.Y : maxy;
 			}
-			o = new Rect(minx, miny, (uint)(maxx - minx), (uint)(maxy - miny));
+			o = new Rectf(minx, miny, maxx - minx, maxy - miny);
 		}
 		#endregion // Creation
 
 		#region Operators
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool operator == (in Rect l, in Rect r) =>
+		public static bool operator == (in Rectf l, in Rectf r) =>
 			(l.X == r.X) && (l.Y == r.Y) && (l.Width == r.Width) && (l.Height == r.Height);
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool operator != (in Rect l, in Rect r) =>
+		public static bool operator != (in Rectf l, in Rectf r) =>
 			(l.X != r.X) || (l.Y != r.Y) || (l.Width != r.Width) || (l.Height != r.Height);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static explicit operator Rect (in Rectf r) => new Rect((int)r.X, (int)r.Y, (uint)r.Width, (uint)r.Height);
+		public static implicit operator Rectf (in Rect r) => new Rectf(r.X, r.Y, r.Width, r.Height);
 		#endregion // Operators
 
 		#region Tuples
-		public readonly void Deconstruct(out int x, out int y, out uint w, out uint h)
+		public readonly void Deconstruct(out float x, out float y, out float w, out float h)
 		{
 			x = X;
 			y = Y;
@@ -337,7 +336,7 @@ namespace Spectrum
 			h = Height;
 		}
 
-		public readonly void Deconstruct(out Point pos, out Extent ext)
+		public readonly void Deconstruct(out Vec2 pos, out Extentf ext)
 		{
 			pos.X = X;
 			pos.Y = Y;
@@ -346,12 +345,12 @@ namespace Spectrum
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static implicit operator Rect (in (int x, int y, uint w, uint h) tup) =>
-			new Rect(tup.x, tup.y, tup.w, tup.h);
+		public static implicit operator Rectf (in (float x, float y, float w, float h) tup) =>
+			new Rectf(tup.x, tup.y, tup.w, tup.h);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static implicit operator Rect (in (Point pos, Extent ext) tup) =>
-			new Rect(tup.pos, tup.ext);
+		public static implicit operator Rectf (in (Vec2 pos, Extentf ext) tup) =>
+			new Rectf(tup.pos, tup.ext);
 		#endregion // Tuples
 	}
 }
