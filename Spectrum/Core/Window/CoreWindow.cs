@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Linq;
 
 namespace Spectrum
 {
@@ -24,9 +25,6 @@ namespace Spectrum
 		internal readonly Glfw3 Glfw;
 		// The handle of the glfw window
 		internal IntPtr Handle { get; private set; } = IntPtr.Zero;
-
-		// Reference to the core instance
-		internal Core Core => Core.Instance;
 
 		// Gets the primary monitor for the system.
 		internal IntPtr PrimaryMonitor => Glfw.GetPrimaryMonitor();
@@ -164,12 +162,19 @@ namespace Spectrum
 		// This occurs after user code is called, to allow the user to set the initial window parameters
 		internal void CreateWindow()
 		{
+			Glfw.Init();
+
 			// Prepare the window hints
 			Glfw.WindowHint(Glfw3.CLIENT_API, Glfw3.NO_API);
 			Glfw.WindowHint(Glfw3.VISIBLE, Glfw3.FALSE);
 
 			// Open the hidden window
 			Handle = Glfw.CreateWindow((int)_cachedSize.Width, (int)_cachedSize.Height, _title);
+			if (Handle == IntPtr.Zero)
+			{
+				var err = Glfw.LastError;
+				throw new Exception($"Unable to create window, error (0x{err.code:X}): {err.desc}.");
+			}
 
 			// TODO: ALL OF THESE
 			// Set the input callbacks
@@ -308,30 +313,48 @@ namespace Spectrum
 		// This calcates the window's current monitor using the center-point of the window. This is needed because
 		//   GLFW does not have functionaly for doing this right out of the box. It returns the GLFW handle to the
 		//   current monitor, as well as the bounding box describing the monitor's position and size.
+		// Cannot use Rect class because of different coordinate systems
 		private IntPtr getCurrentMonitor(out Rect bb)
 		{
+			// Return IntPtr.Zero if the window is not yet shown
 			if (!IsShown)
 			{
-				getMonitorRect(PrimaryMonitor, out bb);
-				return PrimaryMonitor;
+				bb = Rect.Empty;
+				return IntPtr.Zero;
 			}
 
-			IntPtr[] monitors = Glfw.GetMonitors();
-			Point center = Position + (Point)(Size / 2);
-			for (int i = 0; i < monitors.Length; ++i)
+			// Get the monitor rects
+			var monitors = Glfw.GetMonitors();
+			var rmon = monitors.Select(m => { getMonitorRect(m, out var mr); return mr; }).ToArray();
+
+			// Check for the monitor that has the window center point
+			var c = Position + (Point)(Size / 2);
+			for (int i = 0; i < rmon.Length; ++i)
 			{
-				getMonitorRect(monitors[i], out bb);
-				// Cannot call Rect.Contains, as it uses a different coordinate system than the monitors do
-				if ((center.X >= bb.X) && (center.X <= (bb.X + bb.Width)) && (center.Y >= bb.Y) && (center.Y <= (bb.Y + bb.Height)))
+				if (rmon[i].Contains(c))
+				{
+					bb = rmon[i];
 					return monitors[i];
+				}
 			}
 
 			// Will only get here if the center of the window has been moved off of all of the monitors
-			// TODO: Switch to checking the corners to allow this to still be used
-			//          -or-
-			//       Change to finding the monitor with the highest overlap instead of a specific point
-			bb = Rect.Empty;
-			return IntPtr.Zero;
+			// Simply find the monitor that has the most overlap
+			int maxi = -1;
+			uint maxa = 0;
+			var srect = new Rect(Position, Size);
+			for (int i = 0; i < rmon.Length; ++i)
+			{
+				Rect.Intersect(srect, rmon[i], out var inter);
+				if (inter.Area > maxa)
+				{
+					maxi = i;
+					maxa = inter.Area;
+				}
+			}
+
+			bb = (maxi != -1) ? rmon[maxi] : Rect.Empty;
+			return (maxi != -1) ? monitors[maxi] : IntPtr.Zero;
 		}
 
 		private void getMonitorRect(IntPtr monitor, out Rect bb)

@@ -53,7 +53,7 @@ namespace Spectrum
 		private Logger(string name, ReadOnlySpan<char> tag, IMessageFormatter formatter)
 		{
 			Name = name;
-			tag.CopyTo((_tag = new char[8]).AsSpan());
+			tag.Slice(0, Math.Min(tag.Length, 8)).CopyTo((_tag = new char[8]).AsSpan());
 			Formatter = formatter;
 			PolicyMask = PolicyMask.All;
 		}
@@ -306,7 +306,7 @@ namespace Spectrum
 				);
 			}
 
-			DefaultLogger = CreateLogger("default", pars.DefaultLoggerTag ?? pars.Name, pars.DefaultMessageFormatter);
+			DefaultLogger = CreateLogger("default", pars.DefaultLoggerTag, pars.DefaultMessageFormatter);
 
 			if (pars.UseInternalLogging)
 				InternalLog.Initialize(pars.InternalMessageFormatter);

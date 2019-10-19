@@ -100,18 +100,23 @@ namespace Spectrum
 		/// <exception cref="InvalidCoreParameterException">One of the parameters has an invalid value.</exception>
 		public void Validate()
 		{
-			// Logging
+			// Logging validation
 			if (LogDirectory != null)
 			{
 				if (String.IsNullOrWhiteSpace(LogDirectory))
 					throw new InvalidCoreParameterException(nameof(LogDirectory), LogDirectory, "empty path");
-				if (!Uri.IsWellFormedUriString(LogDirectory, UriKind.RelativeOrAbsolute))
+				if (!PathUtils.IsValidPath(LogDirectory))
 					throw new InvalidCoreParameterException(nameof(LogDirectory), LogDirectory, "invalid file path");
 			}
-			if (LogFileName != null && (LogFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+			if (LogFileName != null && !PathUtils.IsValidPath(LogFileName))
 				throw new InvalidCoreParameterException(nameof(LogFileName), LogFileName, "invalid characters in file name");
 			if (DefaultLoggerTag != null && String.IsNullOrWhiteSpace(DefaultLoggerTag))
 				throw new InvalidCoreParameterException(nameof(DefaultLoggerTag), DefaultLoggerTag, "cannot specify empty tag");
+
+			// Logging defaults
+			LogDirectory = LogDirectory ?? Directory.GetCurrentDirectory();
+			LogFileName = LogFileName ?? PathUtils.SanitizeFileName(Name);
+			DefaultLoggerTag = DefaultLoggerTag ?? Name;
 		}
 	}
 

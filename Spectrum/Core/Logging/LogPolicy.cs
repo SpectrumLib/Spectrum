@@ -149,7 +149,7 @@ namespace Spectrum
 		public FileLogPolicy(string file, bool async = true, bool timestamp = false, bool archive = true)
 		{
 			// Calculate the full path
-			if (!Uri.IsWellFormedUriString(file, UriKind.RelativeOrAbsolute))
+			if (!PathUtils.IsValidPath(file))
 				throw new ArgumentException($"Invalid path for log file '{file}'.", nameof(file));
 			var fpath = Path.GetFullPath(Path.IsPathRooted(file) ? file : Path.Combine(Directory.GetCurrentDirectory(), file));
 
