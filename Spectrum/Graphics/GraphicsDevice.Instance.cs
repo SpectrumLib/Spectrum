@@ -228,6 +228,7 @@ namespace Spectrum.Graphics
 			var qfi = qInfos[0].QueueFamilyIndex;
 			queues.Graphics = device.GetQueue(qfi, 0);
 			queues.Transfer = sepTrans ? device.GetQueue(qfi, 1) : queues.Graphics;
+			queues.FamilyIndex = qfi;
 
 			// Save the memory info
 			memory = bestDev.memProps;

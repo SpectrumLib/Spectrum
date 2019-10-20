@@ -73,6 +73,73 @@ namespace Spectrum
 			(Width == other.Width) && (Height == other.Height);
 		#endregion // Overrides
 
+		#region Basic Math
+		/// <summary>
+		/// Finds the component-wise minimum of the two extents.
+		/// </summary>
+		/// <param name="l">The first extent.</param>
+		/// <param name="r">The second extent.</param>
+		/// <returns>The component-wise mimimum.</returns>
+		public static Extentf Min(in Extentf l, in Extentf r)
+		{
+			Min(l, r, out var o);
+			return o;
+		}
+
+		/// <summary>
+		/// Finds the component-wise minimum of the two extents.
+		/// </summary>
+		/// <param name="l">The first extent.</param>
+		/// <param name="r">The second extent.</param>
+		/// <param name="o">The output extent.</param>
+		public static void Min(in Extentf l, in Extentf r, out Extentf o) =>
+			o = new Extentf(Math.Min(l.Width, r.Width), Math.Min(l.Height, r.Height));
+
+		/// <summary>
+		/// Finds the component-wise maximum of the two extents.
+		/// </summary>
+		/// <param name="l">The first extent.</param>
+		/// <param name="r">The second extent.</param>
+		/// <returns>The component-wise maximum.</returns>
+		public static Extentf Max(in Extentf l, in Extentf r)
+		{
+			Max(l, r, out var o);
+			return o;
+		}
+
+		/// <summary>
+		/// Finds the component-wise maximum of the two extents.
+		/// </summary>
+		/// <param name="l">The first extent.</param>
+		/// <param name="r">The second extent.</param>
+		/// <param name="o">The output extent.</param>
+		public static void Max(in Extentf l, in Extentf r, out Extentf o) =>
+			o = new Extentf(Math.Max(l.Width, r.Width), Math.Max(l.Height, r.Height));
+
+		/// <summary>
+		/// Component-wise clamp the extent between two limiting extents.
+		/// </summary>
+		/// <param name="e">The extent to clamp.</param>
+		/// <param name="min">The minimum extent.</param>
+		/// <param name="max">The maximum extent.</param>
+		/// <returns>The component-wise clamp.</returns>
+		public static Extentf Clamp(in Extentf e, in Extentf min, in Extentf max)
+		{
+			Clamp(e, min, max, out var o);
+			return o;
+		}
+
+		/// <summary>
+		/// Component-wise clamp the extent between two limiting extents.
+		/// </summary>
+		/// <param name="e">The extent to clamp.</param>
+		/// <param name="min">The minimum extent.</param>
+		/// <param name="max">The maximum extent.</param>
+		/// <param name="o">The component-wise clamp.</param>
+		public static Extentf Clamp(in Extentf e, in Extentf min, in Extentf max, out Extentf o) =>
+			o = new Extentf(Math.Clamp(e.Width, min.Width, max.Width), Math.Clamp(e.Height, min.Height, max.Height));
+		#endregion // Basic Math
+
 		#region Operators
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool operator == (in Extentf l, in Extentf r) => (l.Width == r.Width) && (l.Height == r.Height);

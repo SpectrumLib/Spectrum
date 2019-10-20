@@ -25,6 +25,31 @@ namespace Spectrum
 			=> new SpanSplitEnumerator<T>(span, separator);
 
 		/// <summary>
+		/// Implements a foreach loop as a Linq-stle function call.
+		/// </summary>
+		/// <typeparam name="T">The type held by the enumerator.</typeparam>
+		/// <param name="span">The enumerable collection to iterate over.</param>
+		/// <param name="func">The function to run on each member of the enumerator.</param>
+		public static void ForEach<T>(this ReadOnlySpan<T> span, Action<T> func)
+		{
+			foreach (var val in span)
+				func(val);
+		}
+
+		/// <summary>
+		/// Implements a foreach loop as a Linq-stle function call, providing the function with the collection index.
+		/// </summary>
+		/// <typeparam name="T">The type held by the enumerator.</typeparam>
+		/// <param name="span">The enumerable collection to iterate over.</param>
+		/// <param name="func">The function to run on each member of the enumerator.</param>
+		public static void ForEach<T>(this ReadOnlySpan<T> span, Action<T, int> func)
+		{
+			int index = 0;
+			foreach (var val in span)
+				func(val, index++);
+		}
+
+		/// <summary>
 		/// An enumerator type that is used to implement enumeration logic when splitting <see cref="ReadOnlySpan{T}"/>.
 		/// </summary>
 		/// <typeparam name="T">The type contained in the ReadOnlySpan.</typeparam>

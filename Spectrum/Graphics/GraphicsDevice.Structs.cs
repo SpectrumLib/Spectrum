@@ -21,6 +21,8 @@ namespace Spectrum.Graphics
 			//   available for the same family as the graphics queue. We require them to be the same family all the resources
 			//   are exclusive and sharing is a level of complexity to avoid.
 			public Vk.Queue Transfer;
+			// The index of the queue family for the graphics and transfer queues
+			public uint FamilyIndex;
 
 			// If the graphics and transfer queues are separate.
 			public bool SeparateTransfer => Graphics.RawHandle.ToUInt64() != Transfer.RawHandle.ToUInt64();
