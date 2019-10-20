@@ -96,6 +96,10 @@ namespace Spectrum.Graphics
 			/// </summary>
 			public string VendorName;
 			/// <summary>
+			/// The unique integer identifier of the manufacturer of the device driver.
+			/// </summary>
+			public uint VendorId;
+			/// <summary>
 			/// The version of the active Vulkan driver.
 			/// </summary>
 			public Version DriverVersion;

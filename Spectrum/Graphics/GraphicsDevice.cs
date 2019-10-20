@@ -19,7 +19,8 @@ namespace Spectrum.Graphics
 		// Top level vulkan objects
 		private readonly Vk.Instance _vkInstance;
 		private readonly Vk.PhysicalDevice _vkPhysicalDevice;
-		internal Vk.Device VkDevice { get; private set; }
+		private readonly Vk.Device _vkDevice;
+		internal Vk.Device VkDevice => _vkDevice;
 		
 		// Queues
 		internal readonly DeviceQueues Queues;
@@ -45,6 +46,7 @@ namespace Spectrum.Graphics
 		internal GraphicsDevice()
 		{
 			CreateVulkanInstance(out _vkInstance);
+			CreateVulkanDevice(_vkInstance, out _vkPhysicalDevice, out _vkDevice, out Features, out Limits, out Info, out Queues, out Memory);
 		}
 		~GraphicsDevice()
 		{
@@ -63,7 +65,7 @@ namespace Spectrum.Graphics
 			if (!IsDisposed && disposing)
 			{
 				// Wait for all current GPU processes to complete
-				//VkDevice.WaitIdle();
+				_vkDevice?.WaitIdle();
 
 				// Clean the internal resources
 				//cleanResources();
