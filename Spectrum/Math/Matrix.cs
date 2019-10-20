@@ -257,6 +257,7 @@ namespace Spectrum
 		/// Subtracts one matrix from the other element-wise.
 		/// </summary>
 		/// <param name="l">The first matrix.</param>
+		/// <param name="r">The second matrix.</param>
 		/// <returns>The element-wise difference of the two matrices.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix Subtract(in Matrix l, in Matrix r)

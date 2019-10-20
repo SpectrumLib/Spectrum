@@ -121,7 +121,7 @@ namespace Spectrum
 		/// <param name="x">The x-component.</param>
 		/// <param name="y">The y-component.</param>
 		/// <param name="z">The z-component.</param>
-		/// <param name="z">The w-component.</param>
+		/// <param name="w">The w-component.</param>
 		public Vec4(float x, float y, float z, float w)
 		{
 			X = x;

@@ -211,6 +211,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The quaternion to multiply.</param>
 		/// <param name="r">The scalar to multiply.</param>
+		/// <param name="o">The output quaternion.</param>
 		public static void Multiply(in Quaternion l, float r, out Quaternion o)
 		{
 			o.X = l.X * r;
@@ -260,6 +261,7 @@ namespace Spectrum
 		/// </summary>
 		/// <param name="l">The quaternion numerator.</param>
 		/// <param name="r">The scalar denominator.</param>
+		/// <param name="o">The output quaternion.</param>
 		public static void Divide(in Quaternion l, float r, out Quaternion o)
 		{
 			o.X = l.X / r;

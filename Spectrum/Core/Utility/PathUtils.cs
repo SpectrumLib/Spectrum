@@ -45,7 +45,7 @@ namespace Spectrum
 		/// <summary>
 		/// Sanitize a folder name by removing or replacing invalid characters.
 		/// </summary>
-		/// <param name="filename">The folder name to sanitize.</param>
+		/// <param name="folder">The folder name to sanitize.</param>
 		/// <param name="options">How to sanitize the folder name.</param>
 		/// <param name="replace">The replacement character if using <see cref="PathSanitizeOptions.Replace"/>.</param>
 		/// <returns>The sanitized folder name.</returns>
@@ -70,7 +70,7 @@ namespace Spectrum
 		/// <summary>
 		/// Sanitize a filesystem path by removing or replacing invalid characters.
 		/// </summary>
-		/// <param name="filename">The path to sanitize.</param>
+		/// <param name="path">The path to sanitize.</param>
 		/// <param name="options">How to sanitize the path.</param>
 		/// <param name="replace">The replacement character if using <see cref="PathSanitizeOptions.Replace"/>.</param>
 		/// <returns>The sanitized path.</returns>

@@ -24,7 +24,7 @@ namespace Spectrum
 		/// <remarks>This works because adjacent floats have adjacent integer values in IEEE.</remarks>
 		/// <param name="f1">The first value.</param>
 		/// <param name="f2">The second value.</param>
-		/// <returns>The ULP distance of the two values, a negative number implies f1 < f2.</returns>
+		/// <returns>The ULP distance of the two values, a negative number implies f1 &lt; f2.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe static long ULPDistance(float f1, float f2)
 		{
@@ -39,7 +39,7 @@ namespace Spectrum
 		/// <remarks>This works because adjacent floats have adjacent integer values in IEEE.</remarks>
 		/// <param name="f1">The first value.</param>
 		/// <param name="f2">The second value.</param>
-		/// <returns>The ULP distance of the two values, a negative number implies f1 < f2.</returns>
+		/// <returns>The ULP distance of the two values, a negative number implies f1 &lt; f2.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe static long ULPDistance(double f1, double f2)
 		{

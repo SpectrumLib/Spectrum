@@ -286,8 +286,9 @@ namespace Spectrum
 		/// Sets the window to either be fullscreen or windowed mode. 
 		/// </summary>
 		/// <param name="fullscreen">`true` to set the window to fullscreen, `false` to set to windowed mode.</param>
+		/// <param name="keepRes">If the resolution of the backbuffer should be maintained when switching to fullscreen.</param>
 		/// <returns>If the window style was changed, false means the requested style was already active.</returns>
-		public bool SetFullscreen(bool fullscreen, bool keepRes = true)
+		public bool SetFullscreen(bool fullscreen, bool keepRes = false)
 		{
 			if (fullscreen == IsFullscreen)
 				return false;
