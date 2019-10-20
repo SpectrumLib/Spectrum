@@ -24,11 +24,11 @@ namespace Spectrum.Input
 
 		#region Fields
 		// Track states and times
-		private static readonly bool[] _LastKeys = new bool[KeyUtils.MAX_KEY_INDEX + 1];
-		private static readonly bool[] _CurrKeys = new bool[KeyUtils.MAX_KEY_INDEX + 1];
-		private static readonly float[] _LastPress = new float[KeyUtils.MAX_KEY_INDEX + 1];
-		private static readonly float[] _LastRelease = new float[KeyUtils.MAX_KEY_INDEX + 1];
-		private static readonly float[] _LastTap = new float[KeyUtils.MAX_KEY_INDEX + 1];
+		private static readonly bool[] _LastKeys = new bool[KeysUtils.MAX_KEY_INDEX + 1];
+		private static readonly bool[] _CurrKeys = new bool[KeysUtils.MAX_KEY_INDEX + 1];
+		private static readonly float[] _LastPress = new float[KeysUtils.MAX_KEY_INDEX + 1];
+		private static readonly float[] _LastRelease = new float[KeysUtils.MAX_KEY_INDEX + 1];
+		private static readonly float[] _LastTap = new float[KeysUtils.MAX_KEY_INDEX + 1];
 		private static readonly List<Keys> _Pressed = new List<Keys>(32);
 
 		// Holds the glfw events until all are registered
@@ -186,7 +186,7 @@ namespace Spectrum.Input
 		{
 			if (action == Glfw3.REPEAT) return; // We generate our own repeat events
 
-			Keys keys = KeyUtils.Translate(key);
+			Keys keys = KeysUtils.Translate(key);
 			if (keys == Keys.Unknown) return; // Dont generate events for unsupported keys
 
 			int index = (int)keys;
@@ -222,7 +222,7 @@ namespace Spectrum.Input
 
 		static Keyboard()
 		{
-			for (int i = 0; i < KeyUtils.MAX_KEY_INDEX; ++i)
+			for (int i = 0; i < KeysUtils.MAX_KEY_INDEX; ++i)
 			{
 				_LastKeys[i] = _CurrKeys[i] = false;
 				_LastPress[i] = _LastRelease[i] = _LastTap[i] = 0;

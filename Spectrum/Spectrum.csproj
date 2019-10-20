@@ -31,4 +31,8 @@
     <ProjectReference Include="..\Spectrum.Native\Spectrum.Native.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Graphics\" />
+  </ItemGroup>
+
 </Project>

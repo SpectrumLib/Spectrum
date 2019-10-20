@@ -338,11 +338,13 @@ namespace Spectrum.Input
 		public static bool operator != (ModKeyMask l, ModKeyMask r) => l.Mask != r.Mask;
 	}
 
-	// Utility functionality for Keys
-	internal static class KeyUtils
+	/// <summary>
+	/// Utility functionality for <see cref="Keys"/> values.
+	/// </summary>
+	public static class KeysUtils
 	{
 		// Maximum index that a key array can take on
-		public const int MAX_KEY_INDEX = (int)Keys.RightAlt;
+		internal const int MAX_KEY_INDEX = (int)Keys.RightAlt;
 
 		// Might be a better way to do this, look later
 		private static readonly Keys[][] _Keys = {
@@ -374,7 +376,7 @@ namespace Spectrum.Input
 
 		// Translates glfw keycodes to Keys values
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Keys Translate(int glfwKey)
+		internal static Keys Translate(int glfwKey)
 		{
 			return (glfwKey == -1) ? Keys.Unknown :
 				   (glfwKey <= Glfw3.KEY_GRAVE_ACCENT) ? _Keys[0][glfwKey - Glfw3.KEY_SPACE] :
@@ -383,8 +385,46 @@ namespace Spectrum.Input
 				   (glfwKey <= Glfw3.KEY_MENU) ? _Keys[3][glfwKey - Glfw3.KEY_CAPS_LOCK] : Keys.Unknown;
 		}
 
-		// Gets if the key is a modifier
+		#region Key Types
+		/// <summary>
+		/// Gets if the key is a modifier (Shift, Ctrl, or Alt).
+		/// </summary>
+		/// <param name="k">The key to check.</param>
+		/// <returns>If the key is a modifier.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool IsModKey(this Keys l) => (l >= Keys.LeftShift) && (l <= Keys.RightAlt);
+		public static bool IsModKey(this Keys k) => (k >= Keys.LeftShift) && (k <= Keys.RightAlt);
+
+		/// <summary>
+		/// Gets if the key is an alpha character (any alphabet letter).
+		/// </summary>
+		/// <param name="k">The key to check.</param>
+		/// <returns>If the key is an alpha.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsAlphaKey(this Keys k) => (k >= Keys.A) && (k <= Keys.Z);
+
+		/// <summary>
+		/// Gets if the key is a digit, either from the number row or the key pad.
+		/// </summary>
+		/// <param name="k">The key to check.</param>
+		/// <returns>If the key is a digit.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsDigit(this Keys k) => (k >= Keys.D1) && (k <= Keys.KP0);
+
+		/// <summary>
+		/// Gets if the key is a digit or an alpha character.
+		/// </summary>
+		/// <param name="k">The key to check.</param>
+		/// <returns>If the key is a digit or character.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsAlphaNum(this Keys k) => (k >= Keys.A) && (k <= Keys.KP0);
+
+		/// <summary>
+		/// Gets if the key is a function key.
+		/// </summary>
+		/// <param name="k">The key to check.</param>
+		/// <returns>If the key is a function key.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool IsFunction(this Keys k) => (k >= Keys.F1) && (k <= Keys.F12);
+		#endregion // Key Types
 	}
 }
