@@ -3,6 +3,7 @@
  * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
+using Spectrum.Graphics;
 using System;
 
 namespace Spectrum
@@ -34,6 +35,11 @@ namespace Spectrum
 		/// The main window for the application.
 		/// </summary>
 		public CoreWindow Window { get; private set; } = null;
+
+		/// <summary>
+		/// The controller for the physical graphics device used by the application window.
+		/// </summary>
+		public GraphicsDevice GraphicsDevice { get; private set; } = null;
 
 		/// <summary>
 		/// Gets if the application is currently flaged to exit at the end of the next frame update loop.
@@ -79,6 +85,7 @@ namespace Spectrum
 			// Initialization code
 			{
 				Window.CreateWindow();
+				GraphicsDevice = new GraphicsDevice();
 				Initialize();
 			}
 
@@ -161,6 +168,11 @@ namespace Spectrum
 		/// Called immediately after the main loop exits, and before application disposable begins.
 		/// </summary>
 		public virtual void End() { }
+		/// <summary>
+		/// Called when the application core object is being disposed.
+		/// </summary>
+		/// <param name="disposing"><c>true</c> if <see cref="Dispose"/> was called manually.</param>
+		public virtual void OnDisposing(bool disposing) { }
 		#endregion // Initialization
 
 		#region Core Loop
@@ -243,6 +255,12 @@ namespace Spectrum
 				// Clean up the updating objects
 				CoroutineManager.Terminate();
 				SceneManager.Terminate();
+
+				// Call the user dispose function
+				OnDisposing(disposing);
+
+				// Clean up the content and hardware objects
+				GraphicsDevice.Dispose();
 
 				// Clean up the window
 				Window.Dispose();

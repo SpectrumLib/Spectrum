@@ -3,6 +3,7 @@
  * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
+using Spectrum.Graphics;
 using System;
 using System.IO;
 
@@ -79,6 +80,23 @@ namespace Spectrum
 		/// </summary>
 		public IMessageFormatter InternalMessageFormatter = null;
 		#endregion // Logging
+
+		#region Graphics
+		/// <summary>
+		/// Sets if the validation layers are loaded into Vulkan. This should be disabled for Release builds. Defaults
+		/// to false.
+		/// </summary>
+		public bool EnableValidationLayers;
+		/// <summary>
+		/// Controls which special features are enabled on the graphics device. By default, no special features are enabled.
+		/// </summary>
+		public GraphicsDevice.DeviceFeatures EnabledGraphicsFeatures;
+		/// <summary>
+		/// If true, then requesting a graphics device feature that is not available will throw an exception, instead of
+		/// logging an error and proceeding. Defaults to true.
+		/// </summary>
+		public bool StrictGraphicsFeatures;
+		#endregion // Graphics
 		#endregion // Fields
 
 		/// <summary>
@@ -117,6 +135,11 @@ namespace Spectrum
 			LogDirectory = LogDirectory ?? Directory.GetCurrentDirectory();
 			LogFileName = LogFileName ?? PathUtils.SanitizeFileName(Name);
 			DefaultLoggerTag = DefaultLoggerTag ?? Name;
+
+			// Graphics defaults
+			EnableValidationLayers = false;
+			EnabledGraphicsFeatures = default;
+			StrictGraphicsFeatures = true;
 		}
 	}
 

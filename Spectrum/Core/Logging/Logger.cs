@@ -214,7 +214,7 @@ namespace Spectrum
 			if (tag.Length < 8)
 				tag = new string(' ', 8 - tag.Length) + tag;
 
-			var lg = new Logger(name, tag.AsSpan(), fmtr);
+			var lg = new Logger(name, tag.AsSpan(), fmtr ?? new DefaultMessageFormatter());
 			_Loggers.Add(name, lg);
 			return lg;
 		}

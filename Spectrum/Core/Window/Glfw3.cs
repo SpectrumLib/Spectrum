@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Vk = SharpVk;
 
 namespace Spectrum
 {
@@ -126,9 +127,8 @@ namespace Spectrum
 		public void SetWindowSizeCallback(IntPtr window, GLFWwindowsizefun func) => _glfwSetWindowSizeCallback(window, func);
 		public void SetWindowFocusCallback(IntPtr window, GLFWwindowfocusfun func) => _glfwSetWindowFocusCallback(window, func);
 		public void SetWindowIconifyCallback(IntPtr window, GLFWwindowiconifyfun func) => _glfwSetWindowIconifyCallback(window, func);
-		// TODO: Re-add when vulkan is linked in
-		//public bool GetPhysicalDevicePresentationSupport(Vk.Instance inst, Vk.PhysicalDevice dev, uint fam)
-		//	=> (_glfwGetPhysicalDevicePresentationSupport(inst.Handle, dev.Handle, fam) == 1);
+		public bool GetPhysicalDevicePresentationSupport(Vk.Instance inst, Vk.PhysicalDevice dev, uint fam)
+			=> _glfwGetPhysicalDevicePresentationSupport(new IntPtr((long)inst.RawHandle.ToUInt64()), new IntPtr((long)dev.RawHandle.ToUInt64()), fam) == 1;
 		#endregion // Passthrough API Functions
 
 		#region API Function Wrappers
@@ -177,14 +177,13 @@ namespace Spectrum
 			}
 		}
 
-		// TODO: Re-add when vulkan is linked in
-		//public static long CreateWindowSurface(Vk.Instance inst, IntPtr window)
-		//{
-		//	Vk.Result res = (Vk.Result)_glfwCreateWindowSurface(inst.Handle, window, IntPtr.Zero, out IntPtr surface);
-		//	if (res != Vk.Result.Success)
-		//		throw new Vk.VulkanException(res, "Could not create Vulkan surface from GLFW.");
-		//	return surface.ToInt64();
-		//}
+		public long CreateWindowSurface(Vk.Instance inst, IntPtr window)
+		{
+			Vk.Result res = (Vk.Result)_glfwCreateWindowSurface(new IntPtr((long)inst.RawHandle.ToUInt64()), window, IntPtr.Zero, out IntPtr surface);
+			if (res != Vk.Result.Success)
+				throw new Exception($"Could not create Vulkan surface (error: {res}).");
+			return surface.ToInt64();
+		}
 		#endregion // API Function Wrappers
 
 		#region IDisposable
