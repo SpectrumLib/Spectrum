@@ -219,7 +219,7 @@ namespace Spectrum
 		internal void DoBackbufferSizeChange(uint nw, uint nh)
 		{
 			OnBackbufferSizeChange(nw, nh);
-			// TODO: SceneManager.ActiveScene?.BackbufferResize(nw, nh);
+			SceneManager.ActiveScene?.BackbufferResize(new Extent(nw, nh));
 		}
 
 		/// <summary>

@@ -3,6 +3,7 @@
  * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
+using Spectrum.Graphics;
 using System;
 
 namespace Spectrum
@@ -17,11 +18,6 @@ namespace Spectrum
 	{
 		#region Fields
 		/// <summary>
-		/// A reference to the current application core instance.
-		/// </summary>
-		public Core Core => Core.Instance;
-
-		/// <summary>
 		/// The name of this scene, used for debugging purposes and identification.
 		/// </summary>
 		public readonly string Name;
@@ -29,6 +25,15 @@ namespace Spectrum
 		/// If this scene is the active scene in the application.
 		/// </summary>
 		public bool IsActive { get; private set; } = false;
+
+		/// <summary>
+		/// A reference to the current <see cref="Core.GraphicsDevice"/>.
+		/// </summary>
+		public GraphicsDevice GraphicsDevice => Core.Instance.GraphicsDevice;
+		/// <summary>
+		/// The renderer managing the graphics for this scene.
+		/// </summary>
+		public readonly SceneRenderer Renderer;
 
 		/// <summary>
 		/// If this scene has been disposed.
@@ -45,6 +50,8 @@ namespace Spectrum
 			if (String.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("Scene name cannot be null or empty.", nameof(name));
 			Name = name;
+
+			Renderer = new SceneRenderer(this);
 		}
 		~Scene()
 		{
@@ -83,6 +90,14 @@ namespace Spectrum
 		/// </param>
 		protected virtual void OnDispose(bool disposing) { }
 
+		/// <summary>
+		/// Called when the backbuffer size changes. The Scene render target will already be rebuilt by the time this
+		/// function is called.
+		/// </summary>
+		/// <param name="oldSize">The old rendertarget size.</param>
+		/// <param name="newSize">The new rendertarget size.</param>
+		protected virtual void OnBackbufferResize(Extent oldSize, Extent newSize) { }
+
 		#region Core Loop
 		/// <summary>
 		/// Called at the beginning of the frame, after <see cref="Core.BeginFrame"/>, but before any of the update
@@ -110,14 +125,34 @@ namespace Spectrum
 
 		#region User Function Calling
 		internal void DoOnQueued(bool newScene) => OnQueued(newScene);
-		internal void DoStart() => OnStart();
+		internal void DoStart()
+		{
+			// TODO: Use backbuffer size
+			Renderer.Rebuild(Core.Instance.Window.Size.Width, Core.Instance.Window.Size.Height);
+			OnStart();
+		}
 		internal void DoRemove() => OnRemove();
-		internal void DoBeginFrame() => BeginFrame();
+		internal void DoBeginFrame()
+		{
+			Renderer.Reset();
+			BeginFrame();
+		}
 		internal void DoUpdate() => Update();
 		internal void DoMidFrame() => MidFrame();
 		internal void DoRender() => Render();
 		internal void DoEndFrame() => EndFrame();
 		#endregion // User Function Calling
+
+		internal void BackbufferResize(Extent newSize)
+		{
+			if (Renderer.BackbufferSize == newSize)
+				return;
+
+			var oldSize = Renderer.BackbufferSize;
+			Renderer.Rebuild(newSize.Width, newSize.Height);
+
+			OnBackbufferResize(oldSize, newSize);
+		}
 
 		#region IDisposable
 		public void Dispose()
@@ -131,6 +166,8 @@ namespace Spectrum
 			if (!IsDisposed)
 			{
 				OnDispose(disposing);
+
+				Renderer.Dispose();
 			}
 
 			IsDisposed = true;

@@ -23,6 +23,12 @@ namespace Spectrum
 		private const int B_SHIFT = 16;
 		private const int G_SHIFT = 8;
 
+		private static readonly Random _Random = new Random();
+		/// <summary>
+		/// Returns a random opaque color.
+		/// </summary>
+		public static Color Random => new Color((uint)(_Random.Next(Int32.MinValue, Int32.MaxValue) | 0xFF000000));
+
 		#region Fields
 		// The backing value containing the color channels packed as a 32-bit integer as 0xAABBGGRR
 		[FieldOffset(0)]
