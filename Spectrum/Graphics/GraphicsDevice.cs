@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Microsoft Public License (Ms-PL) - Copyright (c) 2018-2019 The Spectrum Team
  * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
@@ -52,6 +52,21 @@ namespace Spectrum.Graphics
 		{
 			dispose(false);
 		}
+
+		#region Frame
+		// Called at the beginning of a render frame to prepare the render subsystem
+		internal void BeginFrame()
+		{
+
+			// Reset the global state
+			//setInitialState();
+		}
+
+		// Called at the end of a render frame to present the frame
+		internal void EndFrame()
+		{
+		}
+		#endregion // Frame
 
 		#region IDisposable
 		public void Dispose()
