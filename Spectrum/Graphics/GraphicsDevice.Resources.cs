@@ -42,16 +42,16 @@ namespace Spectrum.Graphics
 		}
 
 		// Finds the best type of memory for the given constraints
-		internal int FindMemoryTypeIndex(uint bits, Vk.MemoryPropertyFlags props)
+		internal uint? FindMemoryTypeIndex(uint bits, Vk.MemoryPropertyFlags props)
 		{
 			// TODO: Cache the results for faster lookups
-			int? index = null;
+			uint? index = null;
 			Memory.MemoryTypes.ForEach((type, idx) => {
 				// If: (not already found) AND (valid memory type) AND (all required properties are present)
 				if (!index.HasValue && (bits & (0x1 << idx)) > 0 && (type.PropertyFlags & props) == props)
-					index = idx;
+					index = (uint)idx;
 			});
-			return index.HasValue ? index.Value : -1;
+			return index;
 		}
 
 		// Submits a one-time action that needs a graphics queue command buffer, will be synchronous
