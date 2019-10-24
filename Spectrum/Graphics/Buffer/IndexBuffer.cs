@@ -41,44 +41,64 @@ namespace Spectrum.Graphics
 		/// Uploads unsigned 16-bit index data into the buffer.
 		/// </summary>
 		/// <param name="indices">The indices to upload to the buffer.</param>
-		/// <param name="length">
-		/// The number of indices to copy. A value of <see cref="UInt32.MaxValue"/> will auto-calculate the proper 
-		/// length to fill the buffer, taking into account the offset into the buffer.
-		/// </param>
+		/// <param name="length">The number of indices to copy.</param>
 		/// <param name="srcOffset">The offset into the source array, in array indices.</param>
 		/// <param name="dstOffset">The offset into the buffer, in index elements.</param>
 		/// <exception cref="InvalidOperationException">The indices in this buffer are not 16 bit.</exception>
-		public void SetData(ushort[] indices, uint length = UInt32.MaxValue, uint srcOffset = 0, uint dstOffset = 0)
+		public void SetData(ushort[] indices, uint length, uint srcOffset, uint dstOffset)
+		{
+			if ((length + srcOffset) > indices.Length)
+				throw new ArgumentException($"Source data too short ({indices.Length}) for offset and length ({srcOffset}:{length})");
+			if (ElementType != IndexElementType.U16)
+				throw new InvalidOperationException("Cannot upload 16-bit indices to a 32-bit index buffer");
+
+			SetDataInternal(new ReadOnlySpan<ushort>(indices, (int)srcOffset, (int)length), dstOffset * 2);
+		}
+
+		/// <summary>
+		/// Uploads unsigned 16-bit index data into the buffer.
+		/// </summary>
+		/// <param name="indices">The indices to upload to the buffer.</param>
+		/// <param name="dstOffset">The offset into the buffer, in index elements.</param>
+		/// <exception cref="InvalidOperationException">The indices in this buffer are not 16 bit.</exception>
+		public void SetData(ReadOnlySpan<ushort> indices, uint dstOffset)
 		{
 			if (ElementType != IndexElementType.U16)
 				throw new InvalidOperationException("Cannot upload 16-bit indices to a 32-bit index buffer");
 
-			if (length == UInt32.MaxValue)
-				length = IndexCount - dstOffset;
-
-			SetDataInternal(indices, length, srcOffset, dstOffset * 2);
+			SetDataInternal(indices, dstOffset * 2);
 		}
 
 		/// <summary>
 		/// Uploads unsigned 32-bit index data into the buffer.
 		/// </summary>
 		/// <param name="indices">The indices to upload to the buffer.</param>
-		/// <param name="length">
-		/// The number of indices to copy. A value of <see cref="UInt32.MaxValue"/> will auto-calculate the proper 
-		/// length to fill the buffer, taking into account the offset into the buffer.
-		/// </param>
+		/// <param name="length">The number of indices to copy.</param>
 		/// <param name="srcOffset">The offset into the source array, in array indices.</param>
 		/// <param name="dstOffset">The offset into the buffer, in index elements.</param>
 		/// <exception cref="InvalidOperationException">The indices in this buffer are not 32 bit.</exception>
-		public void SetData(uint[] indices, uint length = UInt32.MaxValue, uint srcOffset = 0, uint dstOffset = 0)
+		public void SetData(uint[] indices, uint length, uint srcOffset, uint dstOffset)
+		{
+			if ((length + srcOffset) > indices.Length)
+				throw new ArgumentException($"Source data too short ({indices.Length}) for offset and length ({srcOffset}:{length})");
+			if (ElementType != IndexElementType.U32)
+				throw new InvalidOperationException("Cannot upload 32-bit indices to a 16-bit index buffer");
+
+			SetDataInternal(new ReadOnlySpan<uint>(indices, (int)srcOffset, (int)length), dstOffset * 4);
+		}
+
+		/// <summary>
+		/// Uploads unsigned 32-bit index data into the buffer.
+		/// </summary>
+		/// <param name="indices">The indices to upload to the buffer.</param>
+		/// <param name="dstOffset">The offset into the buffer, in index elements.</param>
+		/// <exception cref="InvalidOperationException">The indices in this buffer are not 32 bit.</exception>
+		public void SetData(ReadOnlySpan<uint> indices, uint dstOffset)
 		{
 			if (ElementType != IndexElementType.U32)
 				throw new InvalidOperationException("Cannot upload 32-bit indices to a 16-bit index buffer");
 
-			if (length == UInt32.MaxValue)
-				length = IndexCount - dstOffset;
-
-			SetDataInternal(indices, length, srcOffset, dstOffset * 4);
+			SetDataInternal(indices, dstOffset * 4);
 		}
 	}
 

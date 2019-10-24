@@ -47,31 +47,43 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <typeparam name="T">The type of the input data.</typeparam>
 		/// <param name="data">The data to copy into the buffer.</param>
-		/// <param name="length">
-		/// The length of the source data to copy, in <typeparamref name="T"/>s. A value of <see cref="UInt32.MaxValue"/>
-		/// will auto-calculate the proper length to fill the buffer, taking into account the offset into the buffer.
-		/// </param>
-		/// <param name="srcOffset">The optional offset into the source data, in <typeparamref name="T"/>s.</param>
+		/// <param name="length">The number of items to copy from the array.</param>
+		/// <param name="srcOffset">The index of the source array to start copying from.</param>
 		/// <param name="dstOffset">The optional offset into the buffer, in vertices.</param>
-		public void SetData<T>(T[] data, uint length = UInt32.MaxValue, uint srcOffset = 0, uint dstOffset = 0)
+		public void SetData<T>(T[] data, uint length, uint srcOffset, uint dstOffset)
+			where T : struct
+		{
+			if ((length + srcOffset) > data.Length)
+				throw new ArgumentException($"Source data too short ({data.Length}) for offset and length ({srcOffset}:{length})");
+
+			uint typeSize = (uint)Unsafe.SizeOf<T>();
+			uint srcSize = length * typeSize;
+			uint srcOff = srcOffset * typeSize;
+
+			if ((srcOff % Stride) != 0)
+				throw new ArgumentException($"Source offset ({srcOff}) misalignment to vertex boundary ({Stride})");
+			if ((srcSize % Stride) != 0)
+				throw new ArgumentException($"Source size ({srcSize}) misalignment to vertex boundary ({Stride})");
+
+			SetDataInternal(new ReadOnlySpan<T>(data, (int)srcOffset, (int)length), dstOffset * Stride);
+		}
+
+		/// <summary>
+		/// Uploads vertex data into the buffer on the graphics device.
+		/// </summary>
+		/// <typeparam name="T">The type of the input data.</typeparam>
+		/// <param name="data">The data to copy into the buffer.</param>
+		/// <param name="dstOffset">The optional offset into the buffer, in vertices.</param>
+		public void SetData<T>(ReadOnlySpan<T> data, uint dstOffset)
 			where T : struct
 		{
 			uint typeSize = (uint)Unsafe.SizeOf<T>();
+			uint srcSize = (uint)data.Length * typeSize;
 
-			if (length == UInt32.MaxValue)
-			{
-				uint rem = VertexCount - dstOffset;
-				length = (uint)((float)rem * Stride / typeSize);
-			}
-
-			uint srcSize = length * typeSize;
-			uint srcOff = srcOffset * typeSize;
-			if ((srcOff % Stride) != 0)
-				throw new ArgumentException($"The start of the source data ({srcOff}) does not align to a vertex boundary ({Stride})");
 			if ((srcSize % Stride) != 0)
-				throw new ArgumentException($"The length of the source data ({srcSize}) does not align to a vertex boundary ({Stride})");
+				throw new ArgumentException($"Source size ({srcSize}) misalignment to vertex boundary ({Stride})");
 
-			SetDataInternal(data, length, srcOffset, dstOffset * Stride);
+			SetDataInternal(data, dstOffset * Stride);
 		}
 	}
 }

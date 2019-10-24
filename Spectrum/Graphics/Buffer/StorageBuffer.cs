@@ -28,35 +28,53 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <typeparam name="T">The type of the source data.</typeparam>
 		/// <param name="data">The data to upload.</param>
-		/// <param name="length">
-		/// The length of the source data to copy, in <typeparamref name="T"/>s. A value of <see cref="UInt32.MaxValue"/>
-		/// will auto-calculate the proper length to fill the buffer, taking into account the offset into the buffer.
-		/// </param>
-		/// <param name="srcOffset">The optional offset into the source data, in <typeparamref name="T"/>s.</param>
-		/// <param name="dstOffset">The optional offset into the buffer, in <typeparamref name="T"/>s.</param>
-		public void SetData<T>(T[] data, uint length = UInt32.MaxValue, uint srcOffset = 0, uint dstOffset = 0)
+		/// <param name="length">The number of array elements to copy.</param>
+		/// <param name="srcOffset">The offset into the source array to start copying from.</param>
+		/// <param name="dstOffset">The offset into the buffer copy to, in <typeparamref name="T"/> elements.</param>
+		public void SetData<T>(T[] data, uint length, uint srcOffset, uint dstOffset)
 			where T : struct
 		{
-			uint typeSize = (uint)Unsafe.SizeOf<T>();
-			if (length == UInt32.MaxValue)
-				length = (uint)MathF.Ceiling((Size - dstOffset) / (float)typeSize);
+			if ((length + srcOffset) > data.Length)
+				throw new ArgumentException($"Source data too short ({data.Length}) for offset and length ({srcOffset}:{length})");
 
-			SetDataInternal(data, length, srcOffset, dstOffset * typeSize);
+			SetDataInternal(new ReadOnlySpan<T>(data, (int)srcOffset, (int)length), dstOffset * (uint)Unsafe.SizeOf<T>());
 		}
 
 		/// <summary>
-		/// Downloads general structured data from the buffer.
+		/// Uploads general structured data into the buffer on the graphics card.
+		/// </summary>
+		/// <typeparam name="T">The type of the source data.</typeparam>
+		/// <param name="data">The data to upload.</param>
+		/// <param name="dstOffset">The offset into the buffer copy to, in <typeparamref name="T"/> elements.</param>
+		public void SetData<T>(ReadOnlySpan<T> data, uint dstOffset)
+			where T : struct =>
+			SetDataInternal(data, dstOffset * (uint)Unsafe.SizeOf<T>());
+
+		/// <summary>
+		/// Pulls general structured data from the buffer.
 		/// </summary>
 		/// <typeparam name="T">The type of the destination data.</typeparam>
-		/// <param name="data">
-		/// The array to place the data into, or null to autocreate an array of the correct size, taking into account
-		/// the requested offset.
-		/// </param>
-		/// <param name="length">The length of the data to download, in <typeparamref name="T"/>s.</param>
-		/// <param name="dstOffset">The optional offset into the source data, in <typeparamref name="T"/>s.</param>
+		/// <param name="data">The array to place the data into.</param>
+		/// <param name="length">The number of array indices to copy from the buffer.</param>
+		/// <param name="dstOffset">The index of the array to start copying into.</param>
 		/// <param name="srcOffset">The optional offset into the buffer, in <typeparamref name="T"/>s.</param>
-		public void GetData<T>(ref T[] data, uint length, uint dstOffset = 0, uint srcOffset = 0)
+		public void GetData<T>(T[] data, uint length, uint dstOffset, uint srcOffset)
+			where T : struct
+		{
+			if ((length + dstOffset) > data.Length)
+				throw new ArgumentException($"Source data too short ({data.Length}) for offset and length ({dstOffset}:{length})");
+
+			GetDataInternal(new Span<T>(data, (int)dstOffset, (int)length), srcOffset * (uint)Unsafe.SizeOf<T>());
+		}
+
+		/// <summary>
+		/// Pulls general structured data from the buffer.
+		/// </summary>
+		/// <typeparam name="T">The type of the destination data.</typeparam>
+		/// <param name="data">The array to place the data into.</param>
+		/// <param name="srcOffset">The optional offset into the buffer, in <typeparamref name="T"/>s.</param>
+		public void GetData<T>(Span<T> data, uint srcOffset)
 			where T : struct =>
-			GetDataInternal(ref data, length, dstOffset, srcOff: srcOffset * (uint)Unsafe.SizeOf<T>());
+			GetDataInternal(data, srcOffset * (uint)Unsafe.SizeOf<T>());
 	}
 }

@@ -67,41 +67,38 @@ namespace Spectrum.Graphics
 		}
 
 		#region Host -> Device
-		public unsafe void PushBuffer(ReadOnlySpan<byte> data, Vk.Buffer dstBuf, uint dstOffset)
+		public unsafe void PushBuffer(byte* data, uint length, Vk.Buffer dstBuf, uint dstOffset)
 		{
 			try
 			{
 				_lock.Lock();
 
 				// Number of transfer blocks
-				uint bcount = (uint)Math.Ceiling((double)data.Length / Size);
+				uint bcount = (uint)Math.Ceiling((double)length / Size);
 
-				fixed (byte* dataptr = data)
+				// Transfer per-block
+				for (uint bi = 0; bi < bcount; ++bi)
 				{
-					// Transfer per-block
-					for (uint bi = 0; bi < bcount; ++bi)
-					{
-						// Current offsets
-						uint off = bi * Size;
-						var src = dataptr + off;
-						var dst = dstOffset + off;
-						var len = (ulong)Math.Min(data.Length - off, Size);
+					// Current offsets
+					uint off = bi * Size;
+					var src = data + off;
+					var dst = dstOffset + off;
+					var len = (ulong)Math.Min(length - off, Size);
 
-						// Wait on previous transfer
-						_pushFence.Wait(UInt64.MaxValue);
-						_pushFence.Reset();
+					// Wait on previous transfer
+					_pushFence.Wait(UInt64.MaxValue);
+					_pushFence.Reset();
 
-						// Copy the memory
-						var dstptr = _memory.Map(0, len, Vk.MemoryMapFlags.None);
-						Unsafe.CopyBlock(dstptr.ToPointer(), src, (uint)len);
-						_memory.Unmap();
+					// Copy the memory
+					var dstptr = _memory.Map(0, len, Vk.MemoryMapFlags.None);
+					Unsafe.CopyBlock(dstptr.ToPointer(), src, (uint)len);
+					_memory.Unmap();
 
-						// Record and submit
-						_commandBuffer.Begin(Vk.CommandBufferUsageFlags.OneTimeSubmit);
-						_commandBuffer.CopyBuffer(_buffer, dstBuf, new[] { new Vk.BufferCopy(0, dst, len) });
-						_commandBuffer.End();
-						_queues.Transfer.Submit(_submitInfo, _pushFence);
-					}
+					// Record and submit
+					_commandBuffer.Begin(Vk.CommandBufferUsageFlags.OneTimeSubmit);
+					_commandBuffer.CopyBuffer(_buffer, dstBuf, new[] { new Vk.BufferCopy(0, dst, len) });
+					_commandBuffer.End();
+					_queues.Transfer.Submit(_submitInfo, _pushFence);
 
 					// DO NOT Reset(), or else it will block the next transfer forever
 					_pushFence.Wait(UInt32.MaxValue);
@@ -115,41 +112,38 @@ namespace Spectrum.Graphics
 		#endregion // Host -> Device
 
 		#region Device -> Host
-		public unsafe void PullBuffer(Span<byte> data, Vk.Buffer srcBuf, uint srcOffset)
+		public unsafe void PullBuffer(byte* data, uint length, Vk.Buffer srcBuf, uint srcOffset)
 		{
 			try
 			{
 				_lock.Lock();
 
 				// Number of transfer blocks
-				uint bcount = (uint)Math.Ceiling((double)data.Length / Size);
+				uint bcount = (uint)Math.Ceiling((double)length / Size);
 
-				fixed (byte* dataptr = data)
+				// Transfer per-block
+				for (uint bi = 0; bi < bcount; ++bi)
 				{
-					// Transfer per-block
-					for (uint bi = 0; bi < bcount; ++bi)
-					{
-						// Current offsets
-						uint off = bi * Size;
-						var dst = dataptr + off;
-						var src = srcOffset + off;
-						var len = (ulong)Math.Min(data.Length - off, Size);
+					// Current offsets
+					uint off = bi * Size;
+					var dst = data + off;
+					var src = srcOffset + off;
+					var len = (ulong)Math.Min(length - off, Size);
 
-						// Record and submit
-						_commandBuffer.Begin(Vk.CommandBufferUsageFlags.OneTimeSubmit);
-						_commandBuffer.CopyBuffer(srcBuf, _buffer, new[] { new Vk.BufferCopy(src, 0, len) });
-						_commandBuffer.End();
-						_queues.Transfer.Submit(_submitInfo, _pushFence);
+					// Record and submit
+					_commandBuffer.Begin(Vk.CommandBufferUsageFlags.OneTimeSubmit);
+					_commandBuffer.CopyBuffer(srcBuf, _buffer, new[] { new Vk.BufferCopy(src, 0, len) });
+					_commandBuffer.End();
+					_queues.Transfer.Submit(_submitInfo, _pullFence);
 
-						// Wait on previous transfer
-						_pullFence.Wait(UInt64.MaxValue);
-						_pullFence.Reset();
+					// Wait on previous transfer
+					_pullFence.Wait(UInt64.MaxValue);
+					_pullFence.Reset();
 
-						// Copy the memory
-						var srcptr = _memory.Map(0, len, Vk.MemoryMapFlags.None);
-						Unsafe.CopyBlock(dataptr, srcptr.ToPointer(), (uint)len);
-						_memory.Unmap();
-					}
+					// Copy the memory
+					var srcptr = _memory.Map(0, len, Vk.MemoryMapFlags.None);
+					Unsafe.CopyBlock(data, srcptr.ToPointer(), (uint)len);
+					_memory.Unmap();
 				}
 			}
 			finally

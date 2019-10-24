@@ -63,57 +63,34 @@ namespace Spectrum.Graphics
 		}
 
 		// Length is in array indices, start is in array indices, dstOff is in bytes
-		private protected unsafe void SetDataInternal<T>(T[] data, uint length, uint start, uint dstOff)
+		private protected unsafe void SetDataInternal<T>(ReadOnlySpan<T> data, uint dstOff)
 			where T : struct
 		{
-			if (data == null)
-				throw new ArgumentNullException(nameof(data));
-			else if ((start + length) > data.Length)
-				throw new ArgumentException("The source array is not large enough to supply the requested amount of data");
-
 			uint typeSize = (uint)Unsafe.SizeOf<T>();
-			uint srcLen = typeSize * length; // Bytes
-			uint srcOff = typeSize * start; // Bytes
+			uint srcLen = typeSize * (uint)data.Length; // Bytes
 
 			if ((Size - dstOff) < srcLen)
 				throw new ArgumentException("The buffer is not large enough to accept the source data");
 
-			var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-			try
+			fixed (byte* dataptr = MemoryMarshal.AsBytes(data))
 			{
-				Device.ThisTransferBuffer.PushBuffer(
-					new ReadOnlySpan<byte>(handle.AddrOfPinnedObject().ToPointer(), (int)srcLen), VkBuffer, dstOff);
-			}
-			finally
-			{
-				handle.Free();
+				Device.ThisTransferBuffer.PushBuffer(dataptr, srcLen, VkBuffer, dstOff);
 			}
 		}
 
 		// Length is in array indices, start is in array indices, srcOff is in bytes
-		private protected unsafe void GetDataInternal<T>(ref T[] data, uint length, uint start, uint srcOff)
+		private protected unsafe void GetDataInternal<T>(Span<T> data, uint srcOff)
 			where T : struct
 		{
 			uint typeSize = (uint)Unsafe.SizeOf<T>();
-			uint dstLen = typeSize * length; // Bytes
-			uint dstOff = typeSize * start; // Bytes
+			uint dstLen = typeSize * (uint)data.Length; // Bytes
 
 			if (dstLen > (Size - srcOff))
 				throw new ArgumentException("The buffer is not large enough to supply the requested amount of data");
-			if (data == null)
-				data = new T[length + start];
-			else if (dstLen > ((data.Length - start) * 4))
-				throw new ArgumentException("The array is not large enough to accept the buffer data");
 
-			var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-			try
+			fixed (byte* dataptr = MemoryMarshal.AsBytes(data))
 			{
-				Device.ThisTransferBuffer.PullBuffer(
-					new Span<byte>(handle.AddrOfPinnedObject().ToPointer(), (int)dstLen), VkBuffer, srcOff);
-			}
-			finally
-			{
-				handle.Free();
+				Device.ThisTransferBuffer.PullBuffer(dataptr, dstLen, VkBuffer, srcOff);
 			}
 		}
 
