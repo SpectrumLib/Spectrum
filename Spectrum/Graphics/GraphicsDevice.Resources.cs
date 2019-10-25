@@ -45,7 +45,7 @@ namespace Spectrum.Graphics
 
 			// Resources scattered thorughout the library
 			_perThreadTransferBuffer.Values.ForEach(tb => tb.Dispose());
-			//Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
+			Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
 		}
 
 		// Finds the best type of memory for the given constraints
