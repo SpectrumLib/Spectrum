@@ -74,7 +74,8 @@ namespace Spectrum.Graphics
 
 			fixed (byte* dataptr = MemoryMarshal.AsBytes(data))
 			{
-				Device.ThisTransferBuffer.PushBuffer(dataptr, srcLen, VkBuffer, dstOff);
+				using var tm = StagingBuffer.Reserve(srcLen);
+				tm.PushBuffer(dataptr, srcLen, VkBuffer, dstOff);
 			}
 		}
 
@@ -90,7 +91,8 @@ namespace Spectrum.Graphics
 
 			fixed (byte* dataptr = MemoryMarshal.AsBytes(data))
 			{
-				Device.ThisTransferBuffer.PullBuffer(dataptr, dstLen, VkBuffer, srcOff);
+				using var tm = StagingBuffer.Reserve(dstLen);
+				tm.PullBuffer(dataptr, dstLen, VkBuffer, srcOff);
 			}
 		}
 

@@ -4,7 +4,6 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
-using System.Threading;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -12,20 +11,11 @@ namespace Spectrum.Graphics
 	// Management of internal resources
 	public sealed partial class GraphicsDevice : IDisposable
 	{
-		private const uint TRANSFER_BUFFER_SIZE = 32 * 1024 * 1024; // 32 MB
-
 		#region Fields
 		// General-use graphics command pool for one-off (scratch) queue submissions (like setting images to their initial layout)
 		private Vk.CommandPool _scratchPool;
 		private Vk.CommandBuffer _scratchBuffer;
 		private Vk.Fence _scratchFence;
-
-		// Per-thread transfer buffer, each thread gets a 32MB buffer that is not allocated unless the thread needs it
-		// Disposal of these objects occurs when the object is finalized after its owning thread exits.
-		// Additionally, the GraphicsDevice class will destroy all alive objects when exiting.
-		internal TransferBuffer ThisTransferBuffer => _perThreadTransferBuffer.Value;
-		private ThreadLocal<TransferBuffer> _perThreadTransferBuffer =
-			new ThreadLocal<TransferBuffer>(() => new TransferBuffer(TRANSFER_BUFFER_SIZE), true);
 		#endregion // Fields
 
 		// Initializes the various graphics resources found throughout the library
@@ -35,6 +25,9 @@ namespace Spectrum.Graphics
 			_scratchPool = VkDevice.CreateCommandPool(Queues.FamilyIndex, Vk.CommandPoolCreateFlags.ResetCommandBuffer | Vk.CommandPoolCreateFlags.Transient);
 			_scratchBuffer = VkDevice.AllocateCommandBuffer(_scratchPool, Vk.CommandBufferLevel.Primary);
 			_scratchFence = VkDevice.CreateFence();
+
+			// Global graphics resources
+			StagingBuffer.Initialize(this);
 		}
 
 		private void cleanResources()
@@ -44,7 +37,7 @@ namespace Spectrum.Graphics
 			_scratchFence.Dispose();
 
 			// Resources scattered thorughout the library
-			_perThreadTransferBuffer.Values.ForEach(tb => tb.Dispose());
+			StagingBuffer.Terminate();
 			Sampler.Samplers.ForEach(pair => pair.Value.Dispose());
 		}
 
