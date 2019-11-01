@@ -27,8 +27,10 @@ namespace Spectrum.Graphics
 		public static Vk.Buffer Buffer => _Buffer;
 		private static IntPtr _Mapped;
 		public static IntPtr MemoryPtr => _Mapped;
-		private static Vk.CommandPool _Pool;
 
+		// Commands
+		private static Vk.CommandPool _Pool;
+		public static Vk.Queue TransferQueue => Core.Instance.GraphicsDevice.Queues.Transfer;
 
 		// Allocation tracking objects
 		private static MemoryBlock[] _Blocks;
@@ -213,10 +215,10 @@ namespace Spectrum.Graphics
 							_Blocks[index + block.Size].Prev = block.Size;
 					}
 				}
-
-				// Signal a free event
-				_FreeEvent.Set();
 			}
+
+			// Signal a free event
+			_FreeEvent.Set();
 
 			_Pool.FreeCommandBuffers(new [] { cmd });
 		}

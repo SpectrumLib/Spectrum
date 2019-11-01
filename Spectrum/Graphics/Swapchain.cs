@@ -5,7 +5,6 @@
  */
 using System;
 using Vk = SharpVk;
-using VkExt = SharpVk.Multivendor;
 using VkKhr = SharpVk.Khronos;
 using static Spectrum.InternalLog;
 using System.Linq;
@@ -29,8 +28,6 @@ namespace Spectrum.Graphics
 		// Blitting constants
 		private static readonly Vk.Offset3D BLIT_ZERO = new Vk.Offset3D(0, 0, 0);
 		private static readonly Vk.ImageSubresourceLayers BLIT_SUBRESOURCE = new Vk.ImageSubresourceLayers(Vk.ImageAspectFlags.Color, 0, 0, 1);
-		// "Infinite" timeout period
-		private const long INFINITE_TIMEOUT = -1;
 		// The maximum number of "in-flight" frames waiting to be rendered, past this we wait for them to be finished
 		// Note that this is the global maximum, and the actual number may be lower depending on the presentation engine capabilities
 		private const uint MAX_INFLIGHT_FRAMES = 3;
@@ -38,7 +35,6 @@ namespace Spectrum.Graphics
 		#region Fields
 		public readonly GraphicsDevice Device;
 		private readonly CoreWindow _window;
-		private readonly Vk.Instance _vkInstance;
 		private readonly Vk.PhysicalDevice _vkPhysicalDevice;
 		private readonly Vk.Device _vkDevice;
 		private Vk.Queue _presentQueue => Device.Queues.Graphics;
@@ -77,7 +73,6 @@ namespace Spectrum.Graphics
 		{
 			Device = gdevice;
 			_window = Core.Instance.Window;
-			_vkInstance = instance;
 			_vkPhysicalDevice = pDevice;
 			_vkDevice = device;
 

@@ -5,7 +5,6 @@
  */
 using System;
 using Vk = SharpVk;
-using VkExt = SharpVk.Multivendor;
 
 namespace Spectrum.Graphics
 {

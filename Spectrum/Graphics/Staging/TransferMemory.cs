@@ -57,7 +57,7 @@ namespace Spectrum.Graphics
 				_cmd.CopyBuffer(StagingBuffer.Buffer, dstBuf, new [] { new Vk.BufferCopy(Offset, dst, len) });
 				_cmd.End();
 				_fence.Reset();
-				_device.Queues.Transfer.Submit(_submitInfo, _fence);
+				StagingBuffer.TransferQueue.Submit(_submitInfo, _fence);
 
 				// DO NOT Reset(), or else it will block the next transfer forever
 				_fence.Wait(UInt32.MaxValue);
@@ -65,6 +65,75 @@ namespace Spectrum.Graphics
 
 			// Leave the fence in the unsignaled state
 			_fence.Reset();
+		}
+
+		public unsafe void PushImage(byte* data, uint texsize, Vk.Image image, in Vk.Offset3D off, in Vk.Extent3D ext, Vk.ImageLayout layout, uint layer)
+		{
+			// Calculate the image block steps
+			uint linelen  = ext.Width * texsize,
+				 planelen = ext.Width * ext.Height * texsize,
+				 fulllen  = ext.Width * ext.Height * ext.Depth * texsize;
+			uint dstep = (uint)Math.Max(Math.Floor((float)Size / planelen), 1),
+				 hstep = (uint)Math.Clamp(Math.Floor((float)Size / linelen), 1, ext.Height),
+				 wstep = (uint)Math.Clamp(Math.Floor((float)Size / texsize), 1, ext.Width);
+
+			// Step over the blocks
+			bool first = true;
+			uint doff = 0;
+			for (uint dstart = 0; dstart < ext.Depth; dstart += dstep)
+			{
+				uint dsize = Math.Min(ext.Depth - dstart, dstep);
+				for (uint hstart = 0; hstart < ext.Height; hstart += hstep)
+				{
+					uint hsize = Math.Min(ext.Height - hstart, hstep);
+					for (uint wstart = 0; wstart < ext.Width; wstart += wstep)
+					{
+						uint wsize = Math.Min(ext.Width - wstart, wstep);
+						uint dlen = wsize * hsize * dsize * texsize;
+
+						Unsafe.CopyBlock((byte*)StagingBuffer.MemoryPtr.ToPointer() + Offset, data + doff, dlen);
+						doff += dlen;
+
+						_cmd.Begin();
+						if (first)
+						{
+							_cmd.PipelineBarrier(
+								sourceStageMask: Vk.PipelineStageFlags.VertexShader,
+								destinationStageMask: Vk.PipelineStageFlags.Transfer,
+								sourceAccessMask: Vk.AccessFlags.None,
+								destinationAccessMask: Vk.AccessFlags.TransferWrite,
+								oldLayout: layout,
+								newLayout: Vk.ImageLayout.TransferDestinationOptimal,
+								sourceQueueFamilyIndex: Vk.Constants.QueueFamilyIgnored,
+								destinationQueueFamilyIndex: Vk.Constants.QueueFamilyIgnored,
+								image: image,
+								subresourceRange: new Vk.ImageSubresourceRange(Vk.ImageAspectFlags.Color, 0, 1, layer, 1),
+								dependencyFlags: Vk.DependencyFlags.ByRegion
+							);
+							first = false;
+						}
+
+						_cmd.CopyBufferToImage(
+							sourceBuffer: StagingBuffer.Buffer,
+							destinationImage: image,
+							destinationImageLayout: Vk.ImageLayout.TransferDestinationOptimal,
+							regions: new Vk.BufferImageCopy {
+								BufferOffset = Offset,
+								BufferImageHeight = 0,
+								BufferRowLength = 0,
+								ImageOffset = new Vk.Offset3D((int)wstart, (int)hstart, (int)dstart),
+								ImageExtent = new Vk.Extent3D(wsize, hsize, dsize),
+								ImageSubresource = new Vk.ImageSubresourceLayers(Vk.ImageAspectFlags.Color, 0, layer, 1)
+							}
+						);
+
+						_cmd.End();
+						_fence.Reset();
+						StagingBuffer.TransferQueue.Submit(new Vk.SubmitInfo { CommandBuffers = new [] { _cmd } }, _fence);
+						_fence.Wait(UInt64.MaxValue);
+					}
+				}
+			}
 		}
 		#endregion // Push
 
