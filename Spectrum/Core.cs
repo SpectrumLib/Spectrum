@@ -130,14 +130,14 @@ namespace Spectrum
 				SceneManager.MidFrame();
 
 				// Render the frame
-				GraphicsDevice.BeginFrame();
+				//GraphicsDevice.BeginFrame();
 				Render();
 				SceneManager.Render();
 
 				// End the frame
 				EndFrame();
 				SceneManager.EndFrame();
-				GraphicsDevice.EndFrame();
+				//GraphicsDevice.EndFrame();
 
 				// Allow final post frame logic
 				PostFrame();

@@ -27,7 +27,7 @@ namespace Spectrum
 		/// <summary>
 		/// The size of the render target for this renderer.
 		/// </summary>
-		public Extent BackbufferSize => ColorTarget?.Size ?? Extent.Zero;
+		//public Extent BackbufferSize => ColorTarget?.Size ?? Extent.Zero;
 
 		private Color _clearColor = Color.Black;
 		/// <summary>
@@ -41,7 +41,7 @@ namespace Spectrum
 				if (_clearColor != value)
 				{
 					_clearColor = value;
-					Rebuild(BackbufferSize.Width, BackbufferSize.Height); // This will only re-record the clear command, which is cheap 
+					//Rebuild(BackbufferSize.Width, BackbufferSize.Height); // This will only re-record the clear command, which is cheap 
 				}
 			}
 		}
@@ -50,12 +50,12 @@ namespace Spectrum
 		/// The default color render target for the scene renderer. This is what is displayed to the screen at the end
 		/// of every frame. It is automatically resized when the window size changes.
 		/// </summary>
-		public RenderTarget ColorTarget { get; private set; } = null;
+		//public RenderTarget ColorTarget { get; private set; } = null;
 		/// <summary>
 		/// The default depth/stencil render target for the scene renderer. This holds the depth/stencil information
 		/// for the scene geometry. It is automatically resized when the window size changes.
 		/// </summary>
-		public RenderTarget DepthTarget { get; private set; } = null;
+		//public RenderTarget DepthTarget { get; private set; } = null;
 
 		// Target clear objects
 		private readonly Vk.CommandPool _clearPool;
@@ -69,9 +69,9 @@ namespace Spectrum
 		{
 			Scene = scene;
 
-			_clearPool = Device.VkDevice.CreateCommandPool(Device.Queues.FamilyIndex, Vk.CommandPoolCreateFlags.ResetCommandBuffer);
-			_clearCmd = Device.VkDevice.AllocateCommandBuffer(_clearPool, Vk.CommandBufferLevel.Primary);
-			_clearFence = Device.VkDevice.CreateFence();
+			//_clearPool = Device.VkDevice.CreateCommandPool(Device.Queues.FamilyIndex, Vk.CommandPoolCreateFlags.ResetCommandBuffer);
+			//_clearCmd = Device.VkDevice.AllocateCommandBuffer(_clearPool, Vk.CommandBufferLevel.Primary);
+			//_clearFence = Device.VkDevice.CreateFence();
 		}
 		~SceneRenderer()
 		{
@@ -85,9 +85,9 @@ namespace Spectrum
 		public void Clear()
 		{
 			_clearFence.Reset();
-			Device.Queues.Graphics.Submit(submits: new[] { new Vk.SubmitInfo {
-				CommandBuffers = new[] { _clearCmd }
-			}}, _clearFence);
+			//Device.Queues.Graphics.Submit(submits: new[] { new Vk.SubmitInfo {
+			//	CommandBuffers = new[] { _clearCmd }
+			//}}, _clearFence);
 			_clearFence.Wait(UInt64.MaxValue);
 		}
 
@@ -102,56 +102,56 @@ namespace Spectrum
 		internal void Rebuild(uint width, uint height)
 		{
 			// Rebuild the targets, if needed
-			if (ColorTarget == null)
-			{
-				ColorTarget = new RenderTarget(width, height, TexelFormat.Color, $"{Scene.Name}_Color");
-				DepthTarget = new RenderTarget(width, height, TexelFormat.Depth24Stencil8, $"{Scene.Name}_Depth");
-			}
-			else if (BackbufferSize.Width != width || BackbufferSize.Height != height)
-			{
-				ColorTarget.Rebuild(width, height);
-				DepthTarget.Rebuild(width, height);
-			}
+			//if (ColorTarget == null)
+			//{
+			//	ColorTarget = new RenderTarget(width, height, TexelFormat.Color, $"{Scene.Name}_Color");
+			//	DepthTarget = new RenderTarget(width, height, TexelFormat.Depth24Stencil8, $"{Scene.Name}_Depth");
+			//}
+			//else if (BackbufferSize.Width != width || BackbufferSize.Height != height)
+			//{
+			//	ColorTarget.Rebuild(width, height);
+			//	DepthTarget.Rebuild(width, height);
+			//}
 
 			// Record the clear command (this will always happen, either the RTs changed, or the color changed)
 			{
 				_clearCmd.Begin();
 
-				// Transition the targets to transfer dst for clearing
-				_clearCmd.PipelineBarrier(
-					sourceStageMask: Vk.PipelineStageFlags.AllGraphics,
-					destinationStageMask: Vk.PipelineStageFlags.AllGraphics,
-					memoryBarriers: null,
-					bufferMemoryBarriers: null,
-					imageMemoryBarriers: new [] { DepthTarget.ClearBarrier, ColorTarget.ClearBarrier }
-				);
+				//// Transition the targets to transfer dst for clearing
+				//_clearCmd.PipelineBarrier(
+				//	sourceStageMask: Vk.PipelineStageFlags.AllGraphics,
+				//	destinationStageMask: Vk.PipelineStageFlags.AllGraphics,
+				//	memoryBarriers: null,
+				//	bufferMemoryBarriers: null,
+				//	imageMemoryBarriers: new [] { DepthTarget.ClearBarrier, ColorTarget.ClearBarrier }
+				//);
 
-				// Clear the color target
-				var cclear = new Vk.ClearColorValue(_clearColor.RFloat, _clearColor.GFloat, _clearColor.BFloat, _clearColor.AFloat);
-				_clearCmd.ClearColorImage(
-					image: ColorTarget.VkImage,
-					imageLayout: Vk.ImageLayout.TransferDestinationOptimal,
-					color: cclear,
-					ranges: new [] { new Vk.ImageSubresourceRange(ColorTarget.VkAspects, 0, 1, 0, 1) }
-				);
+				//// Clear the color target
+				//var cclear = new Vk.ClearColorValue(_clearColor.RFloat, _clearColor.GFloat, _clearColor.BFloat, _clearColor.AFloat);
+				//_clearCmd.ClearColorImage(
+				//	image: ColorTarget.VkImage,
+				//	imageLayout: Vk.ImageLayout.TransferDestinationOptimal,
+				//	color: cclear,
+				//	ranges: new [] { new Vk.ImageSubresourceRange(ColorTarget.VkAspects, 0, 1, 0, 1) }
+				//);
 
-				// Clear the depth target
-				var dclear = new Vk.ClearDepthStencilValue(1, 0);
-				_clearCmd.ClearDepthStencilImage(
-					image: DepthTarget.VkImage,
-					imageLayout: Vk.ImageLayout.TransferDestinationOptimal,
-					depthStencil: dclear,
-					ranges: new [] { new Vk.ImageSubresourceRange(DepthTarget.VkAspects, 0, 1, 0, 1) }
-				);
+				//// Clear the depth target
+				//var dclear = new Vk.ClearDepthStencilValue(1, 0);
+				//_clearCmd.ClearDepthStencilImage(
+				//	image: DepthTarget.VkImage,
+				//	imageLayout: Vk.ImageLayout.TransferDestinationOptimal,
+				//	depthStencil: dclear,
+				//	ranges: new [] { new Vk.ImageSubresourceRange(DepthTarget.VkAspects, 0, 1, 0, 1) }
+				//);
 
-				// Transition both images back to their attachment layouts
-				_clearCmd.PipelineBarrier(
-					sourceStageMask: Vk.PipelineStageFlags.AllGraphics,
-					destinationStageMask: Vk.PipelineStageFlags.AllGraphics,
-					memoryBarriers: null,
-					bufferMemoryBarriers: null,
-					imageMemoryBarriers: new [] { DepthTarget.AttachBarrier, ColorTarget.AttachBarrier }
-				);
+				//// Transition both images back to their attachment layouts
+				//_clearCmd.PipelineBarrier(
+				//	sourceStageMask: Vk.PipelineStageFlags.AllGraphics,
+				//	destinationStageMask: Vk.PipelineStageFlags.AllGraphics,
+				//	memoryBarriers: null,
+				//	bufferMemoryBarriers: null,
+				//	imageMemoryBarriers: new [] { DepthTarget.AttachBarrier, ColorTarget.AttachBarrier }
+				//);
 
 				_clearCmd.End();
 			}
@@ -168,11 +168,11 @@ namespace Spectrum
 		{
 			if (disposing && !_isDisposed)
 			{
-				Device.Queues.Graphics.WaitIdle();
+				//Device.Queues.Graphics.WaitIdle();
 				_clearFence.Dispose();
 				_clearPool.Dispose();
-				ColorTarget?.Dispose();
-				DepthTarget?.Dispose();
+				//ColorTarget?.Dispose();
+				//DepthTarget?.Dispose();
 				//base.Dispose();
 			}
 			_isDisposed = true;

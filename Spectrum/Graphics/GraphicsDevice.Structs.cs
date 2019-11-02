@@ -4,107 +4,156 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Runtime.CompilerServices;
 using Vk = SharpVk;
+using static Spectrum.InternalLog;
 
 namespace Spectrum.Graphics
 {
-	// Contains the definitions for structs used with the graphics device
+	// Contains extra types related to the graphics device
 	public sealed partial class GraphicsDevice : IDisposable
 	{
-		// Contains the queues that the device uses
-		internal struct DeviceQueues
-		{
-			// The main graphics/present queue
-			public Vk.Queue Graphics;
-			// The queue dedicated to transfering data for images and buffers between the host and device
-			//   Note that this queue may be the same as the graphics queue, and depends on if there is more than one queue
-			//   available for the same family as the graphics queue. We require them to be the same family all the resources
-			//   are exclusive and sharing is a level of complexity to avoid.
-			public Vk.Queue Transfer;
-			// The index of the queue family for the graphics and transfer queues
-			public uint FamilyIndex;
-
-			// If the graphics and transfer queues are separate.
-			public bool SeparateTransfer => Graphics.RawHandle.ToUInt64() != Transfer.RawHandle.ToUInt64();
-		}
-
 		/// <summary>
-		/// Contains the set of supported features and extensions for a device.
-		/// </summary>
-		public struct DeviceFeatures
-		{
-			// NOTE: the openVulkanDevice function must be updated whenever this one is
-
-			/// <summary>
-			/// If the device supports rendering in line or point fill mode.
-			/// </summary>
-			public bool FillModeNonSolid;
-			/// <summary>
-			/// If the device supports line widths other than 1.0.
-			/// </summary>
-			public bool WideLines;
-			/// <summary>
-			/// If the device supports clamping depth fragments instead of discarding them.
-			/// </summary>
-			public bool DepthClamp;
-			/// <summary>
-			/// If the device supports anisotropic filtering for image samplers.
-			/// </summary>
-			public bool AnisotropicFiltering;
-		}
-
-		/// <summary>
-		/// Contains the set of limits for a device.
-		/// </summary>
-		public struct DeviceLimits
-		{
-			// NOTE: the openVulkanDevice function must be updated whenever this one is
-
-			/// <summary>
-			/// The maximum dimensions for a 1D texture.
-			/// </summary>
-			public uint MaxTextureSize1D;
-			/// <summary>
-			/// The maximum dimensions for a 2D texture.
-			/// </summary>
-			public uint MaxTextureSize2D;
-			/// <summary>
-			/// The maximum dimensions for a 3D texture.
-			/// </summary>
-			public uint MaxTextureSize3D;
-			/// <summary>
-			/// The maximum number of layers that a texture can have.
-			/// </summary>
-			public uint MaxTextureLayers;
-		}
-
-		/// <summary>
-		/// Contains high level information about a physical device.
+		/// Contains overall information about a physical device.
 		/// </summary>
 		public struct DeviceInfo
 		{
-			// NOTE: the openVulkanDevice function must be updated whenever this one is
-
 			/// <summary>
-			/// The human-readable name of the device.
+			/// Human-readable name for the device.
 			/// </summary>
 			public string Name;
 			/// <summary>
-			/// If the device is a discrete GPU, false implies an integrated GPU.
+			/// Version of the Vulkan API initialized on the device.
+			/// </summary>
+			public Version ApiVersion;
+			/// <summary>
+			/// Device driver version.
+			/// </summary>
+			public Version DriverVersion;
+			/// <summary>
+			/// If the device is discrete.
 			/// </summary>
 			public bool IsDiscrete;
 			/// <summary>
-			/// The human-readable name of the manufacturer of the device driver.
-			/// </summary>
-			public string VendorName;
-			/// <summary>
-			/// The unique integer identifier of the manufacturer of the device driver.
+			/// Vendor-specific identification value.
 			/// </summary>
 			public uint VendorId;
 			/// <summary>
-			/// The version of the active Vulkan driver.
+			/// Device-specific identification value.
 			/// </summary>
-			public Version DriverVersion;
+			public uint DeviceId;
+			/// <summary>
+			/// Universally unique identifier for the device.
+			/// </summary>
+			public Guid Uuid;
+
+			internal DeviceInfo(in Vk.PhysicalDeviceProperties props)
+			{
+				Name = props.DeviceName;
+				ApiVersion = new Version(props.ApiVersion.Major, props.ApiVersion.Minor, props.ApiVersion.Patch);
+				DriverVersion = new Version(props.DriverVersion.Major, props.DriverVersion.Minor, props.DriverVersion.Patch);
+				IsDiscrete = props.DeviceType == Vk.PhysicalDeviceType.DiscreteGpu;
+				VendorId = props.VendorID;
+				DeviceId = props.DeviceID;
+				Uuid = props.PipelineCacheUUID;
+			}
+		}
+
+		/// <summary>
+		/// Optional features on the graphics device that can be enabled, if they are supported.
+		/// </summary>
+		public struct DeviceFeatures
+		{
+			/// <summary>
+			/// Geometry shader stage.
+			/// </summary>
+			public (bool Enabled, bool Strict) GeometryShader;
+			/// <summary>
+			/// Tessellation shader stages (control and evaluation).
+			/// </summary>
+			public (bool Enabled, bool Strict) TessellationShader;
+			/// <summary>
+			/// Non-solid polygon fill mode (wireframe mode).
+			/// </summary>
+			public (bool Enabled, bool Strict) FillModeNonSolid;
+			/// <summary>
+			/// Lines can be drawn with widths other than one.
+			/// </summary>
+			public (bool Enabled, bool Strict) WideLines;
+			/// <summary>
+			/// Points can be drawn with sizes other than one.
+			/// </summary>
+			public (bool Enabled, bool Strict) LargePoints;
+			/// <summary>
+			/// Anisotropic filtering for textures.
+			/// </summary>
+			public (bool Enabled, bool Strict) SamplerAnisotropy;
+			/// <summary>
+			/// Support for double-precision floating point numbers in shaders.
+			/// </summary>
+			public (bool Enabled, bool Strict) ShaderFloat64;
+
+			internal DeviceFeatures(in Vk.PhysicalDeviceFeatures feats)
+			{
+				GeometryShader = (feats.GeometryShader, false);
+				TessellationShader = (feats.TessellationShader, false);
+				FillModeNonSolid = (feats.FillModeNonSolid, false);
+				WideLines = (feats.WideLines, false);
+				LargePoints = (feats.LargePoints, false);
+				SamplerAnisotropy = (feats.SamplerAnisotropy, false);
+				ShaderFloat64 = (feats.ShaderFloat64, false);
+			}
+
+			// Ensures that the requested features are available
+			// Modifies the struct for non-strict features, throws an exception for strict features
+			internal void Check(in Vk.PhysicalDeviceFeatures feats)
+			{
+				GeometryShader.Enabled = 
+					CheckFeature(GeometryShader.Enabled, feats.GeometryShader, GeometryShader.Strict, "GeometryShader");
+				TessellationShader.Enabled =
+					CheckFeature(TessellationShader.Enabled, feats.TessellationShader, TessellationShader.Strict, "TessellationShader");
+				FillModeNonSolid.Enabled =
+					CheckFeature(FillModeNonSolid.Enabled, feats.FillModeNonSolid, FillModeNonSolid.Strict, "FillModeNonSolid");
+				WideLines.Enabled =
+					CheckFeature(WideLines.Enabled, feats.WideLines, WideLines.Strict, "WideLines");
+				LargePoints.Enabled =
+					CheckFeature(LargePoints.Enabled, feats.LargePoints, LargePoints.Strict, "LargePoints");
+				SamplerAnisotropy.Enabled =
+					CheckFeature(SamplerAnisotropy.Enabled, feats.SamplerAnisotropy, SamplerAnisotropy.Strict, "SamplerAnisotropy");
+				ShaderFloat64.Enabled =
+					CheckFeature(ShaderFloat64.Enabled, feats.ShaderFloat64, ShaderFloat64.Strict, "ShaderFloat64");
+			}
+
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			private static bool CheckFeature(bool r, bool a, bool strict, string fname)
+			{
+				if (r && !a)
+				{
+					if (strict) throw new PlatformNotSupportedException($"Required device feature '{fname}' not available on system.");
+					IWARN($"Requested device feature '{fname}' not available on system, disabling.");
+					return false;
+				}
+				return r;
+			}
+
+			internal Vk.PhysicalDeviceFeatures ToVulkanType() => new Vk.PhysicalDeviceFeatures { 
+				GeometryShader = GeometryShader.Enabled,
+				TessellationShader = TessellationShader.Enabled,
+				FillModeNonSolid = FillModeNonSolid.Enabled,
+				WideLines = WideLines.Enabled,
+				LargePoints = LargePoints.Enabled,
+				SamplerAnisotropy = SamplerAnisotropy.Enabled,
+				ShaderFloat64 = ShaderFloat64.Enabled
+			};
+		}
+
+		// Contains information about the device queues
+		internal struct DeviceQueues
+		{
+			public Vk.Queue Graphics;
+			public Vk.Queue Transfer;
+			public uint FamilyIndex;
+			public readonly bool SeparateTransfer => Graphics.RawHandle.ToUInt64() != Transfer.RawHandle.ToUInt64();
 		}
 	}
 }

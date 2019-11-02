@@ -145,13 +145,13 @@ namespace Spectrum
 
 		internal void BackbufferResize(Extent newSize)
 		{
-			if (Renderer.BackbufferSize == newSize)
-				return;
+			//if (Renderer.BackbufferSize == newSize)
+			//	return;
 
-			var oldSize = Renderer.BackbufferSize;
-			Renderer.Rebuild(newSize.Width, newSize.Height);
+			//var oldSize = Renderer.BackbufferSize;
+			//Renderer.Rebuild(newSize.Width, newSize.Height);
 
-			OnBackbufferResize(oldSize, newSize);
+			//OnBackbufferResize(oldSize, newSize);
 		}
 
 		#region IDisposable
