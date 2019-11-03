@@ -101,7 +101,7 @@ namespace Spectrum.Graphics
 
 		// Open the device and populate device into
 		private static void OpenDevice(Vk.Instance inst, Vk.PhysicalDevice pdev, out Vk.Device device, out DeviceInfo dinfo, 
-			out DeviceFeatures dfeats, out Vk.PhysicalDeviceLimits dlims, out DeviceQueues dqueues)
+			out DeviceFeatures dfeats, out Vk.PhysicalDeviceLimits dlims, out DeviceQueues dqueues, out DeviceMemory dmem)
 		{
 			// Get the physical device info
 			var props = pdev.GetProperties();
@@ -111,6 +111,7 @@ namespace Spectrum.Graphics
 			dinfo = new DeviceInfo(props);
 			dfeats = Core.Instance.Params.EnabledGraphicsFeatures;
 			dlims = props.Limits;
+			dmem = new DeviceMemory(memp);
 			IINFO($"Selected device '{props.DeviceName}'.");
 
 			// Check the features
@@ -188,6 +189,17 @@ namespace Spectrum.Graphics
 			// Strongly prefer discrete devices
 			if (props.DeviceType == Vk.PhysicalDeviceType.DiscreteGpu)
 				score += 10000;
+
+			// Megabytes of device local memory
+			{
+				ulong tmem = 0;
+				foreach (var heap in memp.MemoryHeaps)
+				{
+					if ((heap.Flags & Vk.MemoryHeapFlags.DeviceLocal) > 0)
+						tmem += heap.Size;
+				}
+				score += (uint)(tmem / (1024 * 1024));
+			}
 
 			IINFO($"Discovered device '{props.DeviceName}' (score: {score}).");
 			return score;

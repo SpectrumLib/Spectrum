@@ -5,6 +5,7 @@
  */
 using System;
 using Vk = SharpVk;
+using static Spectrum.InternalLog;
 
 namespace Spectrum.Graphics
 {
@@ -31,6 +32,10 @@ namespace Spectrum.Graphics
 		public readonly DeviceFeatures Features;
 		internal readonly Vk.PhysicalDeviceLimits Limits;
 		internal readonly DeviceQueues Queues;
+		internal readonly DeviceMemory Memory;
+
+		// Swapchain
+		internal readonly Swapchain Swapchain;
 
 		// Disposal state
 		public bool IsDisposed { get; private set; } = false;
@@ -39,12 +44,25 @@ namespace Spectrum.Graphics
 		internal GraphicsDevice()
 		{
 			InitializeVulkan(out VkInstance, out VkPhysicalDevice);
-			OpenDevice(VkInstance, VkPhysicalDevice, out VkDevice, out Info, out Features, out Limits, out Queues);
+			OpenDevice(VkInstance, VkPhysicalDevice, out VkDevice, out Info, out Features, out Limits, out Queues, out Memory);
+			Swapchain = new Swapchain(this);
 		}
 		~GraphicsDevice()
 		{
 			dispose(false);
 		}
+
+		#region Frame Functions
+		internal void BeginFrame()
+		{
+			Swapchain.BeginFrame();
+		}
+
+		internal void EndFrame()
+		{
+			Swapchain.EndFrame();
+		}
+		#endregion // Frame Functions
 
 		#region IDisposable
 		public void Dispose()
@@ -57,9 +75,14 @@ namespace Spectrum.Graphics
 		{
 			if (!IsDisposed)
 			{
+				VkDevice?.WaitIdle();
+
+				Swapchain?.Dispose();
+
 				// Destroy top level objects
 				VkDevice?.Dispose();
 				VkInstance?.Dispose();
+				IINFO("Destroyed global Vulkan objects.");
 			}
 			IsDisposed = true;
 		}

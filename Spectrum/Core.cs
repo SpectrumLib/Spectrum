@@ -3,8 +3,9 @@
  * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
-using Spectrum.Graphics;
 using System;
+using Spectrum.Graphics;
+using static Spectrum.InternalLog;
 
 namespace Spectrum
 {
@@ -67,6 +68,7 @@ namespace Spectrum
 			Params.Validate();
 
 			Logger.Initialize(Params);
+			IINFO($"Application initialized at {DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}.");
 
 			// Create (but dont open) the window
 			Window = new CoreWindow();
@@ -130,14 +132,14 @@ namespace Spectrum
 				SceneManager.MidFrame();
 
 				// Render the frame
-				//GraphicsDevice.BeginFrame();
+				GraphicsDevice.BeginFrame();
 				Render();
 				SceneManager.Render();
 
 				// End the frame
 				EndFrame();
 				SceneManager.EndFrame();
-				//GraphicsDevice.EndFrame();
+				GraphicsDevice.EndFrame();
 
 				// Allow final post frame logic
 				PostFrame();
@@ -267,6 +269,7 @@ namespace Spectrum
 				// Clean up the window
 				Window.Dispose();
 
+				IINFO($"Application terminated at {DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}.");
 				Logger.Terminate(); // Should go last to allow logging to the last moment
 			}
 

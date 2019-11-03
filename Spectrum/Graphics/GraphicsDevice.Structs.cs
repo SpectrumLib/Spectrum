@@ -7,6 +7,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Vk = SharpVk;
 using static Spectrum.InternalLog;
+using System.Collections.Generic;
 
 namespace Spectrum.Graphics
 {
@@ -154,6 +155,39 @@ namespace Spectrum.Graphics
 			public Vk.Queue Transfer;
 			public uint FamilyIndex;
 			public readonly bool SeparateTransfer => Graphics.RawHandle.ToUInt64() != Transfer.RawHandle.ToUInt64();
+		}
+
+		// Contains information and operations for device memory types
+		internal class DeviceMemory
+		{
+			public Vk.PhysicalDeviceMemoryProperties Properties;
+			private readonly Dictionary<ulong, uint> _memoryCache;
+
+			public DeviceMemory(in Vk.PhysicalDeviceMemoryProperties mp)
+			{
+				Properties = mp;
+				_memoryCache = new Dictionary<ulong, uint>();
+			}
+
+			// Tries to find the memory heap index that supports the given requirements
+			public uint? Find(uint bits, Vk.MemoryPropertyFlags flags)
+			{
+				ulong idx = ((ulong)bits << 32) | (ulong)flags;
+				if (_memoryCache.TryGetValue(idx, out var mem))
+					return mem;
+
+				for (int mi = 0; mi < Properties.MemoryTypes.Length; ++mi)
+				{
+					uint mask = 1u << mi;
+					if ((bits & mask) > 0 && (Properties.MemoryTypes[mi].PropertyFlags & flags) == flags)
+					{
+						_memoryCache.Add(idx, (uint)mi);
+						return (uint)mi;
+					}
+				}
+
+				return null;
+			}
 		}
 	}
 }
