@@ -8,6 +8,7 @@ using Vk = SharpVk;
 using VkKhr = SharpVk.Khronos;
 using static Spectrum.InternalLog;
 using System.Linq;
+using System.Diagnostics;
 
 namespace Spectrum.Graphics
 {
@@ -134,6 +135,7 @@ namespace Spectrum.Graphics
 		// Rebuilds the swapchain
 		private void rebuildSwapchain()
 		{
+			Stopwatch timer = Stopwatch.StartNew();
 			var scaps = VkKhr.PhysicalDeviceExtensions.GetSurfaceCapabilities(_vkPhysicalDevice, Surface);
 
 			// Get the size and number of images
@@ -165,7 +167,6 @@ namespace Spectrum.Graphics
 				clipped: true,
 				oldSwapchain: oldsc
 			);
-			oldsc?.Dispose();
 
 			// Setup new swapchain images
 			var imgs = _swapChain.GetImages();
@@ -205,6 +206,10 @@ namespace Spectrum.Graphics
 				};
 			});
 
+			// Dispose the old swapchain once the device is done with it
+			_device.Queues.Graphics.WaitIdle();
+			oldsc?.Dispose();
+
 			// Perform initial layout transitions to present mode
 			_commandBuffer.Begin(Vk.CommandBufferUsageFlags.OneTimeSubmit);
 			_commandBuffer.PipelineBarrier(
@@ -234,7 +239,8 @@ namespace Spectrum.Graphics
 			_blitFence.Wait(UInt64.MaxValue); // Do not reset
 
 			Dirty = false;
-			IINFO($"Swapchain rebuilt @ {Extent} - F={_surfaceFormat.Format}:{_surfaceFormat.ColorSpace} C={_swapChainImages.Length}");
+			IINFO($"Swapchain rebuilt @ {Extent} - F={_surfaceFormat.Format}:{_surfaceFormat.ColorSpace} C={_swapChainImages.Length}" +
+				$" in {timer.Elapsed.TotalMilliseconds:.00} ms.");
 		}
 
 		private void cleanSwapchain()

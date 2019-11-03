@@ -43,9 +43,14 @@ namespace Spectrum.Graphics
 
 		internal GraphicsDevice()
 		{
+			if (!Threading.IsMainThread)
+				throw new InvalidOperationException("Graphics device instances can only be created on the main thread.");
+
 			InitializeVulkan(out VkInstance, out VkPhysicalDevice);
 			OpenDevice(VkInstance, VkPhysicalDevice, out VkDevice, out Info, out Features, out Limits, out Queues, out Memory);
 			Swapchain = new Swapchain(this);
+
+			initializeResources();
 		}
 		~GraphicsDevice()
 		{
@@ -76,6 +81,8 @@ namespace Spectrum.Graphics
 			if (!IsDisposed)
 			{
 				VkDevice?.WaitIdle();
+
+				cleanupResources();
 
 				Swapchain?.Dispose();
 
