@@ -10,7 +10,7 @@ namespace Spectrum.Graphics
 {
 	/// <summary>
 	/// A special type of texture that can be used as the target for pipeline draw commands. It can then be used
-	/// as a source of data in future shader invocations. These are reference counted in <see cref="Pipeline"/>
+	/// as a source of data in future shader invocations. These are reference counted in <see cref="Renderer"/>
 	/// instances, and attempting to dispose of a referenced RenderTarget will generate an exception.
 	/// </summary>
 	public sealed class RenderTarget : IDisposable
@@ -77,7 +77,7 @@ namespace Spectrum.Graphics
 		// Reference counting
 		private uint _refCount = 0;
 		/// <summary>
-		/// Gets the number of <see cref="Pipeline"/> instances currently using the render target. This property is
+		/// Gets the number of <see cref="PipelineDescription"/> instances currently using the render target. This property is
 		/// thread-safe.
 		/// </summary>
 		public uint ReferenceCount => _refCount;

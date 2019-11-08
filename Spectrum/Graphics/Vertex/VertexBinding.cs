@@ -101,7 +101,7 @@ namespace Spectrum.Graphics
 			PerInstance = pi;
 		}
 
-		internal VertexBinding Copy()
+		internal readonly VertexBinding Copy()
 		{
 			VertexElement[] elems;
 			Array.Copy(Elements, elems = new VertexElement[Elements.Length], Elements.Length);

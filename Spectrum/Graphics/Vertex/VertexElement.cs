@@ -132,7 +132,13 @@ namespace Spectrum.Graphics
 		/// <summary>
 		/// A 4-component 32-bit signed integer vector (HLSV `uvec4`).
 		/// </summary>
-		UInt4 = Vk.Format.R32G32B32A32UInt
+		UInt4 = Vk.Format.R32G32B32A32UInt,
+
+		/// <summary>
+		/// A 4-component 8-bit normalized unsigned integer vector. This is the correct layout for 
+		/// <see cref="Spectrum.Color"/>.
+		/// </summary>
+		Color = Vk.Format.R8G8B8A8UNorm
 	}
 
 	/// <summary>
@@ -152,6 +158,7 @@ namespace Spectrum.Graphics
 				case VertexElementFormat.Float:
 				case VertexElementFormat.Int:
 				case VertexElementFormat.UInt:
+				case VertexElementFormat.Color:
 					return 4;
 				case VertexElementFormat.Float2:
 				case VertexElementFormat.Int2:

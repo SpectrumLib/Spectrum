@@ -52,7 +52,7 @@ namespace Spectrum.Graphics
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal Vk.PipelineVertexInputStateCreateInfo ToVulkanType()
+		internal readonly Vk.PipelineVertexInputStateCreateInfo ToVulkanType()
 		{
 			var bds = Bindings.Select((b, idx) =>
 				new Vk.VertexInputBindingDescription((uint)idx, b.Stride, b.PerInstance ? Vk.VertexInputRate.Instance : Vk.VertexInputRate.Vertex)
