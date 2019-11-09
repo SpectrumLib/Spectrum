@@ -144,7 +144,7 @@ namespace Spectrum.Graphics
 
 		// Copies the render targets into an array, putting the depth/stencil target at the end
 		//   It returns the index of the depth/stencil attachment, if there is one
-		internal uint? CopyAttachments(out Attachment[] targs)
+		internal void CopyAttachments(out Attachment[] targs)
 		{
 			targs = Count > 0 ? new Attachment[Count] : null;
 			if (targs != null)
@@ -153,9 +153,7 @@ namespace Spectrum.Graphics
 					Array.Copy(_color, targs, _color.Length);
 				if (_depthStencil.HasValue)
 					targs[targs.Length - 1] = _depthStencil.Value;
-				return _depthStencil.HasValue ? (uint)targs.Length - 1 : (uint?)null;
 			}
-			return null;
 		}
 	}
 

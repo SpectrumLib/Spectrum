@@ -50,6 +50,12 @@ namespace Spectrum.Graphics
 		/// If primitive restart is enabled for indexed rendering (using 0xFFFF or 0xFFFFFFFF).
 		/// </summary>
 		public bool Restart;
+
+		/// <summary>
+		/// If the topology is a list type. If <c>true</c>, then <see cref="Restart"/> must be <c>false</c>.
+		/// </summary>
+		public readonly bool IsListType =>
+			Type == PrimitiveType.PointList || Type == PrimitiveType.LineList || Type == PrimitiveType.TriangleList;
 		#endregion // Fields
 
 		/// <summary>

@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Vk = SharpVk;
 
@@ -35,7 +36,7 @@ namespace Spectrum.Graphics
 		};
 		/// <summary>
 		/// Fully blends the source and destination colors using the alpha values for both. This is the traditional
-		/// "nothing special" transparency blending..
+		/// "nothing special" transparency blending.
 		/// </summary>
 		public static readonly ColorBlendState Alpha = new ColorBlendState {
 			Enabled = true,
@@ -85,24 +86,16 @@ namespace Spectrum.Graphics
 		#endregion // Fields
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal Vk.PipelineColorBlendStateCreateInfo ToVulkanType()
-		{
-			var cbas = new Vk.PipelineColorBlendAttachmentState {
-				BlendEnable = Enabled,
-				SourceColorBlendFactor = (Vk.BlendFactor)SrcColorFactor,
-				DestinationColorBlendFactor = (Vk.BlendFactor)DstColorFactor,
-				ColorBlendOp = (Vk.BlendOp)ColorOp,
-				SourceAlphaBlendFactor = (Vk.BlendFactor)SrcAlphaFactor,
-				DestinationAlphaBlendFactor = (Vk.BlendFactor)DstAlphaFactor,
-				AlphaBlendOp = (Vk.BlendOp)AlphaOp,
-				ColorWriteMask = (Vk.ColorComponentFlags)(WriteMask.HasValue ? WriteMask.Value : ColorComponents.All)
-			};
-			return new Vk.PipelineColorBlendStateCreateInfo {
-				Attachments = new [] { cbas },
-				LogicOpEnable = false,
-				BlendConstants = (BlendConstants.RFloat, BlendConstants.GFloat, BlendConstants.BFloat, BlendConstants.AFloat)
-			};
-		}
+		internal Vk.PipelineColorBlendAttachmentState ToVulkanType() => new Vk.PipelineColorBlendAttachmentState {
+			BlendEnable = Enabled,
+			SourceColorBlendFactor = (Vk.BlendFactor)SrcColorFactor,
+			DestinationColorBlendFactor = (Vk.BlendFactor)DstColorFactor,
+			ColorBlendOp = (Vk.BlendOp)ColorOp,
+			SourceAlphaBlendFactor = (Vk.BlendFactor)SrcAlphaFactor,
+			DestinationAlphaBlendFactor = (Vk.BlendFactor)DstAlphaFactor,
+			AlphaBlendOp = (Vk.BlendOp)AlphaOp,
+			ColorWriteMask = (Vk.ColorComponentFlags)(WriteMask.HasValue ? WriteMask.Value : ColorComponents.All)
+		};
 	}
 
 	/// <summary>

@@ -78,7 +78,7 @@ namespace Spectrum.Graphics
 			PolygonMode = (Vk.PolygonMode)FillMode,
 			CullMode = (Vk.CullModeFlags)CullMode,
 			FrontFace = (Vk.FrontFace)FrontFace,
-			LineWidth = LineWidth.HasValue ? LineWidth.Value : 1.0f,
+			LineWidth = LineWidth.GetValueOrDefault(1.0f),
 			DepthBiasEnable = false,
 			RasterizerDiscardEnable = false
 		};

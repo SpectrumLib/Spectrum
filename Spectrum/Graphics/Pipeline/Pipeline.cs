@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Linq;
 using System.Threading;
 using Vk = SharpVk;
 
@@ -27,11 +28,16 @@ namespace Spectrum.Graphics
 		private VertexDescription? _vertexDescription = null;
 
 		// Cached Vulkan state objects
-		internal Vk.PipelineColorBlendStateCreateInfo VkColorBlendState;
+		internal Vk.PipelineColorBlendAttachmentState VkColorBlendState;
+		internal (float R, float G, float B, float A) VkColorBlendConstants;
 		internal Vk.PipelineDepthStencilStateCreateInfo VkDepthStencilState;
 		internal Vk.PipelineInputAssemblyStateCreateInfo VkPrimitiveInput;
 		internal Vk.PipelineRasterizationStateCreateInfo VkRasterizerState;
 		internal Vk.PipelineVertexInputStateCreateInfo VkVertexDescription;
+
+		// Cached validation objects, for all non-framebuffer related validation
+		private bool? _isValid = null;
+		private string _validError = null;
 		#endregion // Backing Fields
 
 		#region State Objects
@@ -41,7 +47,16 @@ namespace Spectrum.Graphics
 		public ColorBlendState? ColorBlendState
 		{
 			get => _colorBlendState;
-			set => (_colorBlendState, VkColorBlendState) = (value, value.GetValueOrDefault().ToVulkanType());
+			set => (_colorBlendState, VkColorBlendState, _isValid) = (value, value?.ToVulkanType() ?? default, null);
+		}
+
+		/// <summary>
+		/// The color blending constant values, if any of the color attachments use constant blending operations.
+		/// </summary>
+		public Color ColorBlendConstants
+		{
+			get => VkColorBlendConstants;
+			set => (VkColorBlendConstants, _isValid) = ((value.RFloat, value.GFloat, value.BFloat, value.AFloat), null);
 		}
 
 		/// <summary>
@@ -50,7 +65,7 @@ namespace Spectrum.Graphics
 		public DepthStencilState? DepthStencilState
 		{
 			get => _depthStencilState;
-			set => (_depthStencilState, VkDepthStencilState) = (value, value.GetValueOrDefault().ToVulkanType());
+			set => (_depthStencilState, VkDepthStencilState, _isValid) = (value, value?.ToVulkanType() ?? default, null);
 		}
 
 		/// <summary>
@@ -59,7 +74,7 @@ namespace Spectrum.Graphics
 		public PrimitiveInput? PrimitiveInput
 		{
 			get => _primitiveInput;
-			set => (_primitiveInput, VkPrimitiveInput) = (value, value.GetValueOrDefault().ToVulkanType());
+			set => (_primitiveInput, VkPrimitiveInput, _isValid) = (value, value?.ToVulkanType() ?? default, null);
 		}
 
 		/// <summary>
@@ -68,7 +83,7 @@ namespace Spectrum.Graphics
 		public RasterizerState? RasterizerState
 		{
 			get => _rasterizerState;
-			set => (_rasterizerState, VkRasterizerState) = (value, value.GetValueOrDefault().ToVulkanType());
+			set => (_rasterizerState, VkRasterizerState, _isValid) = (value, value?.ToVulkanType() ?? default, null);
 		}
 
 		/// <summary>
@@ -77,25 +92,40 @@ namespace Spectrum.Graphics
 		public VertexDescription? VertexDescription
 		{
 			get => _vertexDescription;
-			set => (_vertexDescription, VkVertexDescription) = (value, value.GetValueOrDefault().ToVulkanType());
+			set => (_vertexDescription, VkVertexDescription, _isValid) = (value, value?.ToVulkanType() ?? default, null);
 		}
 		#endregion // State Objects
 
 		#region Attachment Info
 		/// <summary>
-		/// If this pipeline requires use of the depth/stencil attachment in the <see cref="Renderer"/>.
+		/// Gets if this pipeline performs operations on a depth buffer.
 		/// </summary>
-		public bool UseDepthStencil = false;
+		public bool UsesDepthBuffer => IsComplete && _depthStencilState.Value.HasDepthOperations;
+
+		/// <summary>
+		/// Gets if this pipeline performs operations on a stencil buffer.
+		/// </summary>
+		public bool UsesStencilBuffer => IsComplete && _depthStencilState.Value.HasStencilOperations;
 
 		/// <summary>
 		/// The indices of the <see cref="Renderer"/> attachments to use as the color buffers for this pass.
 		/// </summary>
-		public uint[] ColorAttachments = null;
+		public uint[] ColorAttachments
+		{
+			get => _colorAttachments;
+			set => (_colorAttachments, _isValid) = (value, null);
+		}
+		private uint[] _colorAttachments = null;
 
 		/// <summary>
 		/// The indices of the <see cref="Renderer"/> attachments to use as subpass input attachments for this pass.
 		/// </summary>
-		public uint[] InputAttachments = null;
+		public uint[] InputAttachments
+		{
+			get => _inputAttachments;
+			set => (_inputAttachments, _isValid) = (value, null);
+		}
+		private uint[] _inputAttachments = null;
 		#endregion // Attachment Info
 
 		/// <summary>
@@ -108,8 +138,7 @@ namespace Spectrum.Graphics
 		/// Gets if the pipeline description is complete, with all pipeline values fully defined.
 		/// </summary>
 		public bool IsComplete =>
-			ColorBlendState.HasValue && DepthStencilState.HasValue && PrimitiveInput.HasValue && RasterizerState.HasValue &&
-			VertexDescription.HasValue;
+			DepthStencilState.HasValue && PrimitiveInput.HasValue && RasterizerState.HasValue && VertexDescription.HasValue;
 		#endregion // Fields
 
 		/// <summary>
@@ -133,11 +162,12 @@ namespace Spectrum.Graphics
 			var copy = new Pipeline(name);
 
 			// Settings
-			if (_colorBlendState.HasValue)
+			if (_colorBlendState != null)
 			{
 				copy._colorBlendState = _colorBlendState;
 				copy.VkColorBlendState = VkColorBlendState;
 			}
+			copy.VkColorBlendConstants = VkColorBlendConstants;
 			if (_depthStencilState.HasValue)
 			{
 				copy._depthStencilState = _depthStencilState;
@@ -160,7 +190,6 @@ namespace Spectrum.Graphics
 			}
 
 			// Attachments
-			copy.UseDepthStencil = UseDepthStencil;
 			if (ColorAttachments != null)
 				Array.Copy(ColorAttachments, copy.ColorAttachments = new uint[ColorAttachments.Length], ColorAttachments.Length);
 			if (InputAttachments != null)
@@ -174,17 +203,85 @@ namespace Spectrum.Graphics
 		/// description of invalid settings.
 		/// </summary>
 		/// <param name="error">Gets set to a human readable error message about the invalid state.</param>
+		/// <param name="fbuffer">The framebuffer to check the pipeline against for attachment validity.</param>
 		/// <returns>If all pipeline settings are valid.</returns>
-		public bool Validate(out string error)
+		public bool Validate(out string error, Framebuffer fbuffer)
 		{
-			if (!IsComplete)
+			// Validate state w/ cache
+			if (!_isValid.HasValue)
+				_isValid = (_validError = validateState()) == null;
+			if (!_isValid.Value)
 			{
-				error = "Incomplete Pipeline";
+				error = _validError;
 				return false;
 			}
 
-			error = null;
-			return true;
+			// Validate against the framebuffer
+			error = validateFramebuffer(fbuffer);
+			return (error == null);
+		}
+
+		private string validateState()
+		{
+			var dev = Core.Instance.GraphicsDevice;
+
+			// Check if complete
+			if (!IsComplete)
+				return "incomplete pipeline";
+
+			// Check state features
+			if (_depthStencilState.Value.DepthBoundsEnable && !dev.Features.DepthBoundsTesting.Enabled)
+				return "depth bounds testing not enabled on device";
+			if (_primitiveInput.Value.IsListType && _primitiveInput.Value.Restart)
+				return "cannot use primitive restart on list topologies";
+			if (_rasterizerState.Value.DepthClampEnable && !dev.Features.DepthClamp.Enabled)
+				return "depth clamping is not enabled on device";
+			if (_rasterizerState.Value.LineWidth.HasValue && _rasterizerState.Value.LineWidth.Value != 1.0f && !dev.Features.WideLines.Enabled)
+				return "wide lines not enabled on device";
+			if (_rasterizerState.Value.FillMode != FillMode.Solid && !dev.Features.FillModeNonSolid.Enabled)
+				return "non-solid fill modes not enabled on device";
+
+			// Check state limits
+			var lw = _rasterizerState.Value.LineWidth.GetValueOrDefault(1.0f);
+			if (lw < dev.Limits.LineWidth.Min || lw > dev.Limits.LineWidth.Max)
+				return $"line width ({lw}) is out of valid range";
+
+			// Check attachment limits
+			if (_colorAttachments != null && _colorAttachments.Length > dev.Limits.ColorAttachments)
+				return "color attachment count exceeds device limits";
+			if (_inputAttachments != null && _inputAttachments.Length > dev.Limits.InputAttachments)
+				return "input attachment count exceeds device limits";
+
+			// Ensure no attachment duplicates
+			if (_colorAttachments?.GroupBy(idx => idx).Any(g => g.Count() > 1) ?? false)
+				return "duplicate color attachment index";
+			if (_inputAttachments?.GroupBy(idx => idx).Any(g => g.Count() > 1) ?? false)
+				return "duplicate input attachment index";
+			if (_colorAttachments != null && _inputAttachments != null && _colorAttachments.Any(idx => _inputAttachments.Contains(idx)))
+				return "attachment used as both color and input attachment";
+
+			return null;
+		}
+
+		private string validateFramebuffer(Framebuffer fb)
+		{
+			// Ensure depth/stencil settings and support
+			if (UsesDepthBuffer && !fb.DepthStencil.HasValue)
+				return "depth operations are not supported by the framebuffer";
+			if (UsesStencilBuffer && !fb.DepthStencil.HasValue)
+				return "stencil operations are not supported by the framebuffer";
+			if (UsesStencilBuffer && !fb.DepthStencil.Value.Target.Format.HasStencilComponent())
+				return "stencil operations are not supported by the framebuffer format";
+
+			// Ensure valid attachment indices
+			if ((_inputAttachments != null || _colorAttachments != null) && fb.Color == null)
+				return "color attachments are not available";
+			if (_colorAttachments?.Any(idx => idx >= fb.Color.Length) ?? false)
+				return "color attachment index out of range";
+			if (_inputAttachments?.Any(idx => idx >= fb.Color.Length) ?? false)
+				return "input attachment index out of range";
+
+			return null;
 		}
 	}
 }

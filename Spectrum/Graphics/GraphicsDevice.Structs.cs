@@ -93,6 +93,14 @@ namespace Spectrum.Graphics
 			/// Support for double-precision floating point numbers in shaders.
 			/// </summary>
 			public (bool Enabled, bool Strict) ShaderFloat64;
+			/// <summary>
+			/// Support for depth bounds testing in pipelines.
+			/// </summary>
+			public (bool Enabled, bool Strict) DepthBoundsTesting;
+			/// <summary>
+			/// Support for depth clamping in pipeline rasterization.
+			/// </summary>
+			public (bool Enabled, bool Strict) DepthClamp;
 
 			internal DeviceFeatures(in Vk.PhysicalDeviceFeatures feats)
 			{
@@ -103,6 +111,8 @@ namespace Spectrum.Graphics
 				LargePoints = (feats.LargePoints, false);
 				SamplerAnisotropy = (feats.SamplerAnisotropy, false);
 				ShaderFloat64 = (feats.ShaderFloat64, false);
+				DepthBoundsTesting = (feats.DepthBounds, false);
+				DepthClamp = (feats.DepthClamp, false);
 			}
 
 			// Ensures that the requested features are available
@@ -123,6 +133,10 @@ namespace Spectrum.Graphics
 					CheckFeature(SamplerAnisotropy.Enabled, feats.SamplerAnisotropy, SamplerAnisotropy.Strict, "SamplerAnisotropy");
 				ShaderFloat64.Enabled =
 					CheckFeature(ShaderFloat64.Enabled, feats.ShaderFloat64, ShaderFloat64.Strict, "ShaderFloat64");
+				DepthBoundsTesting.Enabled =
+					CheckFeature(DepthBoundsTesting.Enabled, feats.DepthBounds, DepthBoundsTesting.Strict, "DepthBoundsTesting");
+				DepthClamp.Enabled =
+					CheckFeature(DepthClamp.Enabled, feats.DepthClamp, DepthClamp.Strict, "DepthClamp");
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -144,7 +158,9 @@ namespace Spectrum.Graphics
 				WideLines = WideLines.Enabled,
 				LargePoints = LargePoints.Enabled,
 				SamplerAnisotropy = SamplerAnisotropy.Enabled,
-				ShaderFloat64 = ShaderFloat64.Enabled
+				ShaderFloat64 = ShaderFloat64.Enabled,
+				DepthBounds = DepthBoundsTesting.Enabled,
+				DepthClamp = DepthClamp.Enabled
 			};
 		}
 
@@ -162,12 +178,27 @@ namespace Spectrum.Graphics
 			/// The maximum height of a <see cref="RenderTarget"/>.
 			/// </summary>
 			public uint RenderTargetHeight;
+			/// <summary>
+			/// The maximum number of color attachments allowed in a single <see cref="Pipeline"/>.
+			/// </summary>
+			public uint ColorAttachments;
+			/// <summary>
+			/// The maximum number of input attachments allowed in a single <see cref="Pipeline"/>.
+			/// </summary>
+			public uint InputAttachments;
+			/// <summary>
+			/// The minimum and maximum values for <see cref="RasterizerState.LineWidth"/>.
+			/// </summary>
+			public (float Min, float Max) LineWidth;
 			#endregion // Fields
 
 			internal DeviceLimits(in Vk.PhysicalDeviceLimits lims)
 			{
 				RenderTargetWidth = lims.MaxFramebufferWidth;
 				RenderTargetHeight = lims.MaxFramebufferHeight;
+				ColorAttachments = lims.MaxColorAttachments;
+				InputAttachments = lims.MaxDescriptorSetInputAttachments;
+				LineWidth = lims.LineWidthRange;
 			}
 		}
 

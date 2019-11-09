@@ -120,6 +120,18 @@ namespace Spectrum.Graphics
 		/// The value used in stencil operations that require a reference value.
 		/// </summary>
 		public byte StencilReference;
+
+		#region Feature Checking
+		/// <summary>
+		/// Gets if the state describes operations on the depth buffer.
+		/// </summary>
+		public readonly bool HasDepthOperations => DepthTestEnable || DepthWriteEnable || DepthBoundsEnable;
+
+		/// <summary>
+		/// Gets if the state describes operations on the stencil buffer.
+		/// </summary>
+		public readonly bool HasStencilOperations => StencilTestEnable;
+		#endregion // Feature Checking
 		#endregion // Fields
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

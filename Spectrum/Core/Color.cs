@@ -240,25 +240,37 @@ namespace Spectrum
 			alpha ? new Color(vals[0 + off], vals[1 + off], vals[2 + off], vals[3 + off]) : new Color(vals[0 + off], vals[1 + off], vals[2 + off]);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static implicit operator Color(uint packed) => new Color(packed);
+		public static implicit operator Color (uint packed) => new Color(packed);
 
 		/// <summary>
 		/// Converts a color into a <see cref="Vec3"/>, with the RGB values mapped to XYZ in the range [0, 1].
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static implicit operator Vec3(Color c) => new Vec3(c.RFloat, c.GFloat, c.BFloat);
+		public static implicit operator Vec3 (Color c) => new Vec3(c.RFloat, c.GFloat, c.BFloat);
 
 		/// <summary>
 		/// Converts a color into a <see cref="Vec4"/>, with the RGBA values mapped to XYZW in the range [0, 1].
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static implicit operator Vec4(Color c) => new Vec4(c.RFloat, c.GFloat, c.BFloat, c.AFloat);
+		public static implicit operator Vec4 (Color c) => new Vec4(c.RFloat, c.GFloat, c.BFloat, c.AFloat);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool operator ==(Color l, Color r) => l._value == r._value;
+		public static implicit operator Color (in (byte, byte, byte) tup) => new Color(tup.Item1, tup.Item2, tup.Item3);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static bool operator !=(Color l, Color r) => l._value != r._value;
+		public static implicit operator Color (in (byte, byte, byte, byte) tup) => new Color(tup.Item1, tup.Item2, tup.Item3, tup.Item4);
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Color (in (float, float, float) tup) => new Color(tup.Item1, tup.Item2, tup.Item3);
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator Color (in (float, float, float, float) tup) => new Color(tup.Item1, tup.Item2, tup.Item3, tup.Item4);
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool operator == (Color l, Color r) => l._value == r._value;
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool operator != (Color l, Color r) => l._value != r._value;
 
 		#region Predefined Colors
 		// Standard colors
