@@ -148,6 +148,29 @@ namespace Spectrum.Graphics
 			};
 		}
 
+		/// <summary>
+		/// Numeric limits for device features and objects.
+		/// </summary>
+		public struct DeviceLimits
+		{
+			#region Fields
+			/// <summary>
+			/// The maximum width of a <see cref="RenderTarget"/>.
+			/// </summary>
+			public uint RenderTargetWidth;
+			/// <summary>
+			/// The maximum height of a <see cref="RenderTarget"/>.
+			/// </summary>
+			public uint RenderTargetHeight;
+			#endregion // Fields
+
+			internal DeviceLimits(in Vk.PhysicalDeviceLimits lims)
+			{
+				RenderTargetWidth = lims.MaxFramebufferWidth;
+				RenderTargetHeight = lims.MaxFramebufferHeight;
+			}
+		}
+
 		// Contains information about the device queues
 		internal struct DeviceQueues
 		{

@@ -101,7 +101,7 @@ namespace Spectrum.Graphics
 
 		// Open the device and populate device into
 		private static void OpenDevice(Vk.Instance inst, Vk.PhysicalDevice pdev, out Vk.Device device, out DeviceInfo dinfo, 
-			out DeviceFeatures dfeats, out Vk.PhysicalDeviceLimits dlims, out DeviceQueues dqueues, out DeviceMemory dmem)
+			out DeviceFeatures dfeats, out DeviceLimits dlims, out DeviceQueues dqueues, out DeviceMemory dmem)
 		{
 			// Get the physical device info
 			var props = pdev.GetProperties();
@@ -110,7 +110,7 @@ namespace Spectrum.Graphics
 			var qfams = pdev.GetQueueFamilyProperties();
 			dinfo = new DeviceInfo(props);
 			dfeats = Core.Instance.Params.EnabledGraphicsFeatures;
-			dlims = props.Limits;
+			dlims = new DeviceLimits(props.Limits);
 			dmem = new DeviceMemory(memp);
 			IINFO($"Selected device '{props.DeviceName}'.");
 

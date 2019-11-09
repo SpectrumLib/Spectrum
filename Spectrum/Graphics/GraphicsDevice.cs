@@ -30,8 +30,8 @@ namespace Spectrum.Graphics
 		/// Enabled features on the device.
 		/// </summary>
 		public readonly DeviceFeatures Features;
-		internal readonly Vk.PhysicalDeviceLimits Limits;
 		internal readonly DeviceQueues Queues;
+		internal readonly DeviceLimits Limits;
 		internal readonly DeviceMemory Memory;
 
 		// Swapchain

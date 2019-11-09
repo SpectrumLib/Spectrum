@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Threading;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -14,6 +15,8 @@ namespace Spectrum.Graphics
 	/// </summary>
 	public sealed class Pipeline
 	{
+		private static int _PipelineIndex = 0;
+
 		#region Fields
 		#region Backing Fields
 		// Public api values
@@ -80,10 +83,9 @@ namespace Spectrum.Graphics
 
 		#region Attachment Info
 		/// <summary>
-		/// The index of the <see cref="Renderer"/> attachment to use as the depth/stencil buffer for this pass. If
-		/// <c>null</c>, then this pass will not use a depth/stencil attachment.
+		/// If this pipeline requires use of the depth/stencil attachment in the <see cref="Renderer"/>.
 		/// </summary>
-		public uint? DepthStencilAttachment = null;
+		public bool UseDepthStencil = false;
 
 		/// <summary>
 		/// The indices of the <see cref="Renderer"/> attachments to use as the color buffers for this pass.
@@ -97,11 +99,92 @@ namespace Spectrum.Graphics
 		#endregion // Attachment Info
 
 		/// <summary>
+		/// A debug name for this pipeline. If not specified, it will take the form "Pipeline_X", where X is a
+		/// monotonically increasing integer.
+		/// </summary>
+		public readonly string Name;
+
+		/// <summary>
 		/// Gets if the pipeline description is complete, with all pipeline values fully defined.
 		/// </summary>
 		public bool IsComplete =>
 			ColorBlendState.HasValue && DepthStencilState.HasValue && PrimitiveInput.HasValue && RasterizerState.HasValue &&
 			VertexDescription.HasValue;
 		#endregion // Fields
+
+		/// <summary>
+		/// Creates a new pipeline with no specified values, and an optional debug name.
+		/// </summary>
+		/// <param name="name">The optional debug name for this pipeline.</param>
+		public Pipeline(string name = null)
+		{
+			Name = name ?? $"Pipeline_{Interlocked.Increment(ref _PipelineIndex)}";
+			if (String.IsNullOrWhiteSpace(Name))
+				throw new ArgumentException("Pipeline name cannot be empty or whitespace.");
+		}
+
+		/// <summary>
+		/// Creates a copy of the current pipeline settings with a new name.
+		/// </summary>
+		/// <param name="name">The optional new debug name for the copy.</param>
+		/// <returns>A new pipeline with copied settings.</returns>
+		public Pipeline Copy(string name = null)
+		{
+			var copy = new Pipeline(name);
+
+			// Settings
+			if (_colorBlendState.HasValue)
+			{
+				copy._colorBlendState = _colorBlendState;
+				copy.VkColorBlendState = VkColorBlendState;
+			}
+			if (_depthStencilState.HasValue)
+			{
+				copy._depthStencilState = _depthStencilState;
+				copy.VkDepthStencilState = VkDepthStencilState;
+			}
+			if (_primitiveInput.HasValue)
+			{
+				copy._primitiveInput = _primitiveInput;
+				copy.VkPrimitiveInput = VkPrimitiveInput;
+			}
+			if (_rasterizerState.HasValue)
+			{
+				copy._rasterizerState = _rasterizerState;
+				copy.VkRasterizerState = VkRasterizerState;
+			}
+			if (_vertexDescription.HasValue)
+			{
+				copy._vertexDescription = _vertexDescription;
+				copy.VkVertexDescription = VkVertexDescription;
+			}
+
+			// Attachments
+			copy.UseDepthStencil = UseDepthStencil;
+			if (ColorAttachments != null)
+				Array.Copy(ColorAttachments, copy.ColorAttachments = new uint[ColorAttachments.Length], ColorAttachments.Length);
+			if (InputAttachments != null)
+				Array.Copy(InputAttachments, copy.InputAttachments = new uint[InputAttachments.Length], InputAttachments.Length);
+
+			return copy;
+		}
+
+		/// <summary>
+		/// Checks that the current pipeline settings are valid with the current device, giving a human-readable
+		/// description of invalid settings.
+		/// </summary>
+		/// <param name="error">Gets set to a human readable error message about the invalid state.</param>
+		/// <returns>If all pipeline settings are valid.</returns>
+		public bool Validate(out string error)
+		{
+			if (!IsComplete)
+			{
+				error = "Incomplete Pipeline";
+				return false;
+			}
+
+			error = null;
+			return true;
+		}
 	}
 }

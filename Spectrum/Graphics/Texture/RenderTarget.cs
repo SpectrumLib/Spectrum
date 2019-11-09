@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Threading;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -75,12 +76,12 @@ namespace Spectrum.Graphics
 		internal Vk.ImageMemoryBarrier AttachBarrier { get; private set; } // Transition to attachment
 
 		// Reference counting
-		private uint _refCount = 0;
+		private int _refCount = 0;
 		/// <summary>
 		/// Gets the number of <see cref="PipelineDescription"/> instances currently using the render target. This property is
 		/// thread-safe.
 		/// </summary>
-		public uint ReferenceCount => _refCount;
+		public int ReferenceCount => _refCount;
 
 		private bool _isDisposed = false;
 		#endregion // Fields
@@ -98,7 +99,7 @@ namespace Spectrum.Graphics
 
 			if ((width == 0) || (height == 0))
 				throw new ArgumentException($"Render target \"{Name ?? "unnamed"}\" with zero dimension.");
-			if ((width > dev.Limits.MaxFramebufferWidth) || (height > dev.Limits.MaxFramebufferHeight))
+			if ((width > dev.Limits.RenderTargetWidth) || (height > dev.Limits.RenderTargetHeight))
 				throw new ArgumentException($"Render target \"{Name ?? "unnamed"}\" larger than size limits.");
 			Format = format;
 			VkAspects = IsDepthTarget ? (Vk.ImageAspectFlags.Depth | (HasStencilData ? Vk.ImageAspectFlags.Stencil : 0)) : Vk.ImageAspectFlags.Color;
@@ -220,6 +221,10 @@ namespace Spectrum.Graphics
 				DestinationQueueFamilyIndex = Vk.Constants.QueueFamilyIgnored
 			};
 		}
+
+		internal void IncRefCount() => Interlocked.Increment(ref _refCount);
+
+		internal void DecRefCount() => Interlocked.Decrement(ref _refCount);
 
 		#region Clearing
 		/// <summary>
