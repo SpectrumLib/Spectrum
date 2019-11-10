@@ -30,10 +30,6 @@ namespace Spectrum.Graphics
 		/// </summary>
 		public readonly TexelFormat Format;
 		/// <summary>
-		/// The optional debug name for this render target.
-		/// </summary>
-		public readonly string Name;
-		/// <summary>
 		/// The size of the backing memory for the render target, in bytes.
 		/// </summary>
 		public uint DataSize { get; private set; }
@@ -92,19 +88,17 @@ namespace Spectrum.Graphics
 		/// <param name="width">The width of the render target.</param>
 		/// <param name="height">The height of the render target.</param>
 		/// <param name="format">The render target format.</param>
-		/// <param name="name">An optional name for the render target for identification and debugging.</param>
-		public RenderTarget(uint width, uint height, TexelFormat format, string name = null)
+		public RenderTarget(uint width, uint height, TexelFormat format)
 		{
 			var dev = Core.Instance.GraphicsDevice;
 
 			if ((width == 0) || (height == 0))
-				throw new ArgumentException($"Render target \"{Name ?? "unnamed"}\" with zero dimension.");
+				throw new ArgumentException($"Render target with zero dimension.");
 			if ((width > dev.Limits.RenderTargetWidth) || (height > dev.Limits.RenderTargetHeight))
-				throw new ArgumentException($"Render target \"{Name ?? "unnamed"}\" larger than size limits.");
+				throw new ArgumentException($"Render target larger than size limits.");
 			Format = format;
 			VkAspects = IsDepthTarget ? (Vk.ImageAspectFlags.Depth | (HasStencilData ? Vk.ImageAspectFlags.Stencil : 0)) : Vk.ImageAspectFlags.Color;
 			DefaultImageLayout = IsDepthTarget ? Vk.ImageLayout.DepthStencilAttachmentOptimal : Vk.ImageLayout.ColorAttachmentOptimal;
-			Name = name;
 
 			Rebuild(width, height);
 		}
@@ -234,7 +228,7 @@ namespace Spectrum.Graphics
 		public void ClearColor(Color c)
 		{
 			if (!IsColorTarget)
-				throw new InvalidOperationException($"Depth/stencil render target \"{Name ?? "unnamed"}\" cleared with color value.");
+				throw new InvalidOperationException($"Depth/stencil render target cleared with color value.");
 
 			using (var sb = Core.Instance.GraphicsDevice.GetScratchCommandBuffer())
 			{
@@ -275,7 +269,7 @@ namespace Spectrum.Graphics
 		public void ClearDepth(float depth = 1, byte stencil = 0)
 		{
 			if (!Format.IsDepthFormat())
-				throw new InvalidOperationException($"Color render target \"{Name ?? "unnamed"}\" cleared with depth/stencil value.");
+				throw new InvalidOperationException($"Color render target cleared with depth/stencil value.");
 
 			using (var sb = Core.Instance.GraphicsDevice.GetScratchCommandBuffer())
 			{
@@ -320,7 +314,7 @@ namespace Spectrum.Graphics
 			if (disposing && !_isDisposed)
 			{
 				if (ReferenceCount > 0)
-					throw new InvalidOperationException($"Disposing render target \"{Name ?? "unnamed"}\" still in use (uses = {_refCount}).");
+					throw new InvalidOperationException($"Disposing render target still in use (uses = {_refCount}).");
 
 				VkView?.Dispose();
 				VkImage.Dispose();
@@ -337,8 +331,8 @@ namespace Spectrum.Graphics
 		/// <param name="height">The height of the render target.</param>
 		/// <param name="name">The optional render target name.</param>
 		/// <returns>A new render target designed to hold color data.</returns>
-		public static RenderTarget CreateColor(uint width, uint height, string name = null) =>
-			new RenderTarget(width, height, TexelFormat.Color, name);
+		public static RenderTarget CreateColor(uint width, uint height) =>
+			new RenderTarget(width, height, TexelFormat.Color);
 
 		/// <summary>
 		/// Creates a new default render target for holding depth (and optionally stencil) data.
@@ -351,7 +345,7 @@ namespace Spectrum.Graphics
 		/// </param>
 		/// <param name="name">The optional render target name.</param>
 		/// <returns>A new render target designed to hold depth (and optionally stencil) data.</returns>
-		public static RenderTarget CreateDepth(uint width, uint height, bool stencil = true, string name = null) =>
-			new RenderTarget(width, height, stencil ? TexelFormat.Depth24Stencil8 : TexelFormat.Depth32, name);
+		public static RenderTarget CreateDepth(uint width, uint height, bool stencil = true) =>
+			new RenderTarget(width, height, stencil ? TexelFormat.Depth24Stencil8 : TexelFormat.Depth32);
 	}
 }

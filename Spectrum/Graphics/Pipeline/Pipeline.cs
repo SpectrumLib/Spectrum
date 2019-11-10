@@ -138,7 +138,8 @@ namespace Spectrum.Graphics
 		/// Gets if the pipeline description is complete, with all pipeline values fully defined.
 		/// </summary>
 		public bool IsComplete =>
-			DepthStencilState.HasValue && PrimitiveInput.HasValue && RasterizerState.HasValue && VertexDescription.HasValue;
+			ColorBlendState.HasValue && DepthStencilState.HasValue && PrimitiveInput.HasValue && 
+			RasterizerState.HasValue && VertexDescription.HasValue;
 		#endregion // Fields
 
 		/// <summary>
@@ -147,6 +148,40 @@ namespace Spectrum.Graphics
 		/// <param name="name">The optional debug name for this pipeline.</param>
 		public Pipeline(string name = null)
 		{
+			Name = name ?? $"Pipeline_{Interlocked.Increment(ref _PipelineIndex)}";
+			if (String.IsNullOrWhiteSpace(Name))
+				throw new ArgumentException("Pipeline name cannot be empty or whitespace.");
+		}
+
+		/// <summary>
+		/// Create a new pipeline from the given states.
+		/// </summary>
+		/// <param name="colorblend">The color blending state.</param>
+		/// <param name="depthStencil">The depth/stencil state.</param>
+		/// <param name="primitiveInput">The primitive input.</param>
+		/// <param name="rasterState">The rasterizer control state.</param>
+		/// <param name="vertexDescription">The vertex layout description.</param>
+		/// <param name="colorAtts">The color attachments.</param>
+		/// <param name="inputAtts">The input attachments.</param>
+		/// <param name="name">An optional debug name for the pipeline.</param>
+		public Pipeline(
+			ColorBlendState colorblend,
+			DepthStencilState depthStencil,
+			PrimitiveInput primitiveInput,
+			RasterizerState rasterState,
+			VertexDescription vertexDescription,
+			uint[] colorAtts,
+			uint[] inputAtts,
+			string name = null
+		)
+		{
+			ColorBlendState = colorblend;
+			DepthStencilState = depthStencil;
+			PrimitiveInput = primitiveInput;
+			RasterizerState = rasterState;
+			VertexDescription = vertexDescription;
+			ColorAttachments = colorAtts ?? throw new ArgumentNullException(nameof(colorAtts));
+			InputAttachments = inputAtts ?? throw new ArgumentNullException(nameof(inputAtts));
 			Name = name ?? $"Pipeline_{Interlocked.Increment(ref _PipelineIndex)}";
 			if (String.IsNullOrWhiteSpace(Name))
 				throw new ArgumentException("Pipeline name cannot be empty or whitespace.");
@@ -217,8 +252,8 @@ namespace Spectrum.Graphics
 			}
 
 			// Validate against the framebuffer
-			error = validateFramebuffer(fbuffer);
-			return (error == null);
+			//error = validateFramebuffer(fbuffer);
+			return ((error = null) == null);
 		}
 
 		private string validateState()
@@ -245,41 +280,6 @@ namespace Spectrum.Graphics
 			var lw = _rasterizerState.Value.LineWidth.GetValueOrDefault(1.0f);
 			if (lw < dev.Limits.LineWidth.Min || lw > dev.Limits.LineWidth.Max)
 				return $"line width ({lw}) is out of valid range";
-
-			// Check attachment limits
-			if (_colorAttachments != null && _colorAttachments.Length > dev.Limits.ColorAttachments)
-				return "color attachment count exceeds device limits";
-			if (_inputAttachments != null && _inputAttachments.Length > dev.Limits.InputAttachments)
-				return "input attachment count exceeds device limits";
-
-			// Ensure no attachment duplicates
-			if (_colorAttachments?.GroupBy(idx => idx).Any(g => g.Count() > 1) ?? false)
-				return "duplicate color attachment index";
-			if (_inputAttachments?.GroupBy(idx => idx).Any(g => g.Count() > 1) ?? false)
-				return "duplicate input attachment index";
-			if (_colorAttachments != null && _inputAttachments != null && _colorAttachments.Any(idx => _inputAttachments.Contains(idx)))
-				return "attachment used as both color and input attachment";
-
-			return null;
-		}
-
-		private string validateFramebuffer(Framebuffer fb)
-		{
-			// Ensure depth/stencil settings and support
-			if (UsesDepthBuffer && !fb.DepthStencil.HasValue)
-				return "depth operations are not supported by the framebuffer";
-			if (UsesStencilBuffer && !fb.DepthStencil.HasValue)
-				return "stencil operations are not supported by the framebuffer";
-			if (UsesStencilBuffer && !fb.DepthStencil.Value.Target.Format.HasStencilComponent())
-				return "stencil operations are not supported by the framebuffer format";
-
-			// Ensure valid attachment indices
-			if ((_inputAttachments != null || _colorAttachments != null) && fb.Color == null)
-				return "color attachments are not available";
-			if (_colorAttachments?.Any(idx => idx >= fb.Color.Length) ?? false)
-				return "color attachment index out of range";
-			if (_inputAttachments?.Any(idx => idx >= fb.Color.Length) ?? false)
-				return "input attachment index out of range";
 
 			return null;
 		}
