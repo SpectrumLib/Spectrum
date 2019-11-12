@@ -13,41 +13,34 @@ namespace Spectrum.Graphics
 	// Creation functions for renderer objects
 	public sealed partial class Renderer : IDisposable
 	{
-		private static void CreateAttachmentInfo(RenderPass[] passes, Framebuffer fb, out Attachment[] atts,
+		private static void CreateAttachmentInfo(PassInfo[] passes, Framebuffer fb, out Attachment[] atts,
 			out Vk.AttachmentDescription[] descs, out Vk.AttachmentReference[][] refs, out Vk.SubpassDependency[] spdeps)
 		{
 			// Create the descriptions
 			fb.CopyAttachments(out atts);
 			descs = atts.Select(at => at.GetDescription()).ToArray();
 
-			// Convert the pass attachment names into attachment indices
-			(uint? ds, uint[] c, uint[] i)[] paidx = passes.Select((pass, pidx) => (
-				ds: pass.UseDepthStencil ? fb.GetDepthStencilIndex().Value : (uint?)null,
-				c:  pass.ColorAttachments.Select(aname => fb.GetColorIndex(aname).Value).ToArray(),
-				i:  pass.InputAttachments.Select(aname => fb.GetColorIndex(aname).Value).ToArray()
-			)).ToArray();
-
 			// Generate the attachment references
-			refs = paidx.Select(pass => {
+			refs = passes.Select(pass => {
 				var ar = new List<Vk.AttachmentReference>();
-				if (pass.c.Length > 0)
+				if (pass.ColorAttachments.Length > 0)
 				{
-					ar.AddRange(pass.c.Select(idx => new Vk.AttachmentReference {
-						Attachment = idx,
+					ar.AddRange(pass.ColorAttachments.Select(att => new Vk.AttachmentReference {
+						Attachment = att.Index,
 						Layout = Vk.ImageLayout.ColorAttachmentOptimal
 					}));
 				}
-				if (pass.i.Length > 0)
+				if (pass.InputAttachments.Length > 0)
 				{
-					ar.AddRange(pass.i.Select(idx => new Vk.AttachmentReference {
-						Attachment = idx,
+					ar.AddRange(pass.InputAttachments.Select(att => new Vk.AttachmentReference {
+						Attachment = att.Index,
 						Layout = Vk.ImageLayout.ShaderReadOnlyOptimal
 					}));
 				}
-				if (pass.ds.HasValue)
+				if (pass.DepthStencil.HasValue)
 				{
 					ar.Add(new Vk.AttachmentReference { 
-						Attachment = pass.ds.Value,
+						Attachment = pass.DepthStencil.Value,
 						Layout = Vk.ImageLayout.DepthStencilAttachmentOptimal
 					});
 				}
@@ -59,11 +52,11 @@ namespace Spectrum.Graphics
 			(bool p, byte[] u)[] uses = new (bool, byte[])[descs.Length];
 			for (int i = 0; i < descs.Length; ++i)
 				uses[i] = (atts[i].Preserve, new byte[passes.Length]);
-			paidx.ForEach((pass, pidx) => {
-				pass.c.ForEach(aidx => uses[aidx].u[pidx] = 1);
-				pass.i.ForEach(aidx => uses[aidx].u[pidx] = 2);
-				if (pass.ds.HasValue)
-					uses[pass.ds.Value].u[pidx] = 3;
+			passes.ForEach((pass, pidx) => {
+				pass.ColorAttachments.ForEach(att => uses[att.Index].u[pidx] = 1);
+				pass.InputAttachments.ForEach(att => uses[att.Index].u[pidx] = 2);
+				if (pass.DepthStencil.HasValue)
+					uses[pass.DepthStencil.Value].u[pidx] = 3;
 			});
 
 			// Convert the use matrix into subpass dependencies
@@ -129,23 +122,20 @@ namespace Spectrum.Graphics
 			spdeps = spd.ToArray();
 		}
 
-		private static void CreateSubpasses(RenderPass[] passes, Framebuffer fb, Vk.AttachmentReference[][] atts, out Vk.SubpassDescription[] spasses)
+		private static void CreateSubpasses(PassInfo[] passes, Framebuffer fb, Vk.AttachmentReference[][] atts, out Vk.SubpassDescription[] spasses)
 		{
-			// Convert the pass attachment names into attachment indices
-			(uint? ds, uint[] c, uint[] i)[] paidx = passes.Select((pass, pidx) => (
-				ds: pass.UseDepthStencil ? fb.GetDepthStencilIndex().Value : (uint?)null,
-				c: pass.ColorAttachments.Select(aname => fb.GetColorIndex(aname).Value).ToArray(),
-				i: pass.InputAttachments.Select(aname => fb.GetColorIndex(aname).Value).ToArray()
-			)).ToArray();
-
 			// Create the subpass descriptions
-			spasses = paidx.Select((pass, pidx) => {
+			spasses = passes.Select((pass, pidx) => {
 				// Find the unused attachments, and preserve them
 				List<uint> preserve = Enumerable.Range(0, (int)fb.Count).Select(idx => (uint)idx).ToList();
-				preserve.RemoveAll(idx => pass.c.Contains(idx) || pass.i.Contains(idx) || (pass.ds.HasValue && idx == pass.ds.Value));
+				preserve.RemoveAll(idx => 
+					pass.ColorAttachments.Any(tup => tup.Index == idx) || 
+					pass.InputAttachments.Any(tup => tup.Index == idx) || 
+					(pass.DepthStencil.HasValue && idx == pass.DepthStencil.Value)
+				);
 
 				return new Vk.SubpassDescription {
-					DepthStencilAttachment = pass.ds.HasValue ? atts[pidx][^1] : (Vk.AttachmentReference?)null,
+					DepthStencilAttachment = pass.DepthStencil.HasValue ? atts[pidx][^1] : (Vk.AttachmentReference?)null,
 					ColorAttachments = atts[pidx].Where(at => at.Layout == Vk.ImageLayout.ColorAttachmentOptimal).ToArray(),
 					InputAttachments = atts[pidx].Where(at => at.Layout == Vk.ImageLayout.ShaderReadOnlyOptimal).ToArray(),
 					ResolveAttachments = null,
