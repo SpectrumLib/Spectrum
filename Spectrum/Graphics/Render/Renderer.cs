@@ -19,14 +19,41 @@ namespace Spectrum.Graphics
 		private static int _RendererUuid; // Creates unique identifiers for compatibility checking
 
 		#region Fields
+		#region Attachments
 		// Attachment/subpass info
 		private readonly Attachment[] _attachments;
 		private readonly PassInfo[] _passes;
+
+		/// <summary>
+		/// The clear values for the color attachments. Ignored for attachments that are preserved.
+		/// </summary>
+		public readonly Color[] ClearColors;
+		#endregion // Attachments
 
 		// Vulkan objects
 		internal readonly Vk.RenderPass VkRenderPass;
 		internal readonly Vk.Framebuffer VkFramebuffer;
 		internal readonly Vk.PipelineCache VkPipelineCache;
+
+		#region Passes
+		// Pass objects
+		private readonly Vk.CommandBuffer _commandBuffer;
+		private readonly Vk.Fence _bufferFence;
+		private uint? _passIndex = null;
+
+		/// <summary>
+		/// Gets if <see cref="Begin"/> has been called on this renderer.
+		/// </summary>
+		public bool IsRecording => _passIndex.HasValue;
+		/// <summary>
+		/// The current pass index, or <c>null</c> if the renderer is not recording.
+		/// </summary>
+		public uint? PassIndex => _passIndex;
+		/// <summary>
+		/// The name of the current pass, or <c>null</c> if the renderer is not recording.
+		/// </summary>
+		public string PassName => _passIndex.HasValue ? _attachments[_passIndex.Value].Name : null;
+		#endregion // Passes
 
 		// Pipeline objects
 		internal readonly uint Uuid;
@@ -63,6 +90,7 @@ namespace Spectrum.Graphics
 
 			// Create the attachment references and dependencies
 			CreateAttachmentInfo(_passes, framebuffer, out _attachments, out var adescs, out var arefs, out var spdeps);
+			ClearColors = new Color[_attachments.Length - (_attachments[^1].Target.IsDepthTarget ? 1 : 0)];
 
 			// Create the subpasses, and finally the renderpass
 			CreateSubpasses(_passes, framebuffer, arefs, out var subpasses);
@@ -91,11 +119,79 @@ namespace Spectrum.Graphics
 				flags: Vk.PipelineCacheCreateFlags.None
 			);
 			Uuid = (uint)Interlocked.Increment(ref _RendererUuid);
+
+			// Create the primary command buffer that controls the render pass
+			_commandBuffer = dev.CreatePrimaryCommandBuffer();
+			_bufferFence = dev.VkDevice.CreateFence(Vk.FenceCreateFlags.Signaled);
 		}
 		~Renderer()
 		{
 			dispose(false);
 		}
+
+		#region Rendering
+		/// <summary>
+		/// Begins the rendering process for this renderer, allowing rendering commands and buffers to be submitted.
+		/// </summary>
+		public void Begin()
+		{
+			if (_passIndex.HasValue)
+				throw new InvalidOperationException("Begin() on renderer that is already recording.");
+
+			// Begin the command buffer
+			_bufferFence.Wait(UInt64.MaxValue);
+			_commandBuffer.Begin(Vk.CommandBufferUsageFlags.OneTimeSubmit);
+
+			// Begin the first pass
+			var clears = ClearColors.Select(c => (Vk.ClearValue)(c.RFloat, c.GFloat, c.BFloat, c.AFloat));
+			if (_attachments[^1].Target.IsDepthTarget)
+				clears = clears.Append(new Vk.ClearDepthStencilValue(1, 0));
+			_commandBuffer.BeginRenderPass(
+				renderPass: VkRenderPass,
+				framebuffer: VkFramebuffer,
+				renderArea: new Vk.Rect2D(Vk.Offset2D.Zero, (Vk.Extent2D)_attachments[0].Target.Size),
+				clearValues: clears.ToArray(),
+				contents: Vk.SubpassContents.SecondaryCommandBuffers
+			);
+			_passIndex = 0;
+		}
+
+		/// <summary>
+		/// Finishes recording rendering commands, and submits them to the device to processing.
+		/// </summary>
+		public void End()
+		{
+			if (!_passIndex.HasValue)
+				throw new InvalidOperationException("End() on renderer that is not recording.");
+
+			// End the command buffer
+			_commandBuffer.EndRenderPass();
+			_commandBuffer.End();
+			_passIndex = null;
+
+			// Submit the command buffer
+			_bufferFence.Reset();
+			Core.Instance.GraphicsDevice.Queues.Graphics.Submit(
+				submits: new Vk.SubmitInfo { CommandBuffers = new [] { _commandBuffer } },
+				fence: _bufferFence
+			);
+		}
+
+		/// <summary>
+		/// Sets the render to use the next pass for rendering commands.
+		/// </summary>
+		public void NextPass()
+		{
+			if (!_passIndex.HasValue)
+				throw new InvalidOperationException("NextPass() on renderer that is not recording.");
+			if (_passIndex.Value == _passes.Length - 1)
+				throw new InvalidOperationException("NextPass() on renderer that is on its final pass.");
+
+			// Move to the next subpass
+			_commandBuffer.NextSubpass(Vk.SubpassContents.SecondaryCommandBuffers);
+			_passIndex = _passIndex.Value + 1;
+		}
+		#endregion // Rendering
 
 		#region Pipelines
 		/// <summary>
@@ -182,7 +278,11 @@ namespace Spectrum.Graphics
 			{
 				if (disposing)
 				{
-					Core.Instance.GraphicsDevice.VkDevice.WaitIdle();
+					var dev = Core.Instance.GraphicsDevice;
+					dev.VkDevice.WaitIdle();
+
+					_bufferFence.Dispose();
+					dev.FreeCommandBuffer(_commandBuffer);
 
 					VkFramebuffer?.Dispose();
 					VkRenderPass?.Dispose();

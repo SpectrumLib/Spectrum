@@ -60,12 +60,42 @@ namespace Spectrum.Graphics
 			else
 				throw new InvalidOperationException("Attempted to release scratch buffer on non-graphics thread.");
 		}
+
+		// Creates a long-lived (non-scratch) primary command buffer for use on the calling thread only
+		internal Vk.CommandBuffer CreatePrimaryCommandBuffer()
+		{
+			var tid = Thread.CurrentThread.ManagedThreadId;
+			if (_threadGraphicsObjects.TryGetValue(tid, out var tgo))
+				return VkDevice.AllocateCommandBuffer(tgo.CommandPool, Vk.CommandBufferLevel.Primary);
+			else
+				throw new InvalidOperationException("Attempted to allocate command buffer on non-graphics thread.");
+		}
+
+		// Creates a long-lived (non-scratch) secondary command buffer for use on the calling thread only
+		internal Vk.CommandBuffer CreateSecondaryCommandBuffer()
+		{
+			var tid = Thread.CurrentThread.ManagedThreadId;
+			if (_threadGraphicsObjects.TryGetValue(tid, out var tgo))
+				return VkDevice.AllocateCommandBuffer(tgo.CommandPool, Vk.CommandBufferLevel.Secondary);
+			else
+				throw new InvalidOperationException("Attempted to allocate command buffer on non-graphics thread.");
+		}
+
+		// Called to free a command buffer made with CreatePrimary...() or CreateSecondary...()
+		internal void FreeCommandBuffer(Vk.CommandBuffer cb)
+		{
+			var tid = Thread.CurrentThread.ManagedThreadId;
+			if (_threadGraphicsObjects.TryGetValue(tid, out var tgo))
+				tgo.CommandPool.FreeCommandBuffers(cb);
+			else
+				throw new InvalidOperationException("Attempted to free command buffer on non-graphics thread.");
+		}
 		#endregion // Command Buffers
 
 		// Contains the set of graphics objects that exist per-thread
 		private class ThreadGraphicsObjects : IDisposable
 		{
-			private const uint SCRATCH_POOL_SIZE = 16; // Number of pooled scratch buffers
+			private const uint SCRATCH_POOL_SIZE = 8; // Number of pooled scratch buffers
 
 			#region Fields
 			public readonly int ThreadId;
