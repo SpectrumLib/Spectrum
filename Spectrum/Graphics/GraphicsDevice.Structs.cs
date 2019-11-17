@@ -179,17 +179,36 @@ namespace Spectrum.Graphics
 			/// </summary>
 			public uint RenderTargetHeight;
 			/// <summary>
-			/// The maximum number of color attachments allowed in a single <see cref="Pipeline"/>.
+			/// The maximum number of color attachments allowed in a single <see cref="RenderPass"/>.
 			/// </summary>
 			public uint ColorAttachments;
 			/// <summary>
-			/// The maximum number of input attachments allowed in a single <see cref="Pipeline"/>.
+			/// The maximum number of input attachments allowed in a single <see cref="RenderPass"/>.
 			/// </summary>
 			public uint InputAttachments;
 			/// <summary>
 			/// The minimum and maximum values for <see cref="RasterizerState.LineWidth"/>.
 			/// </summary>
 			public (float Min, float Max) LineWidth;
+			/// <summary>
+			/// The maximum texel count for textures of type <see cref="TextureType.Tex1D"/> and 
+			/// <see cref="TextureType.Tex1DArray"/>.
+			/// </summary>
+			public uint TextureSize1D;
+			/// <summary>
+			/// The maximum side length (in texels) for textures of type <see cref="TextureType.Tex2D"/> and
+			/// <see cref="TextureType.Tex2DArray"/>.
+			/// </summary>
+			public uint TextureSize2D;
+			/// <summary>
+			/// The maximum side length (in texels) for textures of type <see cref="TextureType.Tex3D"/>.
+			/// </summary>
+			public uint TextureSize3D;
+			/// <summary>
+			/// The maximum number of layers for textures of type <see cref="TextureType.Tex1DArray"/> and 
+			/// <see cref="TextureType.Tex2DArray"/>.
+			/// </summary>
+			public uint TextureLayers;
 			#endregion // Fields
 
 			internal DeviceLimits(in Vk.PhysicalDeviceLimits lims)
@@ -199,6 +218,10 @@ namespace Spectrum.Graphics
 				ColorAttachments = lims.MaxColorAttachments;
 				InputAttachments = lims.MaxDescriptorSetInputAttachments;
 				LineWidth = lims.LineWidthRange;
+				TextureSize1D = lims.MaxImageDimension1D;
+				TextureSize2D = lims.MaxImageDimension2D;
+				TextureSize3D = lims.MaxImageDimension3D;
+				TextureLayers = lims.MaxImageArrayLayers;
 			}
 		}
 
