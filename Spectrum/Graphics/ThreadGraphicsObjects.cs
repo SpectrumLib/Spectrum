@@ -23,6 +23,7 @@ namespace Spectrum.Graphics
 		public readonly Vk.DeviceMemory TransferMemory;
 		public (Vk.Buffer Buffer, Vk.CommandBuffer Commands, Vk.Fence Fence, bool Free)[] TransferPool;
 		public readonly bool CoherentTransfer;
+		public readonly IntPtr TransferPointer;
 		private uint _transferIndex;
 		#endregion // Fields
 
@@ -58,6 +59,7 @@ namespace Spectrum.Graphics
 			}
 			var memidx = GetMemoryInfo(dev, TransferPool[0].Buffer, out CoherentTransfer);
 			TransferMemory = dev.VkDevice.AllocateMemory(TransferBuffer.SIZE * TRANSFER_BUFFER_COUNT, memidx);
+			TransferPointer = TransferMemory.Map(0, TransferBuffer.SIZE * TRANSFER_BUFFER_COUNT, Vk.MemoryMapFlags.None);
 			for (uint i = 0; i < TRANSFER_BUFFER_COUNT; ++i)
 			{
 				TransferPool[i].Buffer.BindMemory(TransferMemory, i * TransferBuffer.SIZE);
@@ -130,6 +132,7 @@ namespace Spectrum.Graphics
 
 			if (TransferMemory != null)
 			{
+				TransferMemory.Unmap();
 				foreach (var b in TransferPool) // Commands get freed below
 				{
 					b.Buffer.Dispose();
@@ -159,6 +162,7 @@ namespace Spectrum.Graphics
 
 			coherent = (dev.Memory.Properties.MemoryTypes[memidx.Value].PropertyFlags & Vk.MemoryPropertyFlags.HostCoherent) > 0 ||
 					   (dev.Memory.Properties.MemoryTypes[memidx.Value].PropertyFlags & Vk.MemoryPropertyFlags.HostCached) == 0;
+			coherent &= !Runtime.OS.IsOSX; // MoltenVK has bug where texture memory is never coherent
 			return memidx.Value;
 		}
 	}

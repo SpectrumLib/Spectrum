@@ -5,6 +5,7 @@
  */
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -47,8 +48,6 @@ namespace Spectrum.Graphics
 		{
 			if (ElementType != IndexElementType.U16)
 				throw new InvalidOperationException("Upload 16-bit indices to a 32-bit index buffer.");
-			if (indices.Length > (IndexCount - dstOffset))
-				throw new ArgumentException("Source data too large for index buffer.");
 
 			SetDataInternal(MemoryMarshal.AsBytes(indices), dstOffset * 2);
 		}
@@ -63,10 +62,40 @@ namespace Spectrum.Graphics
 		{
 			if (ElementType != IndexElementType.U32)
 				throw new InvalidOperationException("Upload 32-bit indices to a 16-bit index buffer");
-			if (indices.Length > (IndexCount - dstOffset))
-				throw new ArgumentException("Source data too large for index buffer.");
 
 			SetDataInternal(MemoryMarshal.AsBytes(indices), dstOffset * 4);
+		}
+
+		/// <summary>
+		/// Uploads unsigned 16-bit index data into the buffer asynchronously. The memory in <paramref name="indices"/> 
+		/// must not be modified until the <see cref="Task"/> returned by this function is complete.
+		/// </summary>
+		/// <param name="indices">The indices to upload to the buffer.</param>
+		/// <param name="dstOffset">The offset into the buffer, in index elements.</param>
+		/// <returns>The task representing the data upload.</returns>
+		/// <exception cref="InvalidOperationException">The buffer holds 32-bit indices.</exception>
+		public Task SetDataAsync(ReadOnlyMemory<ushort> indices, uint dstOffset = 0)
+		{
+			if (ElementType != IndexElementType.U16)
+				throw new InvalidOperationException("Upload 16-bit indices to a 32-bit index buffer.");
+
+			return SetDataInternalAsync(indices, dstOffset * 2);
+		}
+
+		/// <summary>
+		/// Uploads unsigned 32-bit index data into the buffer asynchronously. The memory in <paramref name="indices"/> 
+		/// must not be modified until the <see cref="Task"/> returned by this function is complete.
+		/// </summary>
+		/// <param name="indices">The indices to upload to the buffer.</param>
+		/// <param name="dstOffset">The offset into the buffer, in index elements.</param>
+		/// <returns>The task representing the data upload.</returns>
+		/// <exception cref="InvalidOperationException">The buffer holds 16-bit indices.</exception>
+		public Task SetDataAsync(ReadOnlyMemory<uint> indices, uint dstOffset = 0)
+		{
+			if (ElementType != IndexElementType.U32)
+				throw new InvalidOperationException("Upload 32-bit indices to a 16-bit index buffer");
+
+			return SetDataInternalAsync(indices, dstOffset * 4);
 		}
 	}
 

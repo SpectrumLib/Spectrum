@@ -5,6 +5,7 @@
  */
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -53,12 +54,30 @@ namespace Spectrum.Graphics
 		{
 			var rawdata = MemoryMarshal.AsBytes(data);
 
-			if (rawdata.Length > ((VertexCount - dstOffset) * Stride))
-				throw new ArgumentException("Source data too large for vertex buffer.");
 			if (safe && (rawdata.Length % Stride) != 0)
 				throw new ArgumentException("Source data length is not aligned to a vertex boundary.");
 
 			SetDataInternal(rawdata, dstOffset * Stride);
+		}
+
+		/// <summary>
+		/// Uploads vertex data into the buffer asynchronously. The memory in <paramref name="data"/> must not be
+		/// modified until the <see cref="Task"/> returned by this function is complete.
+		/// </summary>
+		/// <typeparam name="T">The type of the input data.</typeparam>
+		/// <param name="data">The data to copy into the buffer.</param>
+		/// <param name="dstOffset">The optional offset into the buffer, in verticies.</param>
+		/// <param name="safe">Enacts additional checks for alignment to vertex boundaries in the buffer.</param>
+		/// <returns>The task representing the data upload.</returns>
+		public Task SetDataAsync<T>(ReadOnlyMemory<T> data, uint dstOffset = 0, bool safe = true)
+			where T : struct
+		{
+			var rawdata = MemoryMarshal.AsBytes(data.Span);
+
+			if (safe && (rawdata.Length % Stride) != 0)
+				throw new ArgumentException("Source data length is not aligned to a vertex boundary.");
+
+			return SetDataInternalAsync(data, dstOffset * Stride);
 		}
 	}
 }

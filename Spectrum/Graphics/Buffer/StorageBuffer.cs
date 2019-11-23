@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -29,13 +30,8 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="data">The raw data to upload.</param>
 		/// <param name="dstOffset">The offset into the buffer, in bytes.</param>
-		public void SetData(ReadOnlySpan<byte> data, uint dstOffset = 0)
-		{
-			if (data.Length > (Size - dstOffset))
-				throw new ArgumentException("Source data too large for storage buffer.");
-
+		public void SetData(ReadOnlySpan<byte> data, uint dstOffset = 0) =>
 			SetDataInternal(data, dstOffset);
-		}
 
 		/// <summary>
 		/// Uploads typed structured data into the buffer.
@@ -52,13 +48,8 @@ namespace Spectrum.Graphics
 		/// </summary>
 		/// <param name="data">The memory to copy the data into.</param>
 		/// <param name="srcOffset">The offset into the device buffer, in bytes.</param>
-		public void GetData(Span<byte> data, uint srcOffset = 0)
-		{
-			if (data.Length > (Size - srcOffset))
-				throw new ArgumentException("Storage buffer too small for requested amount of data.");
-
+		public void GetData(Span<byte> data, uint srcOffset = 0) =>
 			GetDataInternal(data, srcOffset);
-		}
 
 		/// <summary>
 		/// Copies typed structured data from the buffer into a memory block.
@@ -69,5 +60,51 @@ namespace Spectrum.Graphics
 		public void GetData<T>(Span<T> data, uint srcOffset = 0)
 			where T : struct =>
 			GetData(MemoryMarshal.AsBytes(data), srcOffset * (uint)Unsafe.SizeOf<T>());
+
+		/// <summary>
+		/// Uploads general structured data into the buffer asynchronously. The memory in <paramref name="data"/> must
+		/// not be modified until the <see cref="Task"/> returned by this function is complete.
+		/// </summary>
+		/// <param name="data">The raw data to upload.</param>
+		/// <param name="dstOffset">The offset into the buffer, in bytes.</param>
+		/// <returns>The task representing the data upload.</returns>
+		public Task SetDataAsync(ReadOnlyMemory<byte> data, uint dstOffset = 0) =>
+			SetDataInternalAsync(data, dstOffset);
+
+		/// <summary>
+		/// Uploads typed structured data into the buffer asynchronously. The memory in <paramref name="data"/> must
+		/// not be modified until the <see cref="Task"/> returned by this function is complete.
+		/// </summary>
+		/// <typeparam name="T">The structure type to upload.</typeparam>
+		/// <param name="data">The data to upload.</param>
+		/// <param name="dstOffset">The offset into the buffer, in <typeparamref name="T"/> strides.</param>
+		/// <returns>The task representing the data upload.</returns>
+		public Task SetDataAsync<T>(ReadOnlyMemory<T> data, uint dstOffset = 0)
+			where T : struct =>
+			SetDataInternalAsync(data, dstOffset * (uint)Unsafe.SizeOf<T>());
+
+		/// <summary>
+		/// Copies general structured data from the buffer into a memory block asynchronously. The memory in 
+		/// <paramref name="data"/> must not be read or modified until the <see cref="Task"/> returned by this function
+		/// is complete.
+		/// </summary>
+		/// <param name="data">The memory to copy the data into.</param>
+		/// <param name="srcOffset">The offset into the device buffer, in bytes.</param>
+		/// <returns>The task representing the data download.</returns>
+		public Task GetDataAsync(Memory<byte> data, uint srcOffset = 0) =>
+			GetDataInternalAsync(data, srcOffset);
+
+		/// <summary>
+		/// Copies typed structured data from the buffer into a memory block asynchronously. The memory in 
+		/// <paramref name="data"/> must not be read or modified until the <see cref="Task"/> returned by this function
+		/// is complete.
+		/// </summary>
+		/// <typeparam name="T">The structure type to copy.</typeparam>
+		/// <param name="data">The memory to copy the data into.</param>
+		/// <param name="srcOffset">The offset into the device buffer, in <typeparamref name="T"/> strides.</param>
+		/// <returns>The task representing the data download.</returns>
+		public Task GetDataAsync<T>(Memory<T> data, uint srcOffset = 0)
+			where T : struct =>
+			GetDataAsync(data, srcOffset * (uint)Unsafe.SizeOf<T>());
 	}
 }

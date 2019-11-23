@@ -4,6 +4,9 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -64,24 +67,80 @@ namespace Spectrum.Graphics
 			Dispose(false);
 		}
 
+		// Synchronous
 		private protected unsafe void SetDataInternal(ReadOnlySpan<byte> data, uint dstOff)
 		{
+			// Check sizes
+			if (dstOff >= Size)
+				throw new ArgumentException("Transfer offset is outside of buffer range.");
+			if (data.Length > (Size - dstOff))
+				throw new ArgumentException("Source data too large for buffer transfer.");
+
+			// Make the transfer
 			using (var tb = Core.Instance.GraphicsDevice.GetTransferBuffer())
 			{
-
+				GetTransferStages(Type, out var sstage, out var dstage);
+				tb.PushBuffer(data, VkBuffer, dstOff, sstage, dstage);
 			}
-
-			throw new NotImplementedException();
 		}
 
+		// Asynchronous
+		private protected Task SetDataInternalAsync<T>(ReadOnlyMemory<T> data, uint dstOff)
+			where T : struct
+		{
+			// Check sizes
+			if (dstOff >= Size)
+				throw new ArgumentException("Transfer offset is outside of buffer range.");
+			if ((data.Length * Unsafe.SizeOf<T>()) > (Size - dstOff))
+				throw new ArgumentException("Source data too large for buffer transfer.");
+
+			// Make the transfer
+			var tb = Core.Instance.GraphicsDevice.GetTransferBuffer();
+			return Task.Run(() => {
+				using (tb)
+				{
+					GetTransferStages(Type, out var sstage, out var dstage);
+					tb.PushBuffer(MemoryMarshal.AsBytes(data.Span), VkBuffer, dstOff, sstage, dstage);
+				}
+			});
+		}
+
+		// Synchronous
 		private protected unsafe void GetDataInternal(Span<byte> data, uint srcOff)
 		{
+			// Check sizes
+			if (srcOff >= Size)
+				throw new ArgumentException("Transfer offset is outside of buffer range.");
+			if (data.Length > (Size - srcOff))
+				throw new ArgumentException("Buffer too small for requested buffer transfer.");
+
+			// Make the transfer
 			using (var tb = Core.Instance.GraphicsDevice.GetTransferBuffer())
 			{
-
+				GetTransferStages(Type, out var sstage, out var dstage);
+				tb.PullBuffer(data, VkBuffer, srcOff, sstage, dstage);
 			}
+		}
 
-			throw new NotImplementedException();
+		// Asynchronous
+		private protected Task GetDataInternalAsync<T>(Memory<T> data, uint srcOff)
+			where T : struct
+		{
+			// Check sizes
+			if (srcOff >= Size)
+				throw new ArgumentException("Transfer offset is outside of buffer range.");
+			if ((data.Length * Unsafe.SizeOf<T>()) > (Size - srcOff))
+				throw new ArgumentException("Buffer too small for requested buffer transfer.");
+
+			// Make the transfer
+			var tb = Core.Instance.GraphicsDevice.GetTransferBuffer();
+			return Task.Run(() => {
+				using (tb)
+				{
+					GetTransferStages(Type, out var sstage, out var dstage);
+					tb.PullBuffer(MemoryMarshal.AsBytes(data.Span), VkBuffer, srcOff, sstage, dstage);
+				}
+			});
 		}
 
 		#region IDisposble
@@ -101,6 +160,24 @@ namespace Spectrum.Graphics
 			}
 		}
 		#endregion // IDisposable
+
+		private static void GetTransferStages(BufferType typ, out Vk.PipelineStageFlags src, out Vk.PipelineStageFlags dst)
+		{
+			switch (typ)
+			{
+				case BufferType.Vertex:
+				case BufferType.Index:
+					src = Vk.PipelineStageFlags.VertexShader;
+					dst = Vk.PipelineStageFlags.VertexInput;
+					break;
+				case BufferType.Storage:
+					src = Vk.PipelineStageFlags.FragmentShader;
+					dst = Vk.PipelineStageFlags.VertexShader;
+					break;
+				default:
+					throw new ArgumentException("Invalid buffer type (library bug).");
+			}
+		}
 	}
 
 	/// <summary>
