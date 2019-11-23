@@ -118,6 +118,11 @@ namespace Spectrum.Graphics
 
 		private protected unsafe void SetDataInternal(ReadOnlySpan<byte> data, in TextureRegion reg, uint layer)
 		{
+			using (var tb = Core.Instance.GraphicsDevice.GetTransferBuffer())
+			{
+
+			}
+
 			throw new NotImplementedException();
 		}
 

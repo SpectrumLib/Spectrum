@@ -21,8 +21,9 @@ namespace Spectrum.Graphics
 		public (Vk.CommandBuffer Buffer, Vk.Fence Fence, bool Free)[] ScratchPool;
 		private uint _scratchIndex;
 		public readonly Vk.DeviceMemory TransferMemory;
-		public (Vk.Buffer Buffer, Vk.CommandBuffer Commands, Vk.Fence Fence, bool Free)[] TransferBuffers;
+		public (Vk.Buffer Buffer, Vk.CommandBuffer Commands, Vk.Fence Fence, bool Free)[] TransferPool;
 		public readonly bool CoherentTransfer;
+		private uint _transferIndex;
 		#endregion // Fields
 
 		public ThreadGraphicsObjects(int tid, GraphicsDevice dev)
@@ -43,28 +44,30 @@ namespace Spectrum.Graphics
 			_scratchIndex = 0;
 
 			// Create transfer buffers
-			TransferBuffers = new (Vk.Buffer, Vk.CommandBuffer, Vk.Fence, bool)[TRANSFER_BUFFER_COUNT];
+			TransferPool = new (Vk.Buffer, Vk.CommandBuffer, Vk.Fence, bool)[TRANSFER_BUFFER_COUNT];
 			sbufs = dev.VkDevice.AllocateCommandBuffers(CommandPool, Vk.CommandBufferLevel.Primary, TRANSFER_BUFFER_COUNT);
 			for (uint i = 0; i < TRANSFER_BUFFER_COUNT; ++i)
 			{
-				TransferBuffers[i].Buffer = dev.VkDevice.CreateBuffer(
+				TransferPool[i].Buffer = dev.VkDevice.CreateBuffer(
 					TransferBuffer.SIZE, Vk.BufferUsageFlags.TransferDestination | Vk.BufferUsageFlags.TransferSource,
 					Vk.SharingMode.Exclusive, Vk.Constants.QueueFamilyIgnored, Vk.BufferCreateFlags.None
 				);
-				TransferBuffers[i].Commands = sbufs[i];
-				TransferBuffers[i].Fence = dev.VkDevice.CreateFence(Vk.FenceCreateFlags.Signaled); // Need to start signaled
-				TransferBuffers[i].Free = true;
+				TransferPool[i].Commands = sbufs[i];
+				TransferPool[i].Fence = dev.VkDevice.CreateFence(Vk.FenceCreateFlags.Signaled); // Need to start signaled
+				TransferPool[i].Free = true;
 			}
-			var memidx = GetMemoryInfo(dev, TransferBuffers[0].Buffer, out CoherentTransfer);
+			var memidx = GetMemoryInfo(dev, TransferPool[0].Buffer, out CoherentTransfer);
 			TransferMemory = dev.VkDevice.AllocateMemory(TransferBuffer.SIZE * TRANSFER_BUFFER_COUNT, memidx);
 			for (uint i = 0; i < TRANSFER_BUFFER_COUNT; ++i)
 			{
-				TransferBuffers[i].Buffer.BindMemory(TransferMemory, i * TransferBuffer.SIZE);
+				TransferPool[i].Buffer.BindMemory(TransferMemory, i * TransferBuffer.SIZE);
 			}
+			_transferIndex = 0;
 
 			IINFO($"Created graphics objects for thread {tid}.");
 		}
 
+		#region Scratch Buffer
 		// Finds the next scratch buffer available
 		public uint NextScratchBuffer()
 		{
@@ -89,6 +92,33 @@ namespace Spectrum.Graphics
 				throw new InvalidOperationException("Attempted to free unacquired scratch buffer (BUG IN LIBRARY).");
 			buf.Free = true;
 		}
+		#endregion // Scratch Buffer
+
+		#region Transfer Buffer
+		// Finds the next transfer buffer available
+		public uint NextTransferBuffer()
+		{
+			while (true)
+			{
+				ref var buf = ref TransferPool[_transferIndex];
+				if (buf.Free && (buf.Fence.GetStatus() == Vk.Result.Success))
+				{
+					buf.Free = false;
+					return _transferIndex;
+				}
+				_transferIndex = (_transferIndex + 1) % TRANSFER_BUFFER_COUNT;
+			}
+		}
+
+		// Releases the transfer buffer to be used again
+		public void ReleaseTransferBuffer(uint index)
+		{
+			ref var buf = ref TransferPool[index];
+			if (buf.Free)
+				throw new InvalidOperationException("Attempted to free unaquired transfer buffer (BUG IN LIBRARY)");
+			buf.Free = true;
+		}
+		#endregion // Transfer Buffer
 
 		public void Dispose()
 		{
@@ -100,7 +130,7 @@ namespace Spectrum.Graphics
 
 			if (TransferMemory != null)
 			{
-				foreach (var b in TransferBuffers) // Commands get freed below
+				foreach (var b in TransferPool) // Commands get freed below
 				{
 					b.Buffer.Dispose();
 					b.Fence.Dispose();

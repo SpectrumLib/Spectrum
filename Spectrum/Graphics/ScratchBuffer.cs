@@ -21,11 +21,11 @@ namespace Spectrum.Graphics
 		private readonly Vk.Fence _fence;
 		#endregion // Fields
 
-		public ScratchBuffer(uint idx, Vk.CommandBuffer buf, Vk.Fence fence)
+		public ScratchBuffer(uint idx, ThreadGraphicsObjects tgo)
 		{
 			Index = idx;
-			Buffer = buf;
-			_fence = fence;
+			Buffer = tgo.ScratchPool[idx].Buffer;
+			_fence = tgo.ScratchPool[idx].Fence;
 		}
 
 		public void Submit(Vk.Semaphore[] waits = null, Vk.PipelineStageFlags[] stages = null, Vk.Semaphore[] signals = null)

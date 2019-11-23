@@ -66,11 +66,21 @@ namespace Spectrum.Graphics
 
 		private protected unsafe void SetDataInternal(ReadOnlySpan<byte> data, uint dstOff)
 		{
+			using (var tb = Core.Instance.GraphicsDevice.GetTransferBuffer())
+			{
+
+			}
+
 			throw new NotImplementedException();
 		}
 
 		private protected unsafe void GetDataInternal(Span<byte> data, uint srcOff)
 		{
+			using (var tb = Core.Instance.GraphicsDevice.GetTransferBuffer())
+			{
+
+			}
+
 			throw new NotImplementedException();
 		}
 

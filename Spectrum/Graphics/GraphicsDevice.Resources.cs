@@ -35,16 +35,16 @@ namespace Spectrum.Graphics
 		#endregion // Lifetime
 
 		#region Command Buffers
-		// Acquires a scratch buffer from the pool of buffers on the current thread. Scratch buffers should be used
-		//   only for one-off operations, such as initial layout transitions, or one time buffer copies. All scratch
-		//   buffers are primary level only, and access to them is synchronized by the library.
+		// Acquires a scratch buffer from the pool of buffers. Scratch buffers should be used only for one-off operations, 
+		//   such as initial layout transitions, or one time buffer copies. All scratch buffers are primary level only, 
+		//   and access to them is synchronized by the library.
 		internal ScratchBuffer GetScratchCommandBuffer()
 		{
 			var tid = Thread.CurrentThread.ManagedThreadId;
 			if (_threadGraphicsObjects.TryGetValue(tid, out var tgo))
 			{
 				var idx = tgo.NextScratchBuffer();
-				return new ScratchBuffer(idx, tgo.ScratchPool[idx].Buffer, tgo.ScratchPool[idx].Fence);
+				return new ScratchBuffer(idx, tgo);
 			}
 			else
 				throw new InvalidOperationException("Attempted to acquire scratch buffer on non-graphics thread.");
@@ -90,5 +90,26 @@ namespace Spectrum.Graphics
 				throw new InvalidOperationException("Attempted to free command buffer on non-graphics thread.");
 		}
 		#endregion // Command Buffers
+
+		#region Transfer Buffers
+		// Acquires a transfer buffer from the pool of buffers
+		internal TransferBuffer GetTransferBuffer()
+		{
+			var tid = Thread.CurrentThread.ManagedThreadId;
+			if (_threadGraphicsObjects.TryGetValue(tid, out var tgo))
+				return new TransferBuffer(tgo.NextTransferBuffer(), tgo);
+			else
+				throw new InvalidOperationException("Attempted to acquire transfer buffer on non-graphics thread.");
+		}
+
+		internal void ReleaseTransferBuffer(TransferBuffer tb)
+		{
+			var tid = Thread.CurrentThread.ManagedThreadId;
+			if (_threadGraphicsObjects.TryGetValue(tid, out var tgo))
+				tgo.ReleaseTransferBuffer(tb.Index);
+			else
+				throw new InvalidOperationException("Attempted to release transfer buffer on non-graphics thread.");
+		}
+		#endregion // Transfer Buffers
 	}
 }
