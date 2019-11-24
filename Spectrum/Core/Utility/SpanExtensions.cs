@@ -21,8 +21,8 @@ namespace Spectrum
 		/// <param name="separator">The value to split the span on.</param>
 		/// <returns>An enumerator over the split span.</returns>
 		public static SpanSplitEnumerator<T> Split<T>(this ReadOnlySpan<T> span, T separator)
-			where T : IEquatable<T>
-			=> new SpanSplitEnumerator<T>(span, separator);
+			where T : IEquatable<T> => 
+			new SpanSplitEnumerator<T>(span, separator);
 
 		/// <summary>
 		/// Implements a foreach loop as a Linq-stle function call.
@@ -48,6 +48,15 @@ namespace Spectrum
 			foreach (var val in span)
 				func(val, index++);
 		}
+
+		/// <summary>
+		/// Gets the <see cref="ReadOnlySpan{T}"/> representation of the array.
+		/// </summary>
+		/// <typeparam name="T">The type contained in the array.</typeparam>
+		/// <param name="arr">The array to get the span of.</param>
+		/// <returns>A <see cref="ReadOnlySpan{T}"/> representing the contents of the array.</returns>
+		public static ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] arr)
+			where T : struct => arr.AsSpan();
 
 		/// <summary>
 		/// An enumerator type that is used to implement enumeration logic when splitting <see cref="ReadOnlySpan{T}"/>.

@@ -186,14 +186,14 @@ namespace Spectrum.Graphics
 					fence: Fence
 				);
 
+				// Wait, then get the data
+				Fence.Wait(UInt64.MaxValue);
+				getData(dst);
+
 				// Calculate next block values
 				dst = dst.Slice((int)blen);
 				srcOff += blen;
 				blen = Math.Min((uint)dst.Length, SIZE);
-
-				// Wait, then get the data
-				Fence.Wait(UInt64.MaxValue);
-				getData(dst);
 			}
 		}
 		#endregion // Buffers

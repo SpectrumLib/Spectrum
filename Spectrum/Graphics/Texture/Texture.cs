@@ -61,7 +61,7 @@ namespace Spectrum.Graphics
 			Type = type;
 			Dimensions = size;
 
-			// Create the image and view
+			// Create the image
 			VkImage = dev.VkDevice.CreateImage(
 				imageType: GetImageType(type),
 				format: Vk.Format.R8G8B8A8UNorm,
@@ -75,14 +75,6 @@ namespace Spectrum.Graphics
 				queueFamilyIndices: Vk.Constants.QueueFamilyIgnored,
 				initialLayout: Vk.ImageLayout.Undefined
 			);
-			VkView = dev.VkDevice.CreateImageView(
-				image: VkImage,
-				viewType: (Vk.ImageViewType)type,
-				format: Vk.Format.R8G8B8A8UNorm,
-				components: Vk.ComponentMapping.Identity,
-				subresourceRange: new Vk.ImageSubresourceRange(Vk.ImageAspectFlags.Color, 0, 1, 0, size.l),
-				flags: Vk.ImageViewCreateFlags.None
-			);
 
 			// Create and bind the backing memory
 			var memReq = VkImage.GetMemoryRequirements();
@@ -95,6 +87,16 @@ namespace Spectrum.Graphics
 			);
 			VkImage.BindMemory(VkMemory, 0);
 			DataSize = (uint)memReq.Size;
+
+			// Create the image view
+			VkView = dev.VkDevice.CreateImageView(
+				image: VkImage,
+				viewType: (Vk.ImageViewType)type,
+				format: Vk.Format.R8G8B8A8UNorm,
+				components: Vk.ComponentMapping.Identity,
+				subresourceRange: new Vk.ImageSubresourceRange(Vk.ImageAspectFlags.Color, 0, 1, 0, size.l),
+				flags: Vk.ImageViewCreateFlags.None
+			);
 
 			// Make the initial layout transition
 			using (var buf = dev.GetScratchCommandBuffer())
