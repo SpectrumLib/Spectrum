@@ -1,12 +1,12 @@
 language: csharp
 mono: none
-dotnet: 3.0.100
+dotnet: 3.0.101
 dist: xenial
 script:
   - dotnet restore
   - cd ./Spectrum.Native
-  - dotnet build -c Debug -p:Platform=x64
-  - dotnet build -c Release -p:Platform=x64
+  - dotnet build -c Debug
+  - dotnet build -c Release
   - cd ../Spectrum
-  - dotnet build -c Debug -p:Platform=x64
-  - dotnet build -c Release -p:Platform=x64
+  - dotnet build -c Debug
+  - dotnet build -c Release
