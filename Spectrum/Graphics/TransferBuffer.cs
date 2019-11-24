@@ -4,6 +4,8 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Vk = SharpVk;
 
@@ -196,12 +198,102 @@ namespace Spectrum.Graphics
 		}
 		#endregion // Buffers
 
+		#region Textures
+
+		public void PushImage(ReadOnlySpan<byte> src, Vk.Image dst, in TextureRegion reg, 
+			uint layer, uint tsize, Vk.PipelineStageFlags srcStages,
+			Vk.PipelineStageFlags dstStages, Vk.ImageLayout layout, Vk.ImageAspectFlags aspects)
+		{
+			// Create the blocks for the image
+			var blocks = new Blockifier(reg, tsize);
+
+			// Loop over each block
+			foreach (var bl in blocks.GetBlocks())
+			{
+				// Wait for last transfer
+				Fence.Wait(UInt64.MaxValue);
+
+				// Upload to transfer buffer
+				setData(src.Slice(0, (int)bl.sz));
+
+				// Record the transfer
+				_commands.Begin(Vk.CommandBufferUsageFlags.OneTimeSubmit);
+				_commands.PipelineBarrier(
+					sourceStageMask: srcStages,
+					destinationStageMask: Vk.PipelineStageFlags.Transfer,
+					memoryBarriers: null,
+					bufferMemoryBarriers: null,
+					imageMemoryBarriers: new Vk.ImageMemoryBarrier {
+						Image = dst,
+						OldLayout = layout,
+						NewLayout = Vk.ImageLayout.TransferDestinationOptimal,
+						SourceAccessMask = Vk.AccessFlags.MemoryWrite,
+						DestinationAccessMask = Vk.AccessFlags.TransferRead,
+						SourceQueueFamilyIndex = Vk.Constants.QueueFamilyIgnored,
+						DestinationQueueFamilyIndex = Vk.Constants.QueueFamilyIgnored,
+						SubresourceRange = new Vk.ImageSubresourceRange(aspects, 0, 1, layer, 1)
+					},
+					dependencyFlags: Vk.DependencyFlags.ByRegion
+				);
+				_commands.CopyBufferToImage(
+					sourceBuffer: _buffer,
+					destinationImage: dst,
+					destinationImageLayout: Vk.ImageLayout.TransferDestinationOptimal,
+					regions: new Vk.BufferImageCopy(
+						bufferOffset: 0,
+						bufferRowLength: 0,
+						bufferImageHeight: 0,
+						imageSubresource: new Vk.ImageSubresourceLayers(aspects, 0, layer, 1),
+						imageOffset: bl.off,
+						imageExtent: bl.ext
+					)
+				);
+				_commands.PipelineBarrier(
+					sourceStageMask: Vk.PipelineStageFlags.Transfer,
+					destinationStageMask: dstStages,
+					memoryBarriers: null,
+					bufferMemoryBarriers: null,
+					imageMemoryBarriers: new Vk.ImageMemoryBarrier {
+						Image = dst,
+						OldLayout = Vk.ImageLayout.TransferDestinationOptimal,
+						NewLayout = layout,
+						SourceAccessMask = Vk.AccessFlags.TransferWrite,
+						DestinationAccessMask = Vk.AccessFlags.MemoryRead,
+						SourceQueueFamilyIndex = Vk.Constants.QueueFamilyIgnored,
+						DestinationQueueFamilyIndex = Vk.Constants.QueueFamilyIgnored,
+						SubresourceRange = new Vk.ImageSubresourceRange(aspects, 0, 1, layer, 1)
+					},
+					dependencyFlags: Vk.DependencyFlags.ByRegion
+				);
+				_commands.End();
+
+				// Submit
+				Fence.Reset();
+				Core.Instance.GraphicsDevice.Queues.Transfer.Submit(
+					submits: new Vk.SubmitInfo {
+						CommandBuffers = new[] { _commands },
+						SignalSemaphores = null,
+						WaitSemaphores = null,
+						WaitDestinationStageMask = null
+					},
+					fence: Fence
+				);
+
+				// Calculate next block values
+				src = src.Slice((int)bl.sz);
+			}
+
+			// Wait for the last transfer
+			Fence.Wait(UInt64.MaxValue);
+		}
+		#endregion // Textures
+
 		#region Host Buffer
 		private unsafe void setData(ReadOnlySpan<byte> src)
 		{
+			uint len = Math.Min((uint)src.Length, SIZE);
 			fixed (void* srcptr = src)
 			{
-				uint len = Math.Min((uint)src.Length, SIZE);
 				Unsafe.CopyBlock(_offset.ToPointer(), srcptr, len);
 			}
 			if (!_coherent)
@@ -210,7 +302,7 @@ namespace Spectrum.Graphics
 					new Vk.MappedMemoryRange { 
 						Memory = _memory, 
 						Offset = (uint)_offset.ToInt64(), 
-						Size = (uint)src.Length
+						Size = len
 					}
 				);
 			}
@@ -234,5 +326,50 @@ namespace Spectrum.Graphics
 			Core.Instance.GraphicsDevice.ReleaseTransferBuffer(this);
 		}
 		#endregion // IDisposable
+
+		// Subdivides texture space into blocks for multiple uploads
+		private readonly struct Blockifier
+		{
+			#region Fields
+			public readonly (uint W, uint H, uint D) Step;
+			public readonly TextureRegion Region;
+			public readonly uint TexelSize;
+			#endregion // Fields
+
+			public Blockifier(in TextureRegion reg, uint tsize)
+			{
+				uint llen = reg.Width * tsize,
+					 plen = reg.Width * reg.Height * tsize,
+					 flen = reg.Width * reg.Height * reg.Depth * tsize;
+				Step.D = (uint)Math.Max(Math.Floor((double)SIZE / plen), 1);
+				Step.H = (uint)Math.Clamp(Math.Floor((double)SIZE / llen), 1, reg.Height);
+				Step.W = (uint)Math.Clamp(Math.Floor((double)SIZE / tsize), 1, reg.Width);
+				Region = reg;
+				TexelSize = tsize;
+			}
+
+			public IEnumerable<(Vk.Offset3D off, Vk.Extent3D ext, uint sz)> GetBlocks()
+			{
+				for (uint dstart = 0; dstart < Region.Depth; dstart += Step.D)
+				{
+					uint dsize = Math.Min(Region.Depth - dstart, Step.D);
+					for (uint hstart = 0; hstart < Region.Height; hstart += Step.H)
+					{
+						uint hsize = Math.Min(Region.Height - hstart, Step.H);
+						for (uint wstart = 0; wstart < Region.Width; wstart += Step.W)
+						{
+							uint wsize = Math.Min(Region.Width - wstart, Step.W);
+							uint blen = wsize * hsize * dsize * TexelSize;
+
+							yield return (
+								new Vk.Offset3D((int)wstart, (int)hstart, (int)dstart), 
+								new Vk.Extent3D(wsize, hsize, dsize), 
+								blen
+							);
+						}
+					}
+				}
+			}
+		}
 	}
 }

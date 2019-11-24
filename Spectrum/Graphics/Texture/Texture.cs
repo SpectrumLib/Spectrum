@@ -4,16 +4,25 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
 {
 	/// <summary>
-	/// Base type for all textures that store data in GPU memory. Implements common functionality, but cannot be
-	/// instantiated directly.
+	/// Base type for all sampled textures that store data in GPU memory. Implements common functionality, but cannot be
+	/// instantiated directly. All sampled textures use <see cref="TexelFormat.Color"/> internally, which matches the
+	/// data layout in the <see cref="Color"/> type.
 	/// </summary>
 	public abstract class Texture : IDisposable
 	{
+		/// <summary>
+		/// The size of each texel, in bytes.
+		/// </summary>
+		public const uint TEXEL_SIZE = 4;
+
 		#region Fields
 		/// <summary>
 		/// The dimensionality of the texture.
@@ -116,14 +125,66 @@ namespace Spectrum.Graphics
 			Dispose(false);
 		}
 
-		private protected unsafe void SetDataInternal(ReadOnlySpan<byte> data, in TextureRegion reg, uint layer)
+		// Source size and alignment is checked here, Texture subtypes should check texel ranges
+		private protected void SetDataInternal(ReadOnlySpan<byte> data, in TextureRegion reg, uint layer)
 		{
+			if (reg.TexelCount == 0 || data.Length == 0)
+				return;
+			if ((data.Length % TEXEL_SIZE) != 0)
+				throw new ArgumentException("Texture data size not a multiple of texel size.");
+			if (data.Length != (reg.TexelCount * TEXEL_SIZE))
+				throw new ArgumentException("Source data size does not match texture region size.");
+
 			using (var tb = Core.Instance.GraphicsDevice.GetTransferBuffer())
 			{
-
+				tb.PushImage(data, VkImage, reg, layer, TEXEL_SIZE,
+					Vk.PipelineStageFlags.FragmentShader, Vk.PipelineStageFlags.VertexInput,
+					Vk.ImageLayout.ShaderReadOnlyOptimal, Vk.ImageAspectFlags.Color);
 			}
+		}
 
-			throw new NotImplementedException();
+		// Source size and alignment is checked here, Texture subtypes should check texel ranges
+		private protected Task SetDataAsyncInternal(ReadOnlyMemory<byte> data, TextureRegion reg, uint layer)
+		{
+			if (reg.TexelCount == 0 || data.Length == 0)
+				return Task.CompletedTask;
+			if ((data.Length % TEXEL_SIZE) != 0)
+				throw new ArgumentException("Texture data size not a multiple of texel size.");
+			if (data.Length != (reg.TexelCount * TEXEL_SIZE))
+				throw new ArgumentException("Source data size does not match texture region size.");
+
+			var tb = Core.Instance.GraphicsDevice.GetTransferBuffer();
+			return Task.Run(() => {
+				using (tb)
+				{
+					tb.PushImage(data.Span, VkImage, reg, layer, TEXEL_SIZE,
+						Vk.PipelineStageFlags.FragmentShader, Vk.PipelineStageFlags.VertexInput,
+						Vk.ImageLayout.ShaderReadOnlyOptimal, Vk.ImageAspectFlags.Color);
+				}
+			});
+		}
+
+		// Source size and alignment is checked here, Texture subtypes should check texel ranges
+		private protected Task SetDataAsyncInternal<T>(ReadOnlyMemory<T> data, TextureRegion reg, uint layer)
+			where T : struct
+		{
+			if (reg.TexelCount == 0 || data.Length == 0)
+				return Task.CompletedTask;
+			uint tsize = (uint)Unsafe.SizeOf<T>();
+			if (((data.Length * tsize) % TEXEL_SIZE) != 0)
+				throw new ArgumentException("Texture data size not a multiple of texel size.");
+			if ((data.Length * tsize) != (reg.TexelCount * TEXEL_SIZE))
+				throw new ArgumentException("Source data size does not match texture region size.");
+
+			var tb = Core.Instance.GraphicsDevice.GetTransferBuffer();
+			return Task.Run(() => {
+				using (tb)
+				{
+					tb.PushImage(MemoryMarshal.AsBytes(data.Span), VkImage, reg, layer, TEXEL_SIZE,
+						Vk.PipelineStageFlags.FragmentShader, Vk.PipelineStageFlags.VertexInput,
+						Vk.ImageLayout.ShaderReadOnlyOptimal, Vk.ImageAspectFlags.Color);
+				}
+			});
 		}
 
 		#region IDisposable

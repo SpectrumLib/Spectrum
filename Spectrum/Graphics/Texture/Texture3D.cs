@@ -5,6 +5,7 @@
  */
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Vk = SharpVk;
 
 namespace Spectrum.Graphics
@@ -53,8 +54,6 @@ namespace Spectrum.Graphics
 				throw new ArgumentOutOfRangeException("SetData(): negative start coordinates.");
 			if ((start.X + size.Width) > Width || (start.Y + size.Height) > Height || (start.Z + size.Depth) > Depth)
 				throw new ArgumentOutOfRangeException("SetData(): (start + size) > texture size.");
-			if (size.Width == 0 || size.Height == 0 || size.Depth == 0)
-				return;
 
 			SetDataInternal(data, ((uint)start.X, (uint)start.Y, (uint)start.Z, size.Width, size.Height, size.Depth), 0);
 		}
@@ -68,5 +67,42 @@ namespace Spectrum.Graphics
 		public void SetData<T>(ReadOnlySpan<T> data, Point3 start, Extent3 size)
 			where T : struct =>
 			SetData(MemoryMarshal.AsBytes(data), start, size);
+
+		/// <summary>
+		/// Uploads texel data to the texture asynchronously. The memory in <paramref name="data"/> must not be
+		/// modified before the task returned by this function completes.
+		/// </summary>
+		/// <param name="data">The data to upload to the texture.</param>
+		/// <param name="start">The starting coordinates to set data for.</param>
+		/// <param name="size">The size of the region to set data for.</param>
+		/// <returns>The task representing the data upload.</returns>
+		public Task SetDataAsync(ReadOnlyMemory<byte> data, Point3 start, Extent3 size)
+		{
+			if (start.X < 0 || start.Y < 0 || start.Z < 0)
+				throw new ArgumentOutOfRangeException("SetData(): negative start coordinates.");
+			if ((start.X + size.Width) > Width || (start.Y + size.Height) > Height || (start.Z + size.Depth) > Depth)
+				throw new ArgumentOutOfRangeException("SetData(): (start + size) > texture size.");
+
+			return SetDataAsyncInternal(data, ((uint)start.X, (uint)start.Y, (uint)start.Z, size.Width, size.Height, size.Depth), 0);
+		}
+
+		/// <summary>
+		/// Uploads texel data to the texture asynchronously. The memory in <paramref name="data"/> must not be
+		/// modified before the task returned by this function completes.
+		/// </summary>
+		/// <param name="data">The data to upload to the texture.</param>
+		/// <param name="start">The starting coordinates to set data for.</param>
+		/// <param name="size">The size of the region to set data for.</param>
+		/// <returns>The task representing the data upload.</returns>
+		public Task SetDataAsync<T>(ReadOnlyMemory<T> data, Point3 start, Extent3 size)
+			where T : struct
+		{
+			if (start.X < 0 || start.Y < 0 || start.Z < 0)
+				throw new ArgumentOutOfRangeException("SetData(): negative start coordinates.");
+			if ((start.X + size.Width) > Width || (start.Y + size.Height) > Height || (start.Z + size.Depth) > Depth)
+				throw new ArgumentOutOfRangeException("SetData(): (start + size) > texture size.");
+
+			return SetDataAsyncInternal(data, ((uint)start.X, (uint)start.Y, (uint)start.Z, size.Width, size.Height, size.Depth), 0);
+		}
 	}
 }
