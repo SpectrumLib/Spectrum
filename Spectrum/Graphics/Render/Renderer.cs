@@ -244,7 +244,22 @@ namespace Spectrum.Graphics
 			// Create the pipeline object
 			var pipeline = Core.Instance.GraphicsDevice.VkDevice.CreateGraphicsPipeline(
 				pipelineCache:      VkPipelineCache,
-				stages:             null, ////* TODO: pull this data from the shader *////
+				stages:             new [] { ////* TODO: pull this data from the shader *////
+					new Vk.PipelineShaderStageCreateInfo {
+						Name = "vert_main",
+						Stage = Vk.ShaderStageFlags.Vertex,
+						Module = null, ////* TODO *////
+						SpecializationInfo = null,
+						Flags = Vk.PipelineShaderStageCreateFlags.None
+					},
+					new Vk.PipelineShaderStageCreateInfo {
+						Name = "frag_main",
+						Stage = Vk.ShaderStageFlags.Fragment,
+						Module = null, ////* TODO *////
+						SpecializationInfo = null,
+						Flags = Vk.PipelineShaderStageCreateFlags.None
+					}
+				}, 
 				rasterizationState: states.VkRasterizerState,
 				layout:             layout,
 				renderPass:         VkRenderPass,

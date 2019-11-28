@@ -146,56 +146,6 @@ namespace Spectrum.Graphics
 			}).ToArray();
 		}
 
-		//private static void CreatePipelines(Pipeline[] plines, Vk.RenderPass rp, int acount, out Vk.Pipeline[] vkplines)
-		//{
-		//	vkplines = plines.Select((pl, pidx) => Core.Instance.GraphicsDevice.VkDevice.CreateGraphicsPipeline(
-		//		pipelineCache: null,
-		//		stages: null, // TODO
-		//		rasterizationState: pl.VkRasterizerState,
-		//		layout: null, // TODO
-		//		renderPass: rp,
-		//		subpass: (uint)pidx,
-		//		basePipelineHandle: null,
-		//		basePipelineIndex: 0,
-		//		flags: Vk.PipelineCreateFlags.None,
-		//		vertexInputState: pl.VkVertexDescription,
-		//		inputAssemblyState: pl.VkPrimitiveInput,
-		//		tessellationState: new Vk.PipelineTessellationStateCreateInfo
-		//		{
-		//			PatchControlPoints = 1,
-		//			Flags = Vk.PipelineTessellationStateCreateFlags.None
-		//		},
-		//		viewportState: new Vk.PipelineViewportStateCreateInfo
-		//		{ // This state is dynamic, so dummy values are okay
-		//			Scissors = new[] { new Vk.Rect2D { Offset = new Vk.Offset2D(0, 0), Extent = new Vk.Extent2D(1, 1) } },
-		//			Viewports = new[] { new Vk.Viewport(0, 0, 1, 1, 0, 1) },
-		//			Flags = Vk.PipelineViewportStateCreateFlags.None
-		//		},
-		//		multisampleState: new Vk.PipelineMultisampleStateCreateInfo
-		//		{
-		//			RasterizationSamples = Vk.SampleCountFlags.SampleCount1,
-		//			SampleShadingEnable = false,
-		//			AlphaToOneEnable = false,
-		//			AlphaToCoverageEnable = false,
-		//			MinSampleShading = 0,
-		//			SampleMask = null
-		//		},
-		//		depthStencilState: pl.VkDepthStencilState,
-		//		colorBlendState: new Vk.PipelineColorBlendStateCreateInfo
-		//		{
-		//			Attachments = Enumerable.Repeat(pl.VkColorBlendState, acount).ToArray(),
-		//			LogicOpEnable = false,
-		//			BlendConstants = pl.VkColorBlendConstants,
-		//			Flags = Vk.PipelineColorBlendStateCreateFlags.None
-		//		},
-		//		dynamicState: new Vk.PipelineDynamicStateCreateInfo
-		//		{
-		//			DynamicStates = new[] { Vk.DynamicState.Viewport, Vk.DynamicState.Scissor },
-		//			Flags = Vk.PipelineDynamicStateCreateFlags.None
-		//		}
-		//	)).ToArray();
-		//}
-
 		// Used to ensure unique subpass dependencies
 		private class SubpassDependencyComparer : IEqualityComparer<Vk.SubpassDependency>
 		{
