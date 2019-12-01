@@ -86,6 +86,7 @@ namespace Spectrum
 		{
 			// Initialization code
 			{
+				Audio.AudioEngine.Initialize();
 				Window.CreateWindow();
 				GraphicsDevice = new GraphicsDevice();
 				Initialize();
@@ -268,6 +269,9 @@ namespace Spectrum
 
 				// Clean up the window
 				Window.Dispose();
+
+				// Clean up the audio engine
+				Audio.AudioEngine.Terminate();
 
 				IINFO($"Application terminated at {DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}.");
 				Logger.Terminate(); // Should go last to allow logging to the last moment
