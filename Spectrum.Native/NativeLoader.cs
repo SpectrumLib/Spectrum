@@ -5,6 +5,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -14,6 +15,8 @@ using System.Runtime.InteropServices;
 
 namespace Spectrum.Native
 {
+	internal delegate void NativeLibraryLoadCallback(string libname, bool @new, TimeSpan time);
+
 	internal static class NativeLoader
 	{
 		#region Fields
@@ -51,13 +54,15 @@ namespace Spectrum.Native
 		}
 
 		// Loads (after extraction, if needed) the library with the given name
-		public static IntPtr LoadLibrary(string libname, string linuxname)
+		public static IntPtr LoadLibrary(string libname, string linuxname, NativeLibraryLoadCallback cb)
 		{
+			Stopwatch timer = Stopwatch.StartNew();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 			{
 				if (NativeLibrary.TryLoad(linuxname, out var handle))
 				{
 					_LoadedLibraries.Add(handle);
+					cb?.Invoke(linuxname, false, timer.Elapsed);
 					return handle;
 				}
 				throw new DllNotFoundException($"The native library '{linuxname}' could not be loaded.");
@@ -69,6 +74,7 @@ namespace Spectrum.Native
 				var libpath = Path.Combine(LibraryPath, $"{libname}.{(isWin ? "dll" : "so")}");
 
 				// Extract the library (if needed)
+				bool @new = false;
 				if (!File.Exists(libpath))
 				{
 					try
@@ -76,6 +82,7 @@ namespace Spectrum.Native
 						using var rstream = _ThisAssembly.GetManifestResourceStream(respath);
 						using var fstream = File.Open(libpath, FileMode.Create, FileAccess.Write, FileShare.None);
 						rstream.CopyTo(fstream, 32768);
+						@new = true;
 					}
 					catch (Exception ex)
 					{
@@ -87,6 +94,7 @@ namespace Spectrum.Native
 				if (NativeLibrary.TryLoad(libpath, out var handle))
 				{
 					_LoadedLibraries.Add(handle);
+					cb?.Invoke(libname, @new, timer.Elapsed);
 					return handle;
 				}
 				throw new DllNotFoundException($"The native library '{libname}' could not be loaded.");

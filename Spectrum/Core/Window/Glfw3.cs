@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using Vk = SharpVk;
+using static Spectrum.InternalLog;
 
 namespace Spectrum
 {
@@ -41,7 +42,8 @@ namespace Spectrum
 		{
 			Stopwatch timer = Stopwatch.StartNew();
 
-			_handle = Native.NativeLoader.LoadLibrary("glfw3", "libglfw.so.3");
+			_handle = Native.NativeLoader.LoadLibrary("glfw3", "libglfw.so.3", 
+				(lib, @new, time) => IINFO($"Loaded {(@new ? "new" : "existing")} native library '{lib}' in {time.TotalMilliseconds:.000}ms."));
 
 			// Check the version
 			_glfwGetVersion = loadFunc<Delegates.glfwGetVersion>();

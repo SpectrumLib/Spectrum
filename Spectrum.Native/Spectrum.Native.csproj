@@ -29,6 +29,7 @@
   <ItemGroup>
     <EmbeddedResource Include="..\Dependencies\Native\glfw3.m" Link="glfw3.m" />
     <EmbeddedResource Include="..\Dependencies\Native\glfw3.w" Link="glfw3.w" />
+    <EmbeddedResource Include="..\Dependencies\Native\openal.w" Link="openal.w" />
   </ItemGroup>
 
 </Project>
