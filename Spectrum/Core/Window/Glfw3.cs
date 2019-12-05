@@ -32,9 +32,6 @@ namespace Spectrum
 
 		// Gets if there is an error
 		public bool HasError => _lastErrorCode != Glfw3.NO_ERROR;
-
-		// Gets time it took to load the library and functions
-		public readonly TimeSpan LoadTime;
 		#endregion // Fields
 
 		// Loads the library and function pointers
@@ -93,7 +90,7 @@ namespace Spectrum
 				_lastErrorDesc = desc;
 			});
 
-			LoadTime = timer.Elapsed;
+			IINFO($"Loaded GLFW functions in {timer.Elapsed.TotalMilliseconds:.000}ms.");
 		}
 		~Glfw3()
 		{

@@ -4,7 +4,12 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using static Spectrum.InternalLog;
 
 namespace Spectrum.Audio
@@ -13,6 +18,9 @@ namespace Spectrum.Audio
 	{
 		#region Fields
 		private IntPtr _library = IntPtr.Zero;
+
+		public int LastALError { get; private set; } = AL.NO_ERROR;
+		public int LastALCError { get; private set; } = ALC.NO_ERROR;
 
 		#region AL Functions
 		public readonly AL.DopplerFactor DopplerFactor;
@@ -222,6 +230,116 @@ namespace Spectrum.Audio
 		{
 			Dispose();
 		}
+
+		#region Strings
+		public string GetAlString(int param)
+		{
+			var str = GetString(param);
+			CheckALError($"Could not get AL string param {param}");
+			return str;
+		}
+
+		public string GetAlcString(int param, IntPtr device)
+		{
+			var sptr = AlcGetString(device, param);
+			CheckALCError(device, $"Could not get ALC string param {param}");
+			if (sptr == IntPtr.Zero)
+				return null;
+
+			// We need to handle the string lists in a different way, as they dont play well with Marshal.PtrToStringAnsi()
+			// Scan through until a double null terminator is found, and return as a newline separated list
+			if (device == IntPtr.Zero && (param == ALC.DEVICE_SPECIFIER || param == ALC.CAPTURE_DEVICE_SPECIFIER || param == ALC.ALL_DEVICES_SPECIFIER))
+			{
+				// Copy the string data to managed memory
+				byte[] charData = new byte[GetStringListPtrLength(sptr)];
+				Marshal.Copy(sptr, charData, 0, charData.Length);
+
+				// Find split indices for null characters
+				var splits = charData.Select((b, i) => b == 0 ? i : -1).Where(i => i != -1).ToList();
+				splits.Insert(0, -1); // Add the beginning of the first string (pos = 0)
+				splits.RemoveAt(splits.Count - 1); // Remove the secondary null terminator at the very end
+
+				// Create list of strings
+				List<string> strList = new List<string>();
+				for (int i = 0; i < (splits.Count - 1); ++i)
+					strList.Add(Encoding.ASCII.GetString(charData, splits[i] + 1, splits[i + 1] - splits[i] - 1));
+
+				// Return newline separated list
+				return String.Join("\n", strList);
+
+			}
+			else
+				return Marshal.PtrToStringAnsi(sptr);
+		}
+
+		private unsafe static int GetStringListPtrLength(IntPtr sPtr)
+		{
+			byte* ptr = (byte*)sPtr.ToPointer();
+			int length = 0;
+			// Scan until two adjacent null terminators are found
+			while ((*(ptr++) != 0) || (*ptr != 0)) ++length;
+			return length + 2;
+		}
+		#endregion // Strings
+
+		#region Error Handling
+		[Conditional("DEBUG")]
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public void CheckALError(
+			string message = null,
+			[CallerMemberName] string name = "",
+			[CallerLineNumber] int line = 0
+		)
+		{
+			LastALError = GetError();
+			if (LastALError != AL.NO_ERROR)
+			{
+				var estr = GetALErrorString(LastALError);
+				throw new AudioException($"AL Error ({LastALError}) at [{name}:{line}]: {estr} {(!(message is null) ? $"({message})" : "")}");
+			}
+		}
+
+		[Conditional("DEBUG")]
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public void CheckALCError(
+			IntPtr device,
+			string message = null,
+			[CallerMemberName] string name = "",
+			[CallerLineNumber] int line = 0
+		)
+		{
+			LastALCError = AlcGetError(device);
+			if (LastALCError != ALC.NO_ERROR)
+			{
+				var estr = GetALCErrorString(LastALCError);
+				throw new AudioException($"ALC Error ({LastALCError}) at [{name}:{line}]: {estr} {(!(message is null) ? $"({message})" : "")}");
+			}
+		}
+
+		public void ClearAlError() => GetError();
+
+		public void ClearAlcError(IntPtr device) => AlcGetError(device);
+
+		public static string GetALErrorString(int err) => err switch { 
+			AL.NO_ERROR => "No error",
+			AL.INVALID_NAME => "Invalid name",
+			AL.INVALID_ENUM => "Invalid enum",
+			AL.INVALID_VALUE => "Invalid value",
+			AL.INVALID_OPERATION => "Invalid operation",
+			AL.OUT_OF_MEMORY => "Out of memory",
+			_ => $"Invalid error code ({err})"
+		};
+
+		public static string GetALCErrorString(int err) => err switch { 
+			ALC.NO_ERROR => "No error",
+			ALC.INVALID_DEVICE => "Invalid device",
+			ALC.INVALID_CONTEXT => "Invalid context",
+			ALC.INVALID_ENUM => "Invalid enum",
+			ALC.INVALID_VALUE => "Invalid value",
+			ALC.OUT_OF_MEMORY => "Out of memory",
+			_ => $"Invalid error code ({err})"
+		};
+		#endregion // Error Handling
 
 		#region IDisposable
 		public void Dispose()
