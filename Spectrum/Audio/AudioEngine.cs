@@ -11,9 +11,13 @@ namespace Spectrum.Audio
 	// Central type for managing the audio subsystem components
 	internal static class AudioEngine
 	{
+		#region Fields
 		public static OpenAL OpenAL { get; private set; } = null;
 		public static IntPtr Device { get; private set; } = IntPtr.Zero;
 		public static IntPtr Context { get; private set; } = IntPtr.Zero;
+
+		public static bool IsRunning { get; private set; } = false;
+		#endregion // Fields
 
 		public static void Initialize()
 		{
@@ -36,6 +40,7 @@ namespace Spectrum.Audio
 			OpenAL.CheckALCError(Device, "error in make context current");
 
 			IINFO($"Started OpenAL audio engine (device: {dname}).");
+			IsRunning = true;
 		}
 
 		public static void Terminate()
@@ -50,6 +55,8 @@ namespace Spectrum.Audio
 			Device = IntPtr.Zero;
 
 			OpenAL.Dispose();
+
+			IsRunning = false;
 
 			IINFO("Terminated OpenAL audio engine.");
 		}

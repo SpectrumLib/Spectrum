@@ -109,5 +109,11 @@ namespace Spectrum.Audio
 			public const int DEFAULT_ALL_DEVICES_SPECIFIER = 0x1012;
 			public const int ALL_DEVICES_SPECIFIER = 0x1013;
 		}
+
+		public static partial class Ext
+		{
+			public const int FORMAT_MONO_FLOAT32 = 0x10010;
+			public const int FORMAT_STEREO_FLOAT32 = 0x10011;
+		}
 	}
 }
