@@ -5,6 +5,9 @@
     <ItemGroup>
       <InputAssemblies Include="$(OutputPath)\Spectrum.dll" />
       <InputAssemblies Include="$(OutputPath)\SharpVk.dll" />
+      <InputAssemblies Include="$(OutputPath)\K4os.Compression.LZ4.dll" />
+      <InputAssemblies Include="$(OutputPath)\K4os.Compression.LZ4.Streams.dll" />
+      <InputAssemblies Include="$(OutputPath)\K4os.Hash.xxHash.dll" />
     </ItemGroup>
 
     <ItemGroup>
