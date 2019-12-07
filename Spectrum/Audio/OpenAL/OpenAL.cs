@@ -316,9 +316,9 @@ namespace Spectrum.Audio
 			}
 		}
 
-		public void ClearAlError() => GetError();
+		public void ClearALError() => GetError();
 
-		public void ClearAlcError(IntPtr device) => AlcGetError(device);
+		public void ClearALCError(IntPtr device) => AlcGetError(device);
 
 		public static string GetALErrorString(int err) => err switch { 
 			AL.NO_ERROR => "No error",

@@ -44,7 +44,7 @@ namespace Spectrum.Audio
 	public static class AudioFormatExtensions
 	{
 		/// <summary>
-		/// The size of a single format sample, in bytes.
+		/// Gets the size of a single format sample, in bytes.
 		/// </summary>
 		/// <param name="fmt">The format to get the sample size of.</param>
 		/// <returns>The format sample size.</returns>
@@ -59,7 +59,7 @@ namespace Spectrum.Audio
 		};
 
 		/// <summary>
-		/// The number of channels in the format.
+		/// Gets the number of channels in the format.
 		/// </summary>
 		/// <param name="fmt">The format to get the channel count of.</param>
 		/// <returns>The format channel count.</returns>
@@ -72,6 +72,13 @@ namespace Spectrum.Audio
 			AudioFormat.StereoFloat => 2,
 			_ => throw new ArgumentException("Bad format enum.")
 		};
+
+		/// <summary>
+		/// Gets the size of a single frame of the format, in bytes.
+		/// </summary>
+		/// <param name="fmt">The format to get the frame size of.</param>
+		/// <returns>The format frame size.</returns>
+		public static uint GetFrameSize(this AudioFormat fmt) => GetChannelCount(fmt) * GetSampleSize(fmt);
 	}
 
 	/// <summary>

@@ -56,12 +56,18 @@ namespace Spectrum.Audio
 			OpenAL.CheckALError("unable to generate audio sources");
 			_AllSources.ForEach(src => _AvailableSources.Push(src));
 
+			// Spin up the song thread
+			SongThread.Start();
+
 			IINFO($"Started OpenAL audio engine (device: {dname}).");
 			IsRunning = true;
 		}
 
 		public static void Terminate()
 		{
+			// Wait for the song thread to spin down
+			SongThread.Stop();
+
 			// Destroy the sources
 			OpenAL.DeleteSources(MAX_SOURCE_COUNT, _AllSources);
 			OpenAL.CheckALError("unable to free audio sources");
