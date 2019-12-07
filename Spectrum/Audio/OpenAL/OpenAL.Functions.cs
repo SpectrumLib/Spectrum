@@ -87,9 +87,9 @@ namespace Spectrum.Audio
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate void GetListeneriv(int param, out int values);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
-			public delegate void GenSources(int n, out uint sources);
+			public delegate void GenSources(int n, uint[] sources);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
-			public delegate void DeleteSources(int n, out uint sources);
+			public delegate void DeleteSources(int n, uint[] sources);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
 			public delegate byte IsSource(uint source);
 			[UnmanagedFunctionPointer(CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]

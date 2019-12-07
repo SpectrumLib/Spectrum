@@ -20,4 +20,14 @@ namespace Spectrum.Audio
             base(msg, inner)
         { }
 	}
+
+    /// <summary>
+	/// Exception thrown when too many audio sources are requested.
+	/// </summary>
+	public class AudioPlayLimitException : AudioException
+    {
+        internal AudioPlayLimitException() :
+            base($"The maximum number of audio sources ({AudioEngine.MAX_SOURCE_COUNT}) has been reached")
+        { }
+    }
 }

@@ -121,6 +121,7 @@ namespace Spectrum
 				// Update the frame
 				CoroutineManager.Tick();
 				Threading.RunActions();
+				Audio.AudioEngine.Update();
 				Update();
 				SceneManager.Update();
 
