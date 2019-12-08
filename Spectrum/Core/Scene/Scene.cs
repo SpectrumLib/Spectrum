@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using Spectrum.Content;
 using Spectrum.Graphics;
 
 namespace Spectrum
@@ -12,7 +13,7 @@ namespace Spectrum
 	/// Represents the collection of all objects and states required for application updates and rendering. Scenes are
 	/// designed to allow separatation and specialization of global application state by subclassing from a central
 	/// type. Scenes should be used to implement the application logic and rendering, instead of putting code into the
-	/// <see cref="Spectrum.Core"/> class.
+	/// <see cref="Core"/> class.
 	/// </summary>
 	public abstract class Scene : IDisposable
 	{
@@ -36,6 +37,11 @@ namespace Spectrum
 		public readonly SceneRenderer Renderer;
 
 		/// <summary>
+		/// Manager for content items loaded for this scene.
+		/// </summary>
+		public readonly ContentManager Content;
+
+		/// <summary>
 		/// If this scene has been disposed.
 		/// </summary>
 		protected bool IsDisposed { get; private set; } = false;
@@ -45,13 +51,21 @@ namespace Spectrum
 		/// Initializes the base Scene functionality.
 		/// </summary>
 		/// <param name="name">The name of the scene, cannot be null or empty.</param>
-		protected Scene(string name)
+		/// <param name="contentPath">
+		/// The path to the content pack to use for this scene, defaults to the value of 
+		/// <see cref="CoreParams.GlobalContentPath"/> for the current <see cref="Core"/> instance.
+		/// </param>
+		protected Scene(string name, string contentPath = null)
 		{
 			if (String.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("Scene name cannot be null or empty.", nameof(name));
+			contentPath ??= Core.Instance.Params.GlobalContentPath;
+			if (String.IsNullOrWhiteSpace(contentPath))
+				throw new ArgumentException("Scene contentPath cannot be null or empty.", nameof(name));
 			Name = name;
 
 			Renderer = new SceneRenderer(this);
+			Content = ContentManager.OpenPackFile(contentPath);
 		}
 		~Scene()
 		{
@@ -129,9 +143,15 @@ namespace Spectrum
 		{
 			// TODO: Use backbuffer size
 			Renderer.Rebuild(Core.Instance.Window.Size.Width, Core.Instance.Window.Size.Height);
+			IsActive = true;
 			OnStart();
 		}
-		internal void DoRemove() => OnRemove();
+		internal void DoRemove()
+		{
+			OnRemove();
+			Content.UnloadAll();
+			IsActive = false;
+		}
 		internal void DoBeginFrame()
 		{
 			Renderer.Reset();
@@ -167,6 +187,7 @@ namespace Spectrum
 			{
 				OnDispose(disposing);
 
+				Content.Dispose();
 				Renderer.Dispose();
 			}
 

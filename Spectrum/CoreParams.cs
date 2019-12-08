@@ -86,17 +86,23 @@ namespace Spectrum
 		/// Sets if the validation layers are loaded into Vulkan. This should be disabled for Release builds. Defaults
 		/// to false.
 		/// </summary>
-		public bool EnableValidationLayers;
+		public bool EnableValidationLayers = false;
 		/// <summary>
 		/// Controls which special features are enabled on the graphics device. By default, no special features are enabled.
 		/// </summary>
-		public GraphicsDevice.DeviceFeatures EnabledGraphicsFeatures;
-		/// <summary>
-		/// If true, then requesting a graphics device feature that is not available will throw an exception, instead of
-		/// logging an error and proceeding. Defaults to true.
-		/// </summary>
-		public bool StrictGraphicsFeatures;
+		public GraphicsDevice.DeviceFeatures EnabledGraphicsFeatures = default;
 		#endregion // Graphics
+
+		#region Content
+		/// <summary>
+		/// The path to the content pack to use for <see cref="Core.GContent"/>. Defaults to "data/Content.cpak" if null.
+		/// </summary>
+		public string GlobalContentPath = null;
+		/// <summary>
+		/// If the <see cref="Core.GContent"/> manager should be created.
+		/// </summary>
+		public bool LoadGlobalContent = true;
+		#endregion // Content
 		#endregion // Fields
 
 		/// <summary>
@@ -132,14 +138,14 @@ namespace Spectrum
 				throw new InvalidCoreParameterException(nameof(DefaultLoggerTag), DefaultLoggerTag, "cannot specify empty tag");
 
 			// Logging defaults
-			LogDirectory = LogDirectory ?? Directory.GetCurrentDirectory();
-			LogFileName = LogFileName ?? PathUtils.SanitizeFileName(Name);
-			DefaultLoggerTag = DefaultLoggerTag ?? Name;
+			LogDirectory ??= Directory.GetCurrentDirectory();
+			LogFileName ??= PathUtils.SanitizeFileName(Name);
+			DefaultLoggerTag ??= Name;
 
-			// Graphics defaults
-			EnableValidationLayers = false;
-			EnabledGraphicsFeatures = default;
-			StrictGraphicsFeatures = true;
+			// Content defaults
+			GlobalContentPath ??= "data/Content.cpak";
+			if (!PathUtils.IsValidPath(GlobalContentPath))
+				throw new InvalidCoreParameterException(nameof(GlobalContentPath), GlobalContentPath, "invalid global content path");
 		}
 	}
 

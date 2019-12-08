@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using Spectrum.Content;
 using Spectrum.Graphics;
 using static Spectrum.InternalLog;
 
@@ -41,6 +42,12 @@ namespace Spectrum
 		/// The controller for the physical graphics device used by the application window.
 		/// </summary>
 		public GraphicsDevice GraphicsDevice { get; private set; } = null;
+
+		/// <summary>
+		/// Manager for global content, which persists outside of <see cref="Scene"/> lifetimes. This object will not
+		/// be available until <see cref="LoadContent"/> is called.
+		/// </summary>
+		public ContentManager GContent { get; private set; } = null;
 
 		/// <summary>
 		/// Gets if the application is currently flaged to exit at the end of the next frame update loop.
@@ -85,15 +92,17 @@ namespace Spectrum
 		public void Run()
 		{
 			// Initialization code
-			{
-				Audio.AudioEngine.Initialize();
-				Window.CreateWindow();
-				GraphicsDevice = new GraphicsDevice();
-				Initialize();
-			}
-
+			Audio.AudioEngine.Initialize();
+			Window.CreateWindow();
+			GraphicsDevice = new GraphicsDevice();
+			Initialize();
+		
 			// Load global content
-			LoadContent();
+			if (Params.LoadGlobalContent)
+			{
+				GContent = ContentManager.OpenPackFile(Params.GlobalContentPath);
+				LoadContent();
+			}
 
 			// Start and run the main loop
 			Start();
@@ -162,7 +171,8 @@ namespace Spectrum
 		public virtual void Initialize() { }
 		/// <summary>
 		/// Allows the application to load global content before the main loop starts, such as for splash or initial
-		/// loading screens.
+		/// loading screens. This will not be called if <see cref="CoreParams.LoadGlobalContent"/> is <c>false</c> for
+		/// <see cref="Params"/>.
 		/// </summary>
 		public virtual void LoadContent() { }
 		/// <summary>
@@ -266,6 +276,7 @@ namespace Spectrum
 				OnDisposing(disposing);
 
 				// Clean up the content and hardware objects
+				GContent?.Dispose();
 				GraphicsDevice.Dispose();
 
 				// Clean up the window
