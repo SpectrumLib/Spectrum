@@ -19,6 +19,24 @@ namespace Spectrum
 		#region Fields
 		private readonly Dictionary<T1, T2> _1_2_map;
 		private readonly Dictionary<T2, T1> _2_1_map;
+
+		/// <summary>
+		/// The number of mappings in the dictionary.
+		/// </summary>
+		public int Count => _1_2_map.Count;
+
+		/// <summary>
+		/// Gets an enumerable collection of the <typeparamref name="T1"/> values in the contained mappings.
+		/// </summary>
+		public IEnumerable<T1> Item1s => _1_2_map.Keys;
+		/// <summary>
+		/// Gets an enumerable collection of the <typeparamref name="T2"/> values in the contained mappings.
+		/// </summary>
+		public IEnumerable<T2> Item2s => _2_1_map.Keys;
+		/// <summary>
+		/// Gets an enumerator object over all item mappings in the dictionary.
+		/// </summary>
+		public IEnumerator<(T1, T2)> Mappings => GetEnumerator();
 		#endregion // Fields
 
 		/// <summary>
@@ -163,6 +181,18 @@ namespace Spectrum
 				return true;
 			}
 			return false;
+		}
+
+		/// <summary>
+		/// Clears all mappings in the dictionary.
+		/// </summary>
+		/// <returns>The number of items that were in the dictionary before it was cleared.</returns>
+		public int Clear()
+		{
+			var count = _2_1_map.Count;
+			_1_2_map.Clear();
+			_2_1_map.Clear();
+			return count;
 		}
 		#endregion // Remove
 

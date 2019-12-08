@@ -162,13 +162,14 @@ namespace Spectrum.Content
 		/// </summary>
 		/// <typeparam name="T">The data type to read.</typeparam>
 		/// <param name="data">The buffer to read data into.</param>
-		/// <returns>If the correct amount of data was read from the file.</returns>
-		public bool Read<T>(Span<T> data)
+		/// <returns>The actual number of bytes read from the file.</returns>
+		public uint Read<T>(Span<T> data)
 			where T : struct
 		{
 			var bytes = MemoryMarshal.AsBytes(data);
-			updateSize((uint)bytes.Length);
-			return Reader.Read(bytes) == bytes.Length;
+			var len = (uint)Math.Min(bytes.Length, Remaining);
+			updateSize(len);
+			return (uint)Reader.Read(bytes.Slice(0, (int)len));
 		}
 
 		/// <summary>
