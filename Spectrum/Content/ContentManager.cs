@@ -111,7 +111,11 @@ namespace Spectrum.Content
 			if (cache)
 				_itemCache.Add(name, item);
 			if (manage && (item is IDisposableContent))
-				_disposableItems.Add(new WeakReference<IDisposableContent>((IDisposableContent)item));
+			{
+				var ci = item as IDisposableContent;
+				_disposableItems.Add(new WeakReference<IDisposableContent>(ci));
+				ci.ObjectDisposed += disposableContentCallback;
+			}
 			LastLoadTime = timer.Elapsed;
 			return item as T;
 		}
@@ -188,7 +192,11 @@ namespace Spectrum.Content
 			if (cache)
 				_itemCache.Add(name, item);
 			if (manage && (item is IDisposableContent))
-				_disposableItems.Add(new WeakReference<IDisposableContent>((IDisposableContent)item));
+			{
+				var ci = item as IDisposableContent;
+				_disposableItems.Add(new WeakReference<IDisposableContent>(ci));
+				ci.ObjectDisposed += disposableContentCallback;
+			}
 			LastLoadTime = timer.Elapsed;
 			return item as T;
 		}

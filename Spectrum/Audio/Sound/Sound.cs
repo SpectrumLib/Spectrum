@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using Spectrum.Content;
 
 namespace Spectrum.Audio
 {
@@ -11,7 +12,7 @@ namespace Spectrum.Audio
     /// Represents a specific set of audio data, which can be spawned into <see cref="SoundInstance"/> objects for
     /// audio playback. Objects of this type hold all of their audio data in memory at once.
     /// </summary>
-	public sealed class Sound : IDisposable
+	public sealed class Sound : IDisposable, IAudioContent
 	{
         #region Fields
         internal readonly AudioBuffer Buffer;

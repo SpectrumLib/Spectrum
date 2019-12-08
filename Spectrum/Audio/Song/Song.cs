@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using Spectrum.Content;
 
 namespace Spectrum.Audio
 {
@@ -11,7 +12,7 @@ namespace Spectrum.Audio
 	/// Represents a specific set of audio data, that is streamed from the disk. Unlike <see cref="Sound"/>, the
 	/// audio data and playback state reside in the same object for songs.
 	/// </summary>
-	public sealed class Song : IDisposable
+	public sealed class Song : IDisposable, IAudioContent
 	{
 		private const uint SECONDS_PER_STREAM = 5; // Stream 5 seconds at a time
 
