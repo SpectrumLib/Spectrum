@@ -5,7 +5,11 @@ VisualStudioVersion = 16.0.29230.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectrum", "Spectrum\Spectrum.csproj", "{8FBBB1C5-34C4-4212-A87E-859317F309F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectrum.Native", "Spectrum.Native\Spectrum.Native.csproj", "{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectrum.Native", "Spectrum.Native\Spectrum.Native.csproj", "{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Prism.Pipeline", "Prism.Pipeline\Prism.Pipeline.csproj", "{ADA9B7C6-3F24-4A9A-A83C-5EFBF0833C27}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Prism", "Prism\Prism.csproj", "{8C58256C-1347-46D2-94C4-3CFF89D76770}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}.Debug|x64.Build.0 = Debug|x64
 		{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}.Release|x64.ActiveCfg = Release|x64
 		{DFF82CC4-79CD-4D9F-86BB-2AF71A7D5549}.Release|x64.Build.0 = Release|x64
+		{ADA9B7C6-3F24-4A9A-A83C-5EFBF0833C27}.Debug|x64.ActiveCfg = Debug|x64
+		{ADA9B7C6-3F24-4A9A-A83C-5EFBF0833C27}.Debug|x64.Build.0 = Debug|x64
+		{ADA9B7C6-3F24-4A9A-A83C-5EFBF0833C27}.Release|x64.ActiveCfg = Release|x64
+		{ADA9B7C6-3F24-4A9A-A83C-5EFBF0833C27}.Release|x64.Build.0 = Release|x64
+		{8C58256C-1347-46D2-94C4-3CFF89D76770}.Debug|x64.ActiveCfg = Debug|x64
+		{8C58256C-1347-46D2-94C4-3CFF89D76770}.Debug|x64.Build.0 = Debug|x64
+		{8C58256C-1347-46D2-94C4-3CFF89D76770}.Release|x64.ActiveCfg = Release|x64
+		{8C58256C-1347-46D2-94C4-3CFF89D76770}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
