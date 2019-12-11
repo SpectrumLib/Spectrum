@@ -30,4 +30,12 @@
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Prism.Pipeline\Prism.Pipeline.csproj" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18" />
+  </ItemGroup>
+
 </Project>
