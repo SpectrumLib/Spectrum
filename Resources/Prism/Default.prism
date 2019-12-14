@@ -1,0 +1,7 @@
+project {
+    root = .
+    intermediate = ./obj
+    output = ./bin
+    compress = true
+    binsize = 512
+}

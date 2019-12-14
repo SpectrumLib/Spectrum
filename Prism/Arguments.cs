@@ -15,10 +15,18 @@ namespace Prism
 		public static string ParseError = null;
 
 		public static bool Help = false;
+
+		public static string Action = null;
+		public static string ActionArg = null;
+		public static string Path = null;
+
+		public static int Verbosity = 0;
 		#endregion // Fields
 
 		public static bool Parse(string[] args)
 		{
+			ParseError = null;
+
 			// Prepare the arguments
 			var argpairs = new (string name, string value)[args.Length];
 			Prepare(args, argpairs);
@@ -30,6 +38,59 @@ namespace Prism
 				return true;
 			}
 
+			// Check for the action and path
+			if (argpairs[0].name != null)
+			{
+				ParseError = "First argument must be path or action.";
+				return false;
+			}
+			if (argpairs[0].value.EndsWith(".prism"))
+			{
+				Action = "gui";
+				Path = argpairs[0].value;
+				return true; // No additional flags are supported when using the GUI
+			}
+			Action = argpairs[0].value;
+			if (Action == "new")
+			{
+				if (args.Length < 3 || (argpairs[1].name != null) || (argpairs[2].name != null))
+				{
+					ParseError = "Not enough arguments for action 'new'.";
+					return false;
+				}
+				ActionArg = argpairs[1].value;
+				Path = argpairs[2].value;
+			}
+			else
+			{
+				if (args.Length < 2 || (argpairs[1].name != null))
+				{
+					ParseError = $"Not enough arguments for action '{Action}'.";
+					return false;
+				}
+				Path = argpairs[1].value;
+			}
+
+			// Loop over parameters
+			foreach (var param in argpairs.Skip(Action[0] == 'n' ? 3 : 2))
+			{
+				if (param.name is null)
+				{
+					ParseError = $"Too many arguments for action '{Action}'.";
+					return false;
+				}
+
+				switch (param.name)
+				{
+					// Verbosity/Quiet
+					case "v":     Verbosity = 1;  break;
+					case "vv":    Verbosity = 2;  break;
+					case "vvv":   Verbosity = 3;  break;
+					case "q":
+					case "quiet": Verbosity = -1; break;
+				}
+			}
+
 			return true;
 		}
 
@@ -38,7 +99,7 @@ namespace Prism
 			int aidx = 0;
 			foreach (var arg in args)
 			{
-				bool ispar = (arg.Length > 1) && ((arg[0] == '-') || (arg[0] == '/'));
+				bool ispar = (arg.Length > 1) && ((arg[0] == '-') || (arg[0] == '/' && Program.IsWindows));
 				sanargs[aidx++] = ispar ? _split_param(arg) : (null, arg);
 			}
 

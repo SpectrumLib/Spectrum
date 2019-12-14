@@ -4,33 +4,56 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Runtime.InteropServices;
 
 namespace Prism
 {
 	internal static class Program
 	{
-		static void Main(string[] args)
+		#region Fields
+		public static bool IsWindows => _IsWindows ?? 
+			(_IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)).Value;
+		private static bool? _IsWindows = null;
+		#endregion // Fields
+
+		static int Main(string[] args)
 		{
 			if (args.Length == 0)
 			{
 				CConsole.Info("Usage (cmd):  Prism.exe <action> <project> [args]");
 				CConsole.Info("Usage (gui):  Prism.exe <project>");
 				CConsole.Info("Usage (help): Prism.exe /(help|h|?)");
-				return;
+				return 0;
 			}
 
 			// Parse the arguments
 			if (!Arguments.Parse(args))
 			{
 				CConsole.Error(Arguments.ParseError);
-				return;
+				return -1;
 			}
 
 			// Display help and exit
 			if (Arguments.Help)
 			{
 				PrintHelp();
-				return;
+				return 0;
+			}
+
+			// GUI not supported yet
+			if (Arguments.Action == "gui")
+			{
+				CConsole.Error("Prism GUI not yet ready - please use the command line.");
+				return -1;
+			}
+
+			// Call the action handler
+			switch (Arguments.Action)
+			{
+				case "new": return NewAction.Process() ? 0 : -1;
+				default:
+					CConsole.Error($"No such action: {Arguments.Action}.");
+					return -1;
 			}
 		}
 
@@ -46,6 +69,7 @@ namespace Prism
 				"\nUsage (gui):    Prism.exe <project_file>" +
 				"\nUsage (cmd):    Prism.exe <action> <project_file> [args...]" +
 				"\n   <action> can be one of:" +
+				"\n      new <type>    - Creates a default file of <type> at the given path." +
 				"\n      build         - Builds the project file." +
 				"\n      rebuild       - Rebuilds the project file, ignoring the build cache." +
 				"\n      clean         - Cleans the build cache for the project file." +
@@ -56,8 +80,11 @@ namespace Prism
 				"\n" + 
 				"\nThe command line parameters are:" +
 				"\n   > help;h;?       - Prints this message, and exits immediately." +
+				"\n   > q;quiet        - Prints minimal output messages (overrides 'v' flags)." +
+				"\n   > v;vv;vvv       - Makes verbose output messages, with increasing levels" +
+				"\n                        of verbosity." +
 				"\n" + 
-				"\nFor compatiblity, all parameters can be specified with '/', '-', or '--'." +
+				"\nParameters can be specified with '-', '--', and '/' (on Windows)." +
 				"\n\n"
 			);
 		}
