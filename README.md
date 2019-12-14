@@ -2,7 +2,7 @@
 
 *Note: This library is still in active development, and is not currently in a useable state.*
 
-This branch is specifically for moving the project over from a .NET Standard 2.0 library to a .NET Core 3.0 library.
+This branch is specifically for moving the project over from a .NET Standard 2.0 library to a .NET Core 3.1 library.
 
 ## Licensing
 

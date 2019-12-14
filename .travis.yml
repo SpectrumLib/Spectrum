@@ -1,6 +1,6 @@
 language: csharp
 mono: none
-dotnet: 3.0.101
+dotnet: 3.1.100
 dist: bionic
 script:
   - dotnet restore
