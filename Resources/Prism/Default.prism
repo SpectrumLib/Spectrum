@@ -1,7 +1,8 @@
 project {
-    root = .
-    intermediate = ./obj
-    output = ./bin
-    compress = true
-    binsize = 512
+	!rp .
+	!ip ./obj
+	!op ./bin
+	!c true
+	!sz 512
+	!ic false
 }
