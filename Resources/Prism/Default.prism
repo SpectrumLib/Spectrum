@@ -1,6 +1,6 @@
 project {
 	!rp .
-	!ip ./obj
+	!cp ./obj
 	!op ./bin
 	!c true
 	!sz 512

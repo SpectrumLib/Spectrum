@@ -44,7 +44,7 @@ namespace Prism
 				ParseError = "First argument must be path or action.";
 				return false;
 			}
-			if (argpairs[0].value.EndsWith(".prism"))
+			if (argpairs[0].value.Contains('.')) // No actions have '.'
 			{
 				Action = "gui";
 				Path = argpairs[0].value;

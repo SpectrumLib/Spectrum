@@ -51,6 +51,7 @@ namespace Prism
 			switch (Arguments.Action)
 			{
 				case "new": return NewAction.Process() ? 0 : -1;
+				case "view": return ViewAction.Process() ? 0 : -1;
 				default:
 					CConsole.Error($"No such action: {Arguments.Action}.");
 					return -1;

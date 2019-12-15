@@ -66,5 +66,46 @@ namespace Prism.Pipeline
 				return false;
 			}
 		}
+
+		/// <summary>
+		/// Attempts to create an absolute path given a source path, and root path. Checks for path validity.
+		/// </summary>
+		/// <param name="path">The path to make aboslute.</param>
+		/// <param name="root">The root path to create relative paths from.</param>
+		/// <param name="abspath">The generated absolute path.</param>
+		/// <returns>If the path could be created.</returns>
+		public static bool TryMakeAbsolutePath(string path, string root, out string abspath)
+		{
+			abspath = null;
+			if (path == null || root == null)
+				return false;
+
+			// Check if already rooted
+			bool abs;
+			try
+			{
+				abs = Path.IsPathRooted(path);
+			}
+			catch { return false; }
+
+			// Try to generate best approximation of full path
+			string fullpath;
+			try
+			{
+				fullpath = abs ? path : Path.Combine(root, path);
+			}
+			catch { return false; }
+
+			// Try to load the path info for a final check
+			try
+			{
+				FileSystemInfo fsi =
+					(fullpath.EndsWith(Path.DirectorySeparatorChar) || fullpath.EndsWith(Path.AltDirectorySeparatorChar))
+					? new DirectoryInfo(fullpath) : (FileSystemInfo)(new FileInfo(fullpath));
+				abspath = fsi.FullName;
+				return true;
+			}
+			catch { return false; }
+		}
 	}
 }

@@ -194,7 +194,6 @@ namespace Prism.Pipeline
 		public struct Item
 		{
 			public string Path;			// Never null
-			public string LinkPath;		// null = no link
 			public List<(string key, string value)> Params; // null = no params
 		}
 	}
