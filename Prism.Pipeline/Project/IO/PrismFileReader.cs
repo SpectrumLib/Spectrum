@@ -20,8 +20,7 @@ namespace Prism.Pipeline
 
 		private uint _lineNum = 1;
 
-		public IReadOnlyList<(string key, string value)> ProjectValues => _projectValues;
-		private List<(string, string)> _projectValues = new List<(string, string)>();
+		public ParamSet ProjectParams { get; private set; }
 		#endregion // Fields
 
 		public PrismFileReader(string path)
@@ -60,6 +59,7 @@ namespace Prism.Pipeline
 
 			// Read in all lines, which must be empty, key-value pairs, or the block close
 			bool closed = false;
+			ProjectParams = new ParamSet();
 			while ((line = _reader.ReadLine()?.Trim()) != null)
 			{
 				_lineNum += 1;
@@ -72,9 +72,7 @@ namespace Prism.Pipeline
 					break;
 				}
 
-				if (parseKeyValueLine(line, out var key, out var value))
-					_projectValues.Add((key.ToString(), value.ToString()));
-				else
+				if (!ProjectParams.TryParse(line))
 					throw new ParseException("Invalid key/value line in project", _lineNum);
 			}
 
@@ -82,9 +80,10 @@ namespace Prism.Pipeline
 				throw new ParseException("Project block was not closed", _lineNum);
 		}
 
-		public bool ReadItem(out Item item)
+		public bool ReadItem(out string path, out ParamSet @params)
 		{
-			item = default;
+			path = null;
+			@params = null;
 
 			bool found = false;
 			while (_reader.ReadLine()?.Trim() is var line && line != null)
@@ -106,7 +105,8 @@ namespace Prism.Pipeline
 					// Item block open
 					if (parseItemLine(line, out var ipath, out var iempty))
 					{
-						item.Path = ipath.ToString();
+						path = ipath.ToString();
+						@params = new ParamSet();
 						found = true;
 						if (iempty)
 							break;  // Return immediately - single line empty item match
@@ -119,12 +119,8 @@ namespace Prism.Pipeline
 				else
 				{
 					// key=value pair for params or importer/processor/comment description
-					if (parseKeyValueLine(line, out var key, out var value))
-					{
-						item.Params ??= new List<(string key, string value)>();
-						item.Params.Add((key.ToString(), value.ToString()));
+					if (@params.TryParse(line))
 						continue;
-					}
 					else
 						throw new ParseException("Expected key/value pair", _lineNum);
 				}
@@ -145,30 +141,13 @@ namespace Prism.Pipeline
 			if (match.Success)
 			{
 				path = line.AsSpan(match.Groups[1].Index, match.Groups[1].Value.Length);
-				empty = match.Groups.Count > 2; // Matched on the final '}'
+				empty = line[^1] == '}';
 				return true;
 			}
 
 			return false;
 		}
-
-		private bool parseKeyValueLine(ReadOnlySpan<char> line, out ReadOnlySpan<char> key, out ReadOnlySpan<char> value)
-		{
-			if (line.IndexOfAny(' ', '\t') is var sidx && (sidx != -1))
-			{
-				// Trim both values
-				key = line.Slice(0, sidx);
-				value = (sidx != (line.Length - 1)) ? line.Slice(sidx + 1).TrimStart() : ReadOnlySpan<char>.Empty;
-				return true;
-			}
-			else
-			{
-				key = ReadOnlySpan<char>.Empty;
-				value = ReadOnlySpan<char>.Empty;
-				return false;
-			}
-		}
-
+		
 		#region IDisposable
 		public void Dispose()
 		{
@@ -190,12 +169,6 @@ namespace Prism.Pipeline
 			}
 		}
 		#endregion // IDisposable
-
-		public struct Item
-		{
-			public string Path;			// Never null
-			public List<(string key, string value)> Params; // null = no params
-		}
 	}
 
 	internal class ParseException : Exception

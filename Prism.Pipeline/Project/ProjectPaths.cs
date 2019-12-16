@@ -34,26 +34,22 @@ namespace Prism.Pipeline
 			Output = o;
 		}
 
-		public static ProjectPaths FromParseResults(string path, IReadOnlyCollection<(string key, string value)> values, out string err)
+		public static ProjectPaths FromParseResults(string path, ParamSet pars, out string err)
 		{
 			var project = new FileInfo(path);
 			var dir = project.Directory.FullName;
 
-			string rp = values.FirstOrDefault(p => p.key == "!rp").value,
-				   cp = values.FirstOrDefault(p => p.key == "!cp").value,
-				   op = values.FirstOrDefault(p => p.key == "!op").value;
-
-			if (rp == null || !PathUtils.TryMakeAbsolutePath(rp, dir, out var rpfull))
+			if (!pars.TryGet("!rp", out var rp) || !PathUtils.TryMakeAbsolutePath(rp, dir, out var rpfull))
 			{
 				err = "missing or invalid root path (!rp) entry";
 				return null;
 			}
-			if (cp == null || !PathUtils.TryMakeAbsolutePath(cp, dir, out var cpfull))
+			if (!pars.TryGet("!cp", out var cp) || !PathUtils.TryMakeAbsolutePath(cp, dir, out var cpfull))
 			{
 				err = "missing or invalid cache path (!cp) entry";
 				return null;
 			}
-			if (op == null || !PathUtils.TryMakeAbsolutePath(op, dir, out var opfull))
+			if (!pars.TryGet("!op", out var op) || !PathUtils.TryMakeAbsolutePath(op, dir, out var opfull))
 			{
 				err = "missing or invalid output path (!op) entry";
 				return null;

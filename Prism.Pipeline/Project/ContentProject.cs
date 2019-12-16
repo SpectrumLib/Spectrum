@@ -17,12 +17,16 @@ namespace Prism.Pipeline
 		public readonly ProjectProperties Properties;
 		public IReadOnlyCollection<(string key, string value)> Params => Properties.Params;
 		public IReadOnlyCollection<string> Comments => Properties.Comments;
+
+		public IReadOnlyCollection<ContentItem> Items => _items;
+		private readonly List<ContentItem> _items;
 		#endregion // Fields
 
-		private ContentProject(ProjectPaths paths, ProjectProperties props)
+		private ContentProject(ProjectPaths paths, ProjectProperties props, List<ContentItem> items)
 		{
 			Paths = paths;
 			Properties = props;
+			_items = items;
 		}
 
 		public static ContentProject LoadFromFile(string path, out string err)
@@ -37,12 +41,24 @@ namespace Prism.Pipeline
 			try
 			{
 				using var reader = new PrismFileReader(filepath);
-				if (ProjectPaths.FromParseResults(filepath, reader.ProjectValues, out err) is var paths && paths == null)
+				if (ProjectPaths.FromParseResults(filepath, reader.ProjectParams, out err) is var paths && paths == null)
 					return null;
-				if (ProjectProperties.FromParseResults(reader.ProjectValues, out err) is var props && props == null)
+				if (ProjectProperties.FromParseResults(reader.ProjectParams, out err) is var props && props == null)
 					return null;
 
-				return new ContentProject(paths, props);
+				var items = new List<ContentItem>();
+				while (reader.ReadItem(out var ipath, out var ipars))
+				{
+					var item = ContentItem.FromParseResults(paths, ipath, ipars, out var ierr);
+					if (item == null)
+					{
+						err = $"item {ipath} - {ierr}";
+						return null;
+					}
+					items.Add(item);
+				}
+
+				return new ContentProject(paths, props, items);
 			}
 			catch (ParseException e)
 			{

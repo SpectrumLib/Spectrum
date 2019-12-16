@@ -29,42 +29,31 @@ namespace Prism.Pipeline
 			Params = pars;
 		}
 
-		public static ProjectProperties FromParseResults(IReadOnlyCollection<(string key, string value)> values, out string err)
+		public static ProjectProperties FromParseResults(ParamSet pars, out string err)
 		{
-			List<string> comments = new List<string>();
-			List<(string, string)> pars = new List<(string, string)>();
 			bool c = false, ic = false;
 			uint ps = 0;
 
-			if (values.FirstOrDefault(p => p.key == "!c") is var cpair && (cpair.key == null
-				|| !Boolean.TryParse(cpair.value, out c)))
+			if (!pars.TryGet("!c", out var cstr) || !Boolean.TryParse(cstr, out c))
 			{
 				err = "missing or invalid compress (!c) field";
 				return null;
 			}
-			if (values.FirstOrDefault(p => p.key == "!sz") is var szpair && (szpair.key == null
-				|| !UInt32.TryParse(szpair.value, out ps)))
+			if (!pars.TryGet("!sz", out var szstr) || !UInt32.TryParse(szstr, out ps))
 			{
 				err = "missing or invalid pack size (!sz) field";
 				return null;
 			}
-			if (values.FirstOrDefault(p => p.key == "!ic") is var icpair && (icpair.key == null
-				|| !Boolean.TryParse(icpair.value, out ic)))
+			if (!pars.TryGet("!ic", out var icstr) || !Boolean.TryParse(icstr, out ic))
 			{
 				err = "missing or invalid include comments (!ic) field";
 				return null;
 			}
 
-			foreach (var pair in values)
-			{
-				if (pair.key == "!!")
-					comments.Add(pair.value);
-				else if (pair.key[0] != '!')
-					pars.Add(pair);
-			}
-
+			pars.CopyCommentsTo(out var comments);
+			pars.CopyStandardParamsTo(out var @params);
 			err = null;
-			return new ProjectProperties(c, Math.Clamp(ps, 1, 2048), ic, comments.ToArray(), pars.ToArray());
+			return new ProjectProperties(c, Math.Clamp(ps, 1, 2048), ic, comments, @params);
 		}
 	}
 }
