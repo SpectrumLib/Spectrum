@@ -20,7 +20,6 @@ namespace Prism.Pipeline
 		public readonly FileInfo CacheFile;		// The path to the cache file (.bcache in cache directory)
 		public readonly bool IsLink;			// If the item is a link
 
-		public readonly string ImporterName;	// Name of the importer
 		public readonly string ProcessorName;	// Name of the processor
 		public readonly bool? IncludeComment;   // The include comment override flag (null = not specified)
 
@@ -31,7 +30,7 @@ namespace Prism.Pipeline
 		#endregion // Fields
 
 		private ContentItem(string ip, string lp, FileInfo @if, FileInfo op, FileInfo cp, bool il, 
-			string @in, string pn, bool? ic, ParamSet pars)
+			string pn, bool? ic, ParamSet pars)
 		{
 			ItemPath = ip;
 			LinkPath = lp;
@@ -39,7 +38,6 @@ namespace Prism.Pipeline
 			OutputFile = op;
 			CacheFile = cp;
 			IsLink = il;
-			ImporterName = @in;
 			ProcessorName = pn;
 			IncludeComment = ic;
 			pars.CopyCommentsTo(out _comments);
@@ -59,7 +57,6 @@ namespace Prism.Pipeline
 				@if = (il = pars.TryGet("!l", out var link)) ? link : path,
 				op = path + ".bin",
 				cp = path + ".bcache",
-				@in = pars.TryGet("!i", out var iname) ? iname : "None",
 				pn = pars.TryGet("!p", out var pname) ? pname : "None";
 			if (!PathUtils.TryMakeAbsolutePath(@if, pps.Root.FullName, out @if))
 			{
@@ -92,7 +89,7 @@ namespace Prism.Pipeline
 			{
 				err = null;
 				return new ContentItem(
-					path, link, new FileInfo(@if), new FileInfo(op), new FileInfo(cp), il, @in, pn, ic, pars);
+					path, link, new FileInfo(@if), new FileInfo(op), new FileInfo(cp), il, pn, ic, pars);
 			}
 			catch (Exception e)
 			{
