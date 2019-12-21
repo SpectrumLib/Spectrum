@@ -52,6 +52,9 @@ namespace Prism
 			{
 				case "new": return NewAction.Process() ? 0 : -1;
 				case "view": return ViewAction.Process() ? 0 : -1;
+				case "clean": return CleanAction.Process() ? 0 : -1;
+				case "build": return BuildAction.Process(false) ? 0 : -1;
+				case "rebuild": return BuildAction.Process(true) ? 0 : -1;
 				default:
 					CConsole.Error($"No such action: {Arguments.Action}.");
 					return -1;
@@ -84,6 +87,11 @@ namespace Prism
 				"\n   > q;quiet        - Prints minimal output messages (overrides 'v' flags)." +
 				"\n   > v;vv;vvv       - Makes verbose output messages, with increasing levels" +
 				"\n                        of verbosity." +
+				"\n   > p;parallel     - For 'build' and 'rebuild' tasks, this sets the number" +
+				"\n     [=<int>]           of threads to use. Not specifying a count will use" +
+				"\n                        the number of cores on the system." +
+				"\n   > r;release      - Set (re)build tasks to be release (default)." +
+				"\n   > d;debug        - Set (re)build tasks to be debug." +
 				"\n" + 
 				"\nParameters can be specified with '-', '--', and '/' (on Windows)." +
 				"\n\n"

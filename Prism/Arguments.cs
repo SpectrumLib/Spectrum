@@ -21,6 +21,10 @@ namespace Prism
 		public static string Path = null;
 
 		public static int Verbosity = 0;
+
+		public static uint Parallel = 1;
+
+		public static bool Debug = false;
 		#endregion // Fields
 
 		public static bool Parse(string[] args)
@@ -88,6 +92,31 @@ namespace Prism
 					case "vvv":   Verbosity = 3;  break;
 					case "q":
 					case "quiet": Verbosity = -1; break;
+					// Parallel thread count
+					case "p":
+					case "parallel":
+						if (param.value != null)
+						{
+							if (!UInt32.TryParse(param.value, out Parallel))
+							{
+								CConsole.Warn($"Invalid value for thread count: {param.value}.");
+								Parallel = 1;
+							}
+							Parallel = Math.Clamp(Parallel, 1u, (uint)Environment.ProcessorCount);
+						}
+						else
+							Parallel = (uint)Environment.ProcessorCount;
+						break;
+					case "r":
+					case "release":
+						if (param.value == null)
+							Debug = false;
+						break;
+					case "d":
+					case "debug":
+						if (param.value == null)
+							Debug = true;
+						break;
 				}
 			}
 
