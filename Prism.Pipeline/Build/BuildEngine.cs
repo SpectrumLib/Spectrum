@@ -57,7 +57,7 @@ namespace Prism.Pipeline
 			for (uint i = 0; i < threads; ++i)
 				_tasks[i] = new BuildTask(this);
 
-			PathUtils.TryMakeAbsolutePath("./__tmp__/", proj.Paths.Cache.FullName, out TempFileDirectory);
+			PathUtils.TryMakeAbsolutePath("./.__tmp__/", proj.Paths.Cache.FullName, out TempFileDirectory);
 		}
 		~BuildEngine()
 		{

@@ -67,7 +67,6 @@ namespace Prism
 			Console.Write($"\n  {item.ItemPath} {(item.IsLink ? $"[{item.LinkPath}]" : "")}");
 			if (Arguments.Verbosity > 0)
 			{
-				Console.Write($"\n    Importer:    {item.ImporterName}");
 				Console.Write($"\n    Processor:   {item.ProcessorName}");
 				if (item.IncludeComment.HasValue)
 					Console.Write($"\n    Inc. Cmt.:   {item.IncludeComment.Value}");
