@@ -7,7 +7,7 @@
     <Authors>The Spectrum Team</Authors>
     <Company>N/A</Company>
     <Description>Vulkan powered framework for creating cross-platform performant games and simulations.</Description>
-    <Copyright>2019 The Spectrum Team</Copyright>
+    <Copyright>2018-2020 The Spectrum Team</Copyright>
     <PackageProjectUrl>https://github.com/SpectrumLib/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/SpectrumLib/SpectrumLib</RepositoryUrl>
     <PackageReleaseNotes></PackageReleaseNotes>

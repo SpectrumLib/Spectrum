@@ -2,20 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-	<Platforms>x64</Platforms>
-	<Version>0.1.0</Version>
-	<Authors>The Spectrum Team</Authors>
-	<Company>N/A</Company>
-	<Description>Content build pipeline for Spectrum applications.</Description>
-	<Copyright>2019 The Spectrum Team</Copyright>
-	<PackageProjectUrl>https://github.com/SpectrumLib/</PackageProjectUrl>
-	<RepositoryUrl>https://github.com/SpectrumLib/SpectrumLib</RepositoryUrl>
-	<PackageReleaseNotes></PackageReleaseNotes>
-	<PackageTags>Vulkan, Game, Simulation, Graphics, Framework, Engine</PackageTags>
-	<PackageLicenseExpression>Microsoft Public License (Ms-PL)</PackageLicenseExpression>
-	<AssemblyName>Prism.Pipeline</AssemblyName>
+    <Platforms>x64</Platforms>
+    <Version>0.1.0</Version>
+    <Authors>The Spectrum Team</Authors>
+    <Company>N/A</Company>
+    <Description>Content build pipeline for Spectrum applications.</Description>
+    <Copyright>2018-2020 The Spectrum Team</Copyright>
+    <PackageProjectUrl>https://github.com/SpectrumLib/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SpectrumLib/SpectrumLib</RepositoryUrl>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageTags>Vulkan, Game, Simulation, Graphics, Framework, Engine</PackageTags>
+    <PackageLicenseExpression>Microsoft Public License (Ms-PL)</PackageLicenseExpression>
+    <AssemblyName>Prism.Pipeline</AssemblyName>
   </PropertyGroup>
-	
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -29,15 +29,15 @@
     <DocumentationFile>$(OutDir)\Prism.Pipeline.xml</DocumentationFile>
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
-	
+
   <ItemGroup>
     <EmbeddedResource Include="..\Resources\Prism\Default.prism" Link="Resources/Default.prism" />
   </ItemGroup>
-	
+
   <ItemGroup>
     <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Reference Include="YamlDotNet">
       <HintPath>..\Dependencies\Managed\YamlDotNet.dll</HintPath>

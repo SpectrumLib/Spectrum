@@ -10,4 +10,4 @@ The Spectrum project, with all related code and assets, is licensed under the [M
 
 Libraries used by Spectrum are subject to their own licenses and terms. Please see each of those libraries for more details.
 
-Spectrum is Copyright (c) 2018-2019 The Spectrum Team
+Spectrum is Copyright (c) 2018-2020 The Spectrum Team
