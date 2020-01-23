@@ -3,13 +3,18 @@
   <Target Name="ILRepacker" AfterTargets="Build">
 
     <ItemGroup>
-      <InputAssemblies Include="$(OutputPath)\Prism.dll" />
       <InputAssemblies Include="$(OutputPath)\Prism.Pipeline.dll" />
+      <InputAssemblies Include="$(OutputPath)\YamlDotNet.dll" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <DoNotInternalize Include="Prism.Pipeline" />
     </ItemGroup>
 
     <ILRepack
       Parallel="true"
       Internalize="true"
+      InternalizeExclude="@(DoNotInternalize)"
       InputAssemblies="@(InputAssemblies)"
       TargetKind="Dll"
       OutputFile="$(OutputPath)\$(AssemblyName).dll"
