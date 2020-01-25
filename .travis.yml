@@ -2,6 +2,8 @@ language: csharp
 mono: none
 dotnet: 3.1.100
 dist: bionic
+env:
+  - NO_ILREPACK=1
 script:
   - cd ./Spectrum.Native
   - dotnet build -c Debug -p:Platform=x64

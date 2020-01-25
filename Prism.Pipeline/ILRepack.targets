@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Target Name="ILRepacker" AfterTargets="Build">
+  <Target Name="ILRepacker" AfterTargets="Build" Condition="'$(NO_ILREPACK)'!='1'">
 
     <ItemGroup>
       <InputAssemblies Include="$(OutputPath)\Prism.Pipeline.dll" />
