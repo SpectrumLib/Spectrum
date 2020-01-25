@@ -67,6 +67,25 @@ namespace Prism.Pipeline
 		// Gets a unique temp file path in the build cache directory
 		public string ReserveTempFile() => Path.Combine(TempFileDirectory, $"{Interlocked.Increment(ref _tempFileIndex)}.tmp");
 
+		// Called by BuildTask instances to get another item to build
+		public bool GetNextOrder(out BuildOrder order)
+		{
+			lock (_taskLock)
+			{
+				if (_itemsToBuild.MoveNext())
+				{
+					var ci = _itemsToBuild.Current;
+					order = new BuildOrder(ci, _itemIndex++);
+					return true;
+				}
+				else
+				{
+					order = null;
+					return false;
+				}
+			}
+		}
+
 		#region Actions
 		public Task Build(bool rebuild, bool release)
 		{
@@ -106,6 +125,40 @@ namespace Prism.Pipeline
 			try
 			{
 				Logger.BuildStart(rebuild, release);
+
+				// Reset the item enumerator
+				_itemIndex = 0;
+				_itemsToBuild = Project.Items.GetEnumerator();
+
+				// Ensure the directories
+				if (!Project.EnsurePaths())
+				{
+					Logger.EngineError("Unable to create build cache and/or output directories.");
+					return;
+				}
+				if (!PathUtils.CreateDirectorySafe(TempFileDirectory, out _))
+				{
+					Logger.EngineError("Unable to create build temporary directory.");
+					return;
+				}
+
+				// Exit check
+				if (ShouldStop)
+					return;
+
+				// Start, then join, the build tasks
+				foreach (var task in _tasks)
+					task.Start(rebuild);
+				foreach (var task in _tasks)
+					task.Join();
+
+				// Exit check
+				if (ShouldStop)
+					return;
+
+				// Clean up, most likely lots of temp items by now
+				GC.Collect();
+
 				success = true;
 			}
 			finally

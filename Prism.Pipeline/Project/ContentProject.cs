@@ -30,6 +30,25 @@ namespace Prism.Pipeline
 			_items = items;
 		}
 
+		// Ensures that the cache and output paths exist
+		public bool EnsurePaths()
+		{
+			try
+			{
+				Paths.Cache.Refresh();
+				Paths.Output.Refresh();
+				if (!Paths.Cache.Exists)
+					Paths.Cache.Create();
+				if (!Paths.Output.Exists)
+					Paths.Output.Create();
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
 		#region File Load/Save
 		public static ContentProject LoadFromFile(string path, out string err)
 		{

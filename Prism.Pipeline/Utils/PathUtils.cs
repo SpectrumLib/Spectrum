@@ -107,5 +107,29 @@ namespace Prism.Pipeline
 			}
 			catch { return false; }
 		}
+
+		/// <summary>
+		/// Attempts to create the directory at the given path, in an exception safe-manner.
+		/// </summary>
+		/// <param name="path">The path of the directory to create.</param>
+		/// <param name="info">The directory info for the resulting path.</param>
+		/// <returns>If the directory already existed, or if it was successfully created.</returns>
+		public static bool CreateDirectorySafe(string path, out DirectoryInfo info)
+		{
+			if (!TryGetDirectoryInfo(path, out info))
+				return false;
+
+			try
+			{
+				if (!info.Exists)
+					info.Create();
+				return true;
+			}
+			catch
+			{
+				info = null;
+				return false;
+			}
+		}
 	}
 }
