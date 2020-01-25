@@ -19,6 +19,8 @@ namespace Prism.Pipeline
 		public readonly ContentProject Project;
 		public readonly BuildLogger Logger;
 
+		public readonly ProcessorTypeCache ProcessorTypes;
+
 		#region Task Management
 		// If the engine is currently running tasks
 		public bool Busy { get; private set; } = false;
@@ -52,6 +54,8 @@ namespace Prism.Pipeline
 			Project = proj ?? throw new ArgumentNullException(nameof(proj));
 			Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			Logger.Engine = this;
+
+			ProcessorTypes = new ProcessorTypeCache(this);
 
 			_tasks = new BuildTask[threads];
 			for (uint i = 0; i < threads; ++i)
@@ -129,6 +133,10 @@ namespace Prism.Pipeline
 				// Reset the item enumerator
 				_itemIndex = 0;
 				_itemsToBuild = Project.Items.GetEnumerator();
+
+				// Load the content processors
+				if (!ProcessorTypes.LoadProcessors(typeof(BuildEngine).Assembly))
+					return;
 
 				// Ensure the directories
 				if (!Project.EnsurePaths())
