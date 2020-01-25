@@ -23,14 +23,19 @@ namespace Prism.Pipeline
 		public readonly DirectoryInfo Cache;
 		// The output (odir) directory for output files
 		public readonly DirectoryInfo Output;
+
+		// The paths, as they originally appeared in the file
+		public readonly (string r, string c, string o) Original;
 		#endregion // Fields
 
-		private ProjectPaths(FileInfo proj, DirectoryInfo root, DirectoryInfo cache, DirectoryInfo output)
+		private ProjectPaths(FileInfo proj, DirectoryInfo root, DirectoryInfo cache, DirectoryInfo output,
+			in (string, string, string) orig)
 		{
 			Project = proj;
 			Root = root;
 			Cache = cache;
 			Output = output;
+			Original = orig;
 		}
 
 		public static ProjectPaths LoadFromYaml(FileInfo proj, YamlMappingNode node)
@@ -51,7 +56,8 @@ namespace Prism.Pipeline
 			if (!PathUtils.TryMakeAbsolutePath(onode.Value, proj.Directory.FullName, out var odir))
 				throw new ProjectFileException($"Invalid odir path '{onode.Value}'");
 
-			return new ProjectPaths(proj, new DirectoryInfo(rdir), new DirectoryInfo(cdir), new DirectoryInfo(odir));
+			return new ProjectPaths(proj, new DirectoryInfo(rdir), new DirectoryInfo(cdir), new DirectoryInfo(odir),
+				(rnode.Value, cnode.Value, onode.Value));
 		}
 	}
 }

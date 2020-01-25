@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using YamlDotNet.RepresentationModel;
 
 namespace Prism.Pipeline
@@ -98,6 +99,70 @@ namespace Prism.Pipeline
 
 			err = null;
 			return new ContentProject(paths, props, ilist);
+		}
+
+		// Emitting YAML is done manually, for full control over generated syntax
+		public static bool SaveToFile(ContentProject proj, string path, out string err)
+		{
+			// Ensure file
+			if (!PathUtils.TryGetFileInfo(path, out var finfo))
+			{
+				err = $"The file path '{path}' is invalid.";
+				return false;
+			}
+			try
+			{
+				if (finfo.Exists)
+					finfo.Delete();
+			}
+			catch
+			{
+				err = $"Unable to overrite existing file '{finfo.FullName}'";
+				return false;
+			}
+			using var stm = finfo.Open(FileMode.Create, FileAccess.Write, FileShare.None);
+			using var writer = new StreamWriter(stm);
+
+			// Write the project block and item block header
+			StringBuilder sb = new StringBuilder(1024);
+			{
+				sb.Append("project:"); sb.AppendLine();
+				sb.Append("  rdir: "); sb.Append(proj.Paths.Original.r); sb.AppendLine();
+				sb.Append("  cdir: "); sb.Append(proj.Paths.Original.c); sb.AppendLine();
+				sb.Append("  odir: "); sb.Append(proj.Paths.Original.o); sb.AppendLine();
+				sb.Append("  compress: "); sb.Append(proj.Properties.Compress); sb.AppendLine();
+				sb.Append("  size: "); sb.Append(proj.Properties.PackSize); sb.AppendLine();
+				foreach (var par in proj.Properties.Params)
+				{
+					sb.Append($"  {par.key}: {par.value}"); sb.AppendLine();
+				}
+				sb.AppendLine();
+				sb.Append("items:"); sb.AppendLine();
+			}
+			writer.Write(sb.ToString());
+
+			// Write each item
+			foreach (var item in proj.Items)
+			{
+				sb.Clear();
+
+				sb.Append("- item: "); sb.Append(item.ItemPath); sb.AppendLine();
+				if (item.IsLink)
+				{
+					sb.Append("  link: "); sb.Append(item.LinkPath); sb.AppendLine();
+				}
+				sb.Append("  type: "); sb.Append(item.Type); sb.AppendLine();
+				foreach (var par in item.Params)
+				{
+					sb.Append($"  {par.key}: {par.value}"); sb.AppendLine();
+				}
+
+				writer.Write(sb.ToString());
+			}
+
+			writer.WriteLine();
+			err = null;
+			return true;
 		}
 		#endregion // File Load/Save
 	}

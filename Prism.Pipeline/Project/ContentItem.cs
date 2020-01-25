@@ -31,13 +31,12 @@ namespace Prism.Pipeline
 		public bool IsLink => LinkPath != null;
 		#endregion // Fields
 
-		public ContentItem(string ipath, string lpath, ProjectPaths paths, string type, List<(string, string)> pars)
+		public ContentItem(string ipath, string lpath, string realPath, ProjectPaths paths, string type, List<(string, string)> pars)
 		{
 			ItemPath = ipath;
 			LinkPath = lpath;
 			ItemName = GetItemName(ipath);
 
-			string realPath = lpath ?? ipath;
 			InputFile = new FileInfo(realPath);
 			OutputFile = new FileInfo(Path.Combine(paths.Cache.FullName, $"{ItemName}.bin"));
 			CacheFile = new FileInfo(Path.Combine(paths.Cache.FullName, $"{ItemName}.cache"));
@@ -95,7 +94,7 @@ namespace Prism.Pipeline
 				pars.Add((key.Value, value.Value));
 			}
 
-			return new ContentItem(itemPath, linkPath, paths, tnode.Value, pars);
+			return new ContentItem(inode.Value, lnode.Value, linkPath ?? itemPath, paths, tnode.Value, pars);
 		}
 	}
 }

@@ -59,10 +59,10 @@ namespace Prism
 		{
 			Console.Write($"\n  {item.ItemPath} {(item.IsLink ? $"[{item.LinkPath}]" : "")}");
 			if (Arguments.Verbosity > 0)
-				Console.Write($"\n    Type:        {item.Type}");
+				Console.Write($"\n    Type:         {item.Type}");
 			if (Arguments.Verbosity > 1)
 			{
-				Console.Write($"\n    Parameters:  ({item.Params.Count})");
+				Console.Write($"\n    Parameters:   ({item.Params.Count})");
 				if (item.Params.Count > 0)
 					Console.Write($"\n        {String.Join("\n        ", item.Params.Select(p => $"{p.key} = {p.value}"))}");
 			}
