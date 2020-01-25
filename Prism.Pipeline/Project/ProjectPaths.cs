@@ -4,9 +4,8 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using YamlDotNet.RepresentationModel;
 
 namespace Prism.Pipeline
 {
@@ -17,46 +16,42 @@ namespace Prism.Pipeline
 		// The path to the content project file
 		public readonly FileInfo Project;
 		// The path to the directory containing the project file
-		public DirectoryInfo ProjectDirectory => Project.Directory;
-		// The root (!rp) directory for the input content files
+		public DirectoryInfo Directory => Project.Directory;
+		// The root (rdir) directory for the input content files
 		public readonly DirectoryInfo Root;
-		// The cache (!cp) directory for build cache and intermediate files
+		// The cache (cdir) directory for build cache and intermediate files
 		public readonly DirectoryInfo Cache;
-		// The output (!op) directory for output files
+		// The output (odir) directory for output files
 		public readonly DirectoryInfo Output;
 		#endregion // Fields
 
-		private ProjectPaths(FileInfo p, DirectoryInfo r, DirectoryInfo c, DirectoryInfo o)
+		private ProjectPaths(FileInfo proj, DirectoryInfo root, DirectoryInfo cache, DirectoryInfo output)
 		{
-			Project = p;
-			Root = r;
-			Cache = c;
-			Output = o;
+			Project = proj;
+			Root = root;
+			Cache = cache;
+			Output = output;
 		}
 
-		public static ProjectPaths FromParseResults(string path, ParamSet pars, out string err)
+		public static ProjectPaths LoadFromYaml(FileInfo proj, YamlMappingNode node)
 		{
-			var project = new FileInfo(path);
-			var dir = project.Directory.FullName;
+			// Get the nodes
+			if (!(node["rdir"] is YamlScalarNode rnode))
+				throw new ProjectFileException("Invalid or missing 'rdir' project option");
+			if (!(node["cdir"] is YamlScalarNode cnode))
+				throw new ProjectFileException("Invalid or missing 'cdir' project option");
+			if (!(node["odir"] is YamlScalarNode onode))
+				throw new ProjectFileException("Invalid or missing 'odir' project option");
 
-			if (!pars.TryGet("!rp", out var rp) || !PathUtils.TryMakeAbsolutePath(rp, dir, out var rpfull))
-			{
-				err = "missing or invalid root path (!rp) entry";
-				return null;
-			}
-			if (!pars.TryGet("!cp", out var cp) || !PathUtils.TryMakeAbsolutePath(cp, dir, out var cpfull))
-			{
-				err = "missing or invalid cache path (!cp) entry";
-				return null;
-			}
-			if (!pars.TryGet("!op", out var op) || !PathUtils.TryMakeAbsolutePath(op, dir, out var opfull))
-			{
-				err = "missing or invalid output path (!op) entry";
-				return null;
-			}
+			// Parse the paths
+			if (!PathUtils.TryMakeAbsolutePath(rnode.Value, proj.Directory.FullName, out var rdir))
+				throw new ProjectFileException($"Invalid rdir path '{rnode.Value}'");
+			if (!PathUtils.TryMakeAbsolutePath(cnode.Value, proj.Directory.FullName, out var cdir))
+				throw new ProjectFileException($"Invalid cdir path '{cnode.Value}'");
+			if (!PathUtils.TryMakeAbsolutePath(onode.Value, proj.Directory.FullName, out var odir))
+				throw new ProjectFileException($"Invalid odir path '{onode.Value}'");
 
-			err = null;
-			return new ProjectPaths(project, new DirectoryInfo(rpfull), new DirectoryInfo(cpfull), new DirectoryInfo(opfull));
+			return new ProjectPaths(proj, new DirectoryInfo(rdir), new DirectoryInfo(cdir), new DirectoryInfo(odir));
 		}
 	}
 }

@@ -18,11 +18,11 @@ namespace Spectrum
 		/// <remarks>This is currently planned for .NET 5.0.</remarks>
 		/// <typeparam name="T">The type contained in the span.</typeparam>
 		/// <param name="span">The span to split.</param>
-		/// <param name="separator">The value to split the span on.</param>
+		/// <param name="separators">The values to split the span on.</param>
 		/// <returns>An enumerator over the split span.</returns>
-		public static SpanSplitEnumerator<T> Split<T>(this ReadOnlySpan<T> span, T separator)
+		public static SpanSplitEnumerator<T> Split<T>(this ReadOnlySpan<T> span, params T[] separators)
 			where T : IEquatable<T> => 
-			new SpanSplitEnumerator<T>(span, separator);
+			new SpanSplitEnumerator<T>(span, separators);
 
 		/// <summary>
 		/// Implements a foreach loop as a Linq-stle function call.
@@ -70,19 +70,19 @@ namespace Spectrum
 			/// </summary>
 			public ReadOnlySpan<T> Span { get; private set; }
 			/// <summary>
-			/// The separator value for splitting the span.
+			/// The separator values for splitting the span.
 			/// </summary>
-			public readonly T Separator;
+			public readonly T[] Separators;
 			/// <summary>
 			/// The span giving the current slice into the backing span.
 			/// </summary>
 			public ReadOnlySpan<T> Current { get; private set; }
 			#endregion // Fields
 
-			internal SpanSplitEnumerator(ReadOnlySpan<T> span, T separator)
+			internal SpanSplitEnumerator(ReadOnlySpan<T> span, T[] separators)
 			{
 				Span = span;
-				Separator = separator;
+				Separators = separators;
 				Current = default;
 			}
 
@@ -104,7 +104,7 @@ namespace Spectrum
 					return false;
 				}
 
-				var idx = Span.IndexOf(Separator);
+				var idx = Span.IndexOfAny(Separators);
 				if (idx < 0)
 				{
 					Current = Span;

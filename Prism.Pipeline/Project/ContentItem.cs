@@ -6,96 +6,96 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using YamlDotNet.RepresentationModel;
 
 namespace Prism.Pipeline
 {
 	// Contains information about a content item from a project file
 	internal class ContentItem
 	{
+		private static readonly List<string> PARAM_IGNORE = new List<string>() { 
+			"item", "type", "link"
+		};
+
 		#region Fields
 		public readonly string ItemPath;        // The path of the item, as it appears in the project file
-		public readonly string LinkPath;		// The path of the link, as it appears in the project file
+		public readonly string LinkPath;        // The path of the link, as it appears in the project file
+		public readonly string ItemName;		// The final name of the item, as it appears in the content pack
 		public readonly FileInfo InputFile;		// The path to the true input file (respecting link)
 		public readonly FileInfo OutputFile;	// The path to the output file (cache directory)
-		public readonly FileInfo CacheFile;		// The path to the cache file (.bcache in cache directory)
-		public readonly bool IsLink;			// If the item is a link
+		public readonly FileInfo CacheFile;     // The path to the cache file (.bcache in cache directory)
+		public readonly string Type;			// The content type, which controls which processor is used
+		public readonly List<(string key, string value)> Params;
 
-		public readonly string ProcessorName;	// Name of the processor
-		public readonly bool? IncludeComment;   // The include comment override flag (null = not specified)
-
-		public IReadOnlyCollection<string> Comments => _comments;
-		private readonly string[] _comments;
-		public IReadOnlyCollection<(string key, string value)> Params => _params;
-		private readonly (string key, string value)[] _params;
+		public bool IsLink => LinkPath != null;
 		#endregion // Fields
 
-		private ContentItem(string ip, string lp, FileInfo @if, FileInfo op, FileInfo cp, bool il, 
-			string pn, bool? ic, ParamSet pars)
+		public ContentItem(string ipath, string lpath, ProjectPaths paths, string type, List<(string, string)> pars)
 		{
-			ItemPath = ip;
-			LinkPath = lp;
-			InputFile = @if;
-			OutputFile = op;
-			CacheFile = cp;
-			IsLink = il;
-			ProcessorName = pn;
-			IncludeComment = ic;
-			pars.CopyCommentsTo(out _comments);
-			pars.CopyStandardParamsTo(out _params);
+			ItemPath = ipath;
+			LinkPath = lpath;
+			ItemName = GetItemName(ipath);
+
+			string realPath = lpath ?? ipath;
+			InputFile = new FileInfo(realPath);
+			OutputFile = new FileInfo(Path.Combine(paths.Cache.FullName, $"{ItemName}.bin"));
+			CacheFile = new FileInfo(Path.Combine(paths.Cache.FullName, $"{ItemName}.cache"));
+
+			Type = type;
+			Params = pars;
 		}
 
-		public static ContentItem FromParseResults(ProjectPaths pps, string path, ParamSet pars, out string err)
+		public static string GetItemName(ReadOnlySpan<char> itemPath)
 		{
-			if (!PathUtils.TryMakeAbsolutePath(path, pps.Root.FullName, out _))
+			StringBuilder sb = new StringBuilder(itemPath.Length);
+			var last = ReadOnlySpan<char>.Empty;
+			foreach (var comp in itemPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
 			{
-				err = "the item file path is not valid";
-				return null;
+				if (comp.Length == 0)
+					continue;
+
+				sb.Append(comp);
+				sb.Append('.');
+				last = comp;
 			}
 
-			bool il = false;
-			string
-				@if = (il = pars.TryGet("!l", out var link)) ? link : path,
-				op = path + ".bin",
-				cp = path + ".bcache",
-				pn = pars.TryGet("!p", out var pname) ? pname : "None";
-			if (!PathUtils.TryMakeAbsolutePath(@if, pps.Root.FullName, out @if))
+			string name = sb.ToString();
+			var ext = Path.GetExtension(last);
+			return name.Substring(0, name.Length - ext.Length);
+		}
+
+		public static ContentItem LoadFromYaml(ProjectPaths paths, YamlMappingNode node)
+		{
+			// Get the nodes
+			if (!(node["item"] is YamlScalarNode inode))
+				throw new ProjectFileException("Invalid or missing 'item' item option");
+			if (!(node["type"] is YamlScalarNode tnode))
+				throw new ProjectFileException("Invalid or missing 'type' item option");
+			if (!((node["link"] ?? new YamlScalarNode("")) is YamlScalarNode lnode))
+				throw new ProjectFileException("Invalid 'link' item option");
+			lnode = (lnode.Value.Length == 0) ? null : lnode;
+
+			// Extract the paths
+			if (!PathUtils.TryMakeAbsolutePath(inode.Value, paths.Root.FullName, out var itemPath))
+				throw new ProjectFileException($"Invalid path for item '{inode.Value}'");
+			string linkPath = null;
+			if ((lnode != null) && !PathUtils.TryMakeAbsolutePath(lnode.Value, paths.Root.FullName, out linkPath))
+				throw new ProjectFileException($"Invalid link path for item '{lnode.Value}'");
+
+			// Extract the parameters
+			var pars = new List<(string, string)>();
+			foreach (var par in node.Children)
 			{
-				err = "the item link path is not valid";
-				return null;
-			}
-			if (!PathUtils.TryMakeAbsolutePath(op, pps.Cache.FullName, out op))
-			{
-				err = "the item output path is not valid";
-				return null;
-			}
-			if (!PathUtils.TryMakeAbsolutePath(cp, pps.Cache.FullName, out cp))
-			{
-				err = "the item cache path is not valid";
-				return null;
+				if (!(par.Key is YamlScalarNode key) || PARAM_IGNORE.Contains(key.Value))
+					continue;
+				if (!(par.Value is YamlScalarNode value))
+					continue;
+
+				pars.Add((key.Value, value.Value));
 			}
 
-			bool? ic = null;
-			if (pars.TryGet("!ic", out var icmt))
-			{
-				if (!Boolean.TryParse(icmt, out var icb))
-				{
-					err = "invalid value for include comment (!ic) key";
-					return null;
-				}
-				ic = icb;
-			}
-
-			try
-			{
-				err = null;
-				return new ContentItem(
-					path, link, new FileInfo(@if), new FileInfo(op), new FileInfo(cp), il, pn, ic, pars);
-			}
-			catch (Exception e)
-			{
-				err = e.Message;
-				return null;
-			}
+			return new ContentItem(itemPath, linkPath, paths, tnode.Value, pars);
 		}
 	}
 }

@@ -30,20 +30,13 @@ namespace Prism
 				$"\n  Cache Path:     {proj.Paths.Cache.FullName}" +
 				$"\n  Output Path:    {proj.Paths.Output.FullName}" +
 				$"\n  Compress:       {proj.Properties.Compress}" +
-				$"\n  Pack Size:      {proj.Properties.PackSize}" +
-				$"\n  Inc. Comments:  {proj.Properties.IncludeComments}"
+				$"\n  Pack Size:      {proj.Properties.PackSize}"
 			);
 			Console.Write(
 				$"\n  Parameters:     ({proj.Params.Count})"
 			);
 			if (Arguments.Verbosity > 0 && proj.Params.Count > 0) Console.Write(
 				$"\n    {String.Join("\n    ", proj.Params.Select(p => $"{p.key} = {p.value}"))}"
-			);
-			Console.Write(
-				$"\n  Comments:       ({proj.Comments.Count})"
-			);
-			if (Arguments.Verbosity > 1 && proj.Comments.Count > 0) Console.Write(
-				$"\n    {String.Join("\n    ", proj.Comments)}"
 			);
 			Console.Write("\n\n");
 
@@ -66,22 +59,12 @@ namespace Prism
 		{
 			Console.Write($"\n  {item.ItemPath} {(item.IsLink ? $"[{item.LinkPath}]" : "")}");
 			if (Arguments.Verbosity > 0)
-			{
-				Console.Write($"\n    Processor:   {item.ProcessorName}");
-				if (item.IncludeComment.HasValue)
-					Console.Write($"\n    Inc. Cmt.:   {item.IncludeComment.Value}");
-			}
+				Console.Write($"\n    Type:        {item.Type}");
 			if (Arguments.Verbosity > 1)
 			{
 				Console.Write($"\n    Parameters:  ({item.Params.Count})");
 				if (item.Params.Count > 0)
 					Console.Write($"\n        {String.Join("\n        ", item.Params.Select(p => $"{p.key} = {p.value}"))}");
-			}
-			if (Arguments.Verbosity > 2)
-			{
-				Console.Write($"\n    Comments:    ({item.Comments.Count})");
-				if (item.Comments.Count > 0)
-					Console.Write($"\n        {String.Join("\n        ", item.Comments)}");
 			}
 		}
 	}

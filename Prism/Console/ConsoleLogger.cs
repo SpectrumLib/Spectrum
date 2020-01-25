@@ -46,7 +46,7 @@ namespace Prism
 			if (Arguments.Verbosity > 1)
 			{
 				INFO($"Build settings: Mode={(release ? "Release" : "Debug")} Compress={Project.Properties.Compress && release} " +
-					 $"PackSize={Project.Properties.PackSize} Comments={Project.Properties.IncludeComments}");
+					 $"PackSize={Project.Properties.PackSize}");
 			}
 		}
 

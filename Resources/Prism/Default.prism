@@ -1,8 +1,11 @@
-project {
-	!rp .
-	!cp ./obj
-	!op ./bin
-	!c true
-	!sz 512
-	!ic false
-}
+project:
+  rdir: .
+  cdir: ./obj
+  odir: ./bin
+  compress: true
+  size: 512
+
+items:
+- item: path/to/example.png
+  link: link/to/exmaple.png
+  type: Texture

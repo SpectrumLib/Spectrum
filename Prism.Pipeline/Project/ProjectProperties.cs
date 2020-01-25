@@ -5,55 +5,57 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using YamlDotNet.RepresentationModel;
 
 namespace Prism.Pipeline
 {
 	// Contains project properties (non-path)
 	internal class ProjectProperties
 	{
+		private static readonly List<string> PARAM_IGNORE = new List<string>() { 
+			"rdir", "cdir", "odir", "compress", "size"
+		};
+
 		#region Fields
 		public readonly bool Compress;
 		public readonly uint PackSize;
-		public readonly bool IncludeComments;
-		public readonly string[] Comments;
 		public readonly (string key, string value)[] Params;
 		#endregion // Fields
 
-		private ProjectProperties(bool c, uint ps, bool ic, string[] cmts, (string, string)[] pars)
+		private ProjectProperties(bool c, uint ps, (string, string)[] pars)
 		{
 			Compress = c;
 			PackSize = ps;
-			IncludeComments = ic;
-			Comments = cmts;
 			Params = pars;
 		}
 
-		public static ProjectProperties FromParseResults(ParamSet pars, out string err)
+		public static ProjectProperties LoadFromYaml(YamlMappingNode node)
 		{
-			bool c = false, ic = false;
-			uint ps = 0;
+			// Get the nodes
+			if (!(node["compress"] is YamlScalarNode cnode))
+				throw new ProjectFileException("Invalid or missing 'compress' project option");
+			if (!(node["size"] is YamlScalarNode snode))
+				throw new ProjectFileException("Invalid or missing 'size' project option");
 
-			if (!pars.TryGet("!c", out var cstr) || !Boolean.TryParse(cstr, out c))
+			// Try to convert
+			if (!Boolean.TryParse(cnode.Value, out bool compress))
+				throw new ProjectFileException("'compress' project option must be a boolean");
+			if (!UInt32.TryParse(snode.Value, out uint size))
+				throw new ProjectFileException("'size' project option must be unsigned integer");
+
+			// Load the rest of the parameters
+			var pars = new List<(string, string)>();
+			foreach (var par in node.Children)
 			{
-				err = "missing or invalid compress (!c) field";
-				return null;
-			}
-			if (!pars.TryGet("!sz", out var szstr) || !UInt32.TryParse(szstr, out ps))
-			{
-				err = "missing or invalid pack size (!sz) field";
-				return null;
-			}
-			if (!pars.TryGet("!ic", out var icstr) || !Boolean.TryParse(icstr, out ic))
-			{
-				err = "missing or invalid include comments (!ic) field";
-				return null;
+				if (!(par.Key is YamlScalarNode key) || PARAM_IGNORE.Contains(key.Value))
+					continue;
+				if (!(par.Value is YamlScalarNode value))
+					continue;
+
+				pars.Add((key.Value, value.Value));
 			}
 
-			pars.CopyCommentsTo(out var comments);
-			pars.CopyStandardParamsTo(out var @params);
-			err = null;
-			return new ProjectProperties(c, Math.Clamp(ps, 1, 2048), ic, comments, @params);
+			return new ProjectProperties(compress, size, pars.ToArray());
 		}
 	}
 }
