@@ -5,6 +5,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.RepresentationModel;
 
 namespace Prism.Pipeline
@@ -19,14 +20,14 @@ namespace Prism.Pipeline
 		#region Fields
 		public readonly bool Compress;
 		public readonly uint PackSize;
-		public readonly (string key, string value)[] Params;
+		public readonly Dictionary<string, string> Params;
 		#endregion // Fields
 
 		private ProjectProperties(bool c, uint ps, (string, string)[] pars)
 		{
 			Compress = c;
 			PackSize = ps;
-			Params = pars;
+			Params = pars.ToDictionary(par => par.Item1, par => par.Item2);
 		}
 
 		public static ProjectProperties LoadFromYaml(YamlMappingNode node)

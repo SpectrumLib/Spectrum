@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
@@ -14,11 +15,12 @@ namespace Prism.Pipeline
 	{
 		#region Fields
 		public readonly BuildEngine Engine;
-
+		public bool ShouldStop => Engine.ShouldStop;
 		public bool IsRelease => Engine.IsRelease;
 		public bool Compress => Engine.Compress;
 
-		public bool ShouldStop => Engine.ShouldStop;
+		private readonly Dictionary<string, ContentProcessor> _procCache = 
+			new Dictionary<string, ContentProcessor>();
 
 		private Thread _thread;
 		public bool Running => (_thread != null);
@@ -43,6 +45,32 @@ namespace Prism.Pipeline
 
 		public void Join() => _thread?.Join();
 
+		private ContentProcessor getProcessor(string ctype, out string err)
+		{
+			err = null;
+			if (_procCache.ContainsKey(ctype))
+				return _procCache[ctype];
+
+			var proctype = Engine.ProcessorTypes.FindContentType(ctype);
+			if (proctype == null)
+			{
+				err = $"no content processor registered for type '{ctype}'";
+				return null;
+			}
+
+			try
+			{
+				var proc = proctype.Ctor.Invoke(null) as ContentProcessor;
+				_procCache.Add(ctype, proc);
+				return proc;
+			}
+			catch (Exception e)
+			{
+				err = $"could not construct content processor ({e.Message}).";
+				return null;
+			}
+		}
+
 		private void _thread_func(bool rebuild)
 		{
 			Stopwatch timer = Stopwatch.StartNew();
@@ -59,6 +87,13 @@ namespace Prism.Pipeline
 				if (!order.Item.InputFile.Exists)
 				{
 					Engine.Logger.ItemFailed(order.Item, order.Index, "Source file does not exist.");
+					continue;
+				}
+
+				// Get the processor instance
+				if (getProcessor(order.Item.Type, out var err) is var pinst && (pinst is null))
+				{
+					Engine.Logger.ItemFailed(order.Item, order.Index, $"Content processor failed - {err}.");
 					continue;
 				}
 

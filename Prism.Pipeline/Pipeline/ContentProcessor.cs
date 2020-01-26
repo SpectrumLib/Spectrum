@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.IO;
 using System.Reflection;
 
 namespace Prism.Pipeline
@@ -78,17 +79,22 @@ namespace Prism.Pipeline
 		/// </para>
 		/// </summary>
 		/// <param name="ctx">Contextual information and utilities for the current item.</param>
-		public abstract void Begin(PipelineContext ctx);
+		/// <param name="stream">The read-only stream to the input content file.</param>
+		public abstract Stream Begin(PipelineContext ctx, BinaryReader stream);
 
 		/// <summary>
 		/// Reads in part (or all) of the data from the content file, which is then passed to <see cref="Process"/>.
 		/// <para>
-		/// Should return <c>true</c> if there is additional data to read - <c>false</c> will end the processing loop.
+		/// Should return <c>true</c> if more data was read - <c>false</c> will end the processing loop.
 		/// </para>
 		/// </summary>
 		/// <param name="ctx">Contextual information and utilities for the current item.</param>
-		/// <returns>If there is additional data - <c>false</c> implies the content file is done being read.</returns>
-		public abstract bool Read(PipelineContext ctx);
+		/// <param name="stream">
+		/// Input content file stream. This is the same stream passed to <see cref="Begin"/>, with its state preserved
+		/// between calls.
+		/// </param>
+		/// <returns>If there was more data read - <c>false</c> implies the content file is done being read.</returns>
+		public abstract bool Read(PipelineContext ctx, BinaryReader stream);
 
 		/// <summary>
 		/// Called to process the last data loaded in the <see cref="Read"/> call, and prepare it for the
@@ -102,7 +108,8 @@ namespace Prism.Pipeline
 		/// any header data the first time it is called.
 		/// </summary>
 		/// <param name="ctx">Contextual information and utilities for the current item.</param>
-		public abstract void Write(PipelineContext ctx);
+		/// <param name="stream">The output stream to write the processed content data into.</param>
+		public abstract void Write(PipelineContext ctx, BinaryWriter stream);
 
 		/// <summary>
 		/// Called to finalize the pipeline once all data has been processed. This is the last function call for any

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using YamlDotNet.RepresentationModel;
 
@@ -26,7 +27,7 @@ namespace Prism.Pipeline
 		public readonly FileInfo OutputFile;	// The path to the output file (cache directory)
 		public readonly FileInfo CacheFile;     // The path to the cache file (.bcache in cache directory)
 		public readonly string Type;			// The content type, which controls which processor is used
-		public readonly List<(string key, string value)> Params;
+		public readonly Dictionary<string, string> Params;
 
 		public bool IsLink => LinkPath != null;
 		#endregion // Fields
@@ -42,7 +43,7 @@ namespace Prism.Pipeline
 			CacheFile = new FileInfo(Path.Combine(paths.Cache.FullName, $"{ItemName}.cache"));
 
 			Type = type.ToLowerInvariant();
-			Params = pars;
+			Params = pars.ToDictionary(p => p.Item1, p => p.Item2);
 		}
 
 		public static string GetItemName(ReadOnlySpan<char> itemPath)

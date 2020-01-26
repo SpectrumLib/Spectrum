@@ -36,7 +36,7 @@ namespace Prism
 				$"\n  Parameters:     ({proj.Params.Count})"
 			);
 			if (Arguments.Verbosity > 0 && proj.Params.Count > 0) Console.Write(
-				$"\n    {String.Join("\n    ", proj.Params.Select(p => $"{p.key} = {p.value}"))}"
+				$"\n    {String.Join("\n    ", proj.Params.Select(p => $"{p.Key} = {p.Value}"))}"
 			);
 			Console.Write("\n\n");
 
@@ -64,7 +64,7 @@ namespace Prism
 			{
 				Console.Write($"\n    Parameters:   ({item.Params.Count})");
 				if (item.Params.Count > 0)
-					Console.Write($"\n        {String.Join("\n        ", item.Params.Select(p => $"{p.key} = {p.value}"))}");
+					Console.Write($"\n        {String.Join("\n        ", item.Params.Select(p => $"{p.Key} = {p.Value}"))}");
 			}
 		}
 	}

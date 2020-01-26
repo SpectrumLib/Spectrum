@@ -17,7 +17,7 @@ namespace Prism.Pipeline
 		#region Fields
 		public readonly ProjectPaths Paths;
 		public readonly ProjectProperties Properties;
-		public IReadOnlyCollection<(string key, string value)> Params => Properties.Params;
+		public IReadOnlyDictionary<string, string> Params => Properties.Params;
 
 		public IReadOnlyCollection<ContentItem> Items => _items;
 		private readonly List<ContentItem> _items;
@@ -153,7 +153,7 @@ namespace Prism.Pipeline
 				sb.Append("  size: "); sb.Append(proj.Properties.PackSize); sb.AppendLine();
 				foreach (var par in proj.Properties.Params)
 				{
-					sb.Append($"  {par.key}: {par.value}"); sb.AppendLine();
+					sb.Append($"  {par.Key}: {par.Value}"); sb.AppendLine();
 				}
 				sb.AppendLine();
 				sb.Append("items:"); sb.AppendLine();
@@ -173,7 +173,7 @@ namespace Prism.Pipeline
 				sb.Append("  type: "); sb.Append(item.Type); sb.AppendLine();
 				foreach (var par in item.Params)
 				{
-					sb.Append($"  {par.key}: {par.value}"); sb.AppendLine();
+					sb.Append($"  {par.Key}: {par.Value}"); sb.AppendLine();
 				}
 
 				writer.Write(sb.ToString());

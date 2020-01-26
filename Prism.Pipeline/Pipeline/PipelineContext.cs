@@ -4,7 +4,9 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace Prism.Pipeline
@@ -12,12 +14,12 @@ namespace Prism.Pipeline
 	/// <summary>
 	/// Provides information and utility to content processing functions in <see cref="ContentProcessor"/> instances.
 	/// </summary>
-	public class PipelineContext
+	public sealed class PipelineContext
 	{
 		#region Fields
-		private protected readonly BuildTask _task;   // Task associated with this
-		private protected BuildLogger _logger => _task.Engine.Logger;
-		private protected readonly BuildOrder _order; // Order associated with this
+		private readonly BuildTask _task;   // Task associated with this
+		private BuildLogger _logger => _task.Engine.Logger;
+		private readonly BuildOrder _order; // Order associated with this
 
 		/// <summary>
 		/// The processed name of the item, taken from the input path, with path delimiters replaced with periods and
@@ -32,6 +34,19 @@ namespace Prism.Pipeline
 		/// The content type name for the item.
 		/// </summary>
 		public string ItemType => _order.Item.Type;
+		/// <summary>
+		/// The absolute path to the input content item in the filesystem.
+		/// </summary>
+		public string ItemPath => _order.Item.InputFile.FullName;
+		/// <summary>
+		/// The absolute path to the output file to contain the processed content data.
+		/// </summary>
+		public string OutputPath => _order.Item.OutputFile.FullName;
+
+		/// <summary>
+		/// The set of raw item parameters from the content project file.
+		/// </summary>
+		public IReadOnlyDictionary<string, string> Params => _order.Item.Params;
 
 		/// <summary>
 		/// Zero-based counter for the current iteration of the <see cref="ContentProcessor"/> process loop. Will be 
@@ -45,13 +60,50 @@ namespace Prism.Pipeline
 		public bool IsFirstLoop => (LoopIndex == 0);
 		#endregion // Fields
 
-		private protected PipelineContext(BuildTask task, BuildOrder order)
+		internal PipelineContext(BuildTask task, BuildOrder order)
 		{
 			_task = task;
 			_order = order;
 
 			LoopIndex = 0;
 		}
+
+		#region Utility
+		/// <summary>
+		/// Reserves a temp file for use by a <see cref="ContentProcessor"/>. Temp files can only be used within
+		/// a single pipeline execution, but can be shared across different content items within that execution.
+		/// <para>
+		/// The returned temp file is unique to the processor instance.
+		/// </para>
+		/// </summary>
+		/// <returns>An object describing the temp file.</returns>
+		public FileInfo GetTempFile() => new FileInfo(_task.Engine.ReserveTempFile());
+		#endregion // Utility
+
+		#region Parameters
+		/// <summary>
+		/// Gets if the content item has the given parameter specified.
+		/// </summary>
+		/// <param name="key">The parameter key to check for.</param>
+		/// <returns>If the parameter with the given key exists in the parameter set.</returns>
+		public bool HasParam(string key) => Params.ContainsKey(key);
+
+		/// <summary>
+		/// Attempts to get the value of the parameter with the given key.
+		/// </summary>
+		/// <param name="key">The parameter key to get.</param>
+		/// <param name="value">The value of the parameter.</param>
+		/// <returns>If the parameter was found, and its value retrieved.</returns>
+		public bool TryGetParam(string key, out string value) => Params.TryGetValue(key, out value);
+
+		/// <summary>
+		/// Gets the parameter with the given key, or a default value if the key can't be found.
+		/// </summary>
+		/// <param name="key">The parameter key to get.</param>
+		/// <param name="default">The default value to use if the key does not exist.</param>
+		/// <returns>The parameter value, or the default.</returns>
+		public string GetParamOrDefault(string key, string @default) => Params.GetValueOrDefault(key, @default);
+		#endregion // Parameters
 
 		#region Logging
 		/// <summary>
