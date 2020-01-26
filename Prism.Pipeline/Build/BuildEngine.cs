@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -167,6 +168,13 @@ namespace Prism.Pipeline
 				// Clean up, most likely lots of temp items by now
 				GC.Collect();
 
+				// Exit from pipeline if any items failed
+				if (_tasks.Any(t => t.Results.Any(r => !r.Success)))
+				{
+					Logger.EngineError("One or more items failed to build, skipping output step.");
+					return;
+				}
+
 				success = true;
 			}
 			finally
@@ -189,6 +197,19 @@ namespace Prism.Pipeline
 			try
 			{
 				Logger.CleanStart();
+
+				Project.Paths.Cache.Refresh();
+				Project.Paths.Output.Refresh();
+
+				if (Project.Paths.Cache.Exists)
+					Project.Paths.Cache.Delete(true);
+
+				if (ShouldStop)
+					return;
+
+				if (Project.Paths.Output.Exists)
+					Project.Paths.Output.Delete(true);
+
 				success = true;
 			}
 			finally

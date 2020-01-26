@@ -13,8 +13,6 @@ namespace Prism.Pipeline
 	internal sealed class TextureProcessor : ContentProcessor
 	{
 		#region Fields
-		public override string LoaderName => "TextureLoader";
-
 		private string _name;
 		private long _size;
 		#endregion // Fields

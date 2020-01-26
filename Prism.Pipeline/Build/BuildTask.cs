@@ -23,6 +23,9 @@ namespace Prism.Pipeline
 		private readonly Dictionary<string, ContentProcessor> _procCache = 
 			new Dictionary<string, ContentProcessor>();
 
+		private readonly List<ItemResult> _results = new List<ItemResult>();
+		public IReadOnlyList<ItemResult> Results => _results;
+
 		private Thread _thread;
 		public bool Running => (_thread != null);
 		#endregion // Fields
@@ -77,6 +80,7 @@ namespace Prism.Pipeline
 		private void _thread_func(bool rebuild)
 		{
 			Stopwatch timer = Stopwatch.StartNew();
+			_results.Clear();
 
 			// Iterate over build orders
 			while (!ShouldStop && Engine.GetNextOrder(out var order))
@@ -85,11 +89,35 @@ namespace Prism.Pipeline
 				Engine.Logger.ItemStart(order.Item, order.Index);
 				timer.Restart();
 
+				// Prepare the item results
+				var res = new ItemResult(order);
+				_results.Add(res);
+
+				// Refresh file status
+				try
+				{
+					order.Item.InputFile.Refresh();
+					order.Item.CacheFile.Refresh();
+					order.Item.OutputFile.Refresh();
+				}
+				catch
+				{
+					Engine.Logger.ItemFailed(order.Item, order.Index, "Could not refresh content file status.");
+					continue;
+				}
+
 				// Check the source file exists
-				order.Item.InputFile.Refresh();
 				if (!order.Item.InputFile.Exists)
 				{
 					Engine.Logger.ItemFailed(order.Item, order.Index, "Source file does not exist.");
+					continue;
+				}
+
+				// Check the build cache
+				if (!rebuild && !order.NeedsRebuild())
+				{
+					Engine.Logger.ItemSkipped(order.Item, order.Index);
+					res.Complete(TimeSpan.Zero, (ulong)order.Item.OutputFile.Length);
 					continue;
 				}
 
@@ -125,6 +153,7 @@ namespace Prism.Pipeline
 				}
 
 				// Run through the pipeline
+				ulong outSize = 0;
 				try
 				{
 					// Exit check
@@ -161,8 +190,7 @@ namespace Prism.Pipeline
 					// End the pipeline
 					pinst.End(ctx, writer);
 					writer.Flush();
-
-					// TODO: Write the build cache
+					outSize = (ulong)outStream.Length;
 				}
 				catch (PipelineItemException e)
 				{
@@ -181,7 +209,10 @@ namespace Prism.Pipeline
 					outStream?.Dispose();
 				}
 
-				// Report the end of the item build
+				// Report the end of the item build, write the cache
+				res.Complete(timer.Elapsed, outSize);
+				if (!order.WriteCacheFile(res))
+					Engine.Logger.ItemWarn(order.Item, order.Index, "Unable to write build cache file.");
 				Engine.Logger.ItemFinished(order.Item, order.Index, timer.Elapsed);
 			}
 		}
