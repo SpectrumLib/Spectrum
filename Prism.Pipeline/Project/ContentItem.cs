@@ -41,7 +41,7 @@ namespace Prism.Pipeline
 			OutputFile = new FileInfo(Path.Combine(paths.Cache.FullName, $"{ItemName}.bin"));
 			CacheFile = new FileInfo(Path.Combine(paths.Cache.FullName, $"{ItemName}.cache"));
 
-			Type = type;
+			Type = type.ToLowerInvariant();
 			Params = pars;
 		}
 

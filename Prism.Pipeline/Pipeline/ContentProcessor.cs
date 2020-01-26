@@ -12,6 +12,8 @@ namespace Prism.Pipeline
 	/// Core type for implementing functionality for importing, processing, and writing content files in the Prism
 	/// pipeline. Subclasses of this type are associated with a content type, and are responsible for all pipeline
 	/// steps for that specific content type. 
+	/// </summary>
+	/// <remarks>
 	/// <para>
 	/// Subtypes must be decorated with <see cref="ContentProcessorAttribute"/> to be usable. They must also have
 	/// a no-args constructor available.
@@ -20,7 +22,18 @@ namespace Prism.Pipeline
 	/// One instance of each subtype will exist on each build thread that uses the type. Because of this, static
 	/// members are discouraged, and should be thread-safe if used.
 	/// </para>
-	/// </summary>
+	/// <para>
+	/// The processing loop is designed to work for both all-at-once and streaming processing. The processing functions
+	/// are called in this order:
+	/// <list type="number">
+	/// <item><see cref="Reset"/></item>
+	/// <item><see cref="Begin"/></item>
+	/// <item><see cref="Read"/> -> <see cref="Process"/> -> <see cref="Write"/></item>
+	/// <item>If the last <see cref="Read"/> call returned <c>true</c>, repeat the above sequence.</item>
+	/// <item><see cref="End"/> - once the last call to <see cref="Read"/> returned <c>false</c>.</item>
+	/// </list>
+	/// </para>
+	/// </remarks>
 	public abstract class ContentProcessor : IDisposable
 	{
 		// Self-type reference
@@ -50,6 +63,54 @@ namespace Prism.Pipeline
 		{
 			dispose(false);
 		}
+
+		#region Pipeline Functions
+		/// <summary>
+		/// Prepares the processor for a new content item. This is the first function called in the pipeline.
+		/// </summary>
+		public abstract void Reset();
+
+		/// <summary>
+		/// Performs initial file reads, and prepares the processor for reading the content file.
+		/// <para>
+		/// This function should be used to load information about the content, not to perform any content
+		/// processing.
+		/// </para>
+		/// </summary>
+		/// <param name="ctx">Contextual information and utilities for the current item.</param>
+		public abstract void Begin(PipelineContext ctx);
+
+		/// <summary>
+		/// Reads in part (or all) of the data from the content file, which is then passed to <see cref="Process"/>.
+		/// <para>
+		/// Should return <c>true</c> if there is additional data to read - <c>false</c> will end the processing loop.
+		/// </para>
+		/// </summary>
+		/// <param name="ctx">Contextual information and utilities for the current item.</param>
+		/// <returns>If there is additional data - <c>false</c> implies the content file is done being read.</returns>
+		public abstract bool Read(PipelineContext ctx);
+
+		/// <summary>
+		/// Called to process the last data loaded in the <see cref="Read"/> call, and prepare it for the
+		/// <see cref="Write"/> function.
+		/// </summary>
+		/// <param name="ctx">Contextual information and utilities for the current item.</param>
+		public abstract void Process(PipelineContext ctx);
+
+		/// <summary>
+		/// Called to write the processed data from the last <see cref="Process"/> call. This function should write
+		/// any header data the first time it is called.
+		/// </summary>
+		/// <param name="ctx">Contextual information and utilities for the current item.</param>
+		public abstract void Write(PipelineContext ctx);
+
+		/// <summary>
+		/// Called to finalize the pipeline once all data has been processed. This is the last function call for any
+		/// content item in the pipeline.
+		/// </summary>
+		/// <param name="ctx">Contextual information and utilities for the current item.</param>
+		public abstract void End(PipelineContext ctx);
+		#endregion // Pipeline Functions
 
 		#region IDisposable
 		public void Dispose()

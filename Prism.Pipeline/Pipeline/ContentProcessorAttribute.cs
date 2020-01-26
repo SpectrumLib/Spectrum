@@ -40,12 +40,12 @@ namespace Prism.Pipeline
 		/// </summary>
 		/// <param name="name">The display name of the processor type.</param>
 		/// <param name="cType">The content type associated with the processor.</param>
-		/// <param name="exts">File extensions that default to the processor type.</param>
-		public ContentProcessorAttribute(string name, string cType, params string[] exts)
+		/// <param name="exts">File extensions (comma-separated) that default to the processor type.</param>
+		public ContentProcessorAttribute(string name, string cType, string exts)
 		{
 			DisplayName = name;
 			ContentType = cType.ToLowerInvariant();
-			_extensions = exts.Select(ex => (ex[0] == '.') ? ex : '.' + ex).ToArray();
+			_extensions = exts?.Split(',').Select(ex => (ex[0] == '.') ? ex : '.' + ex).ToArray();
 		}
 	}
 }
