@@ -41,11 +41,11 @@ namespace Prism.Pipeline
 		public static ProjectPaths LoadFromYaml(FileInfo proj, YamlMappingNode node)
 		{
 			// Get the nodes
-			if (!(node["rdir"] is YamlScalarNode rnode))
+			if (!node.TryGetChild<YamlScalarNode>("rdir", out var rnode))
 				throw new ProjectFileException("Invalid or missing 'rdir' project option");
-			if (!(node["cdir"] is YamlScalarNode cnode))
+			if (!node.TryGetChild<YamlScalarNode>("cdir", out var cnode))
 				throw new ProjectFileException("Invalid or missing 'cdir' project option");
-			if (!(node["odir"] is YamlScalarNode onode))
+			if (!node.TryGetChild<YamlScalarNode>("odir", out var onode))
 				throw new ProjectFileException("Invalid or missing 'odir' project option");
 
 			// Parse the paths

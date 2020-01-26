@@ -67,19 +67,18 @@ namespace Prism.Pipeline
 		public static ContentItem LoadFromYaml(ProjectPaths paths, YamlMappingNode node)
 		{
 			// Get the nodes
-			if (!(node["item"] is YamlScalarNode inode))
+			if (!node.TryGetChild<YamlScalarNode>("item", out var inode))
 				throw new ProjectFileException("Invalid or missing 'item' item option");
-			if (!(node["type"] is YamlScalarNode tnode))
+			if (!node.TryGetChild<YamlScalarNode>("type", out var tnode))
 				throw new ProjectFileException("Invalid or missing 'type' item option");
-			if (!((node["link"] ?? new YamlScalarNode("")) is YamlScalarNode lnode))
+			if (!(node.GetChildOrDefault("link", new YamlScalarNode(null)) is YamlScalarNode lnode))
 				throw new ProjectFileException("Invalid 'link' item option");
-			lnode = (lnode.Value.Length == 0) ? null : lnode;
 
 			// Extract the paths
 			if (!PathUtils.TryMakeAbsolutePath(inode.Value, paths.Root.FullName, out var itemPath))
 				throw new ProjectFileException($"Invalid path for item '{inode.Value}'");
 			string linkPath = null;
-			if ((lnode != null) && !PathUtils.TryMakeAbsolutePath(lnode.Value, paths.Root.FullName, out linkPath))
+			if (!(lnode.Value is null) && !PathUtils.TryMakeAbsolutePath(lnode.Value, paths.Root.FullName, out linkPath))
 				throw new ProjectFileException($"Invalid link path for item '{lnode.Value}'");
 
 			// Extract the parameters

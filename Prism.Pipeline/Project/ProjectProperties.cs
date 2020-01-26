@@ -32,9 +32,9 @@ namespace Prism.Pipeline
 		public static ProjectProperties LoadFromYaml(YamlMappingNode node)
 		{
 			// Get the nodes
-			if (!(node["compress"] is YamlScalarNode cnode))
+			if (!node.TryGetChild<YamlScalarNode>("compress", out var cnode))
 				throw new ProjectFileException("Invalid or missing 'compress' project option");
-			if (!(node["size"] is YamlScalarNode snode))
+			if (!node.TryGetChild<YamlScalarNode>("size", out var snode))
 				throw new ProjectFileException("Invalid or missing 'size' project option");
 
 			// Try to convert
