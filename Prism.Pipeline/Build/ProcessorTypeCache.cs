@@ -20,6 +20,7 @@ namespace Prism.Pipeline
 		private readonly List<string> _loadedAssemblies = new List<string>(); // Prevent double-loading
 
 		private readonly List<ProcessorType> _procTypes = new List<ProcessorType>();
+		public IReadOnlyList<ProcessorType> ProcTypes => _procTypes;
 		#endregion // Fields
 
 		public ProcessorTypeCache(BuildEngine engine)
@@ -47,7 +48,7 @@ namespace Prism.Pipeline
 				return true;
 
 			// Filter a list of types that have the super class and attribute, and are instantiable
-			var types = assembly.GetExportedTypes()
+			var types = assembly.GetTypes()
 								.Where(typ => typ.GetCustomAttribute(ContentProcessorAttribute.TYPE) != null)
 								.Where(typ => typ.IsSubclassOf(ContentProcessor.TYPE))
 								.Where(typ => !typ.IsAbstract);

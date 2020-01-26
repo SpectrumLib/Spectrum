@@ -62,7 +62,7 @@ namespace Prism.Pipeline
 
 			string name = sb.ToString();
 			var ext = Path.GetExtension(last);
-			return name.Substring(0, name.Length - ext.Length);
+			return name.Substring(0, name.Length - (ext.Length + 1));
 		}
 
 		public static ContentItem LoadFromYaml(ProjectPaths paths, YamlMappingNode node)

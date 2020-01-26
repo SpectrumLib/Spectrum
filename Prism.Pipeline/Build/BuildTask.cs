@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 
 namespace Prism.Pipeline
@@ -45,8 +46,9 @@ namespace Prism.Pipeline
 
 		public void Join() => _thread?.Join();
 
-		private ContentProcessor getProcessor(string ctype, out string err)
+		private ContentProcessor getProcessor(string ctype, out string pname, out string err)
 		{
+			pname = null;
 			err = null;
 			if (_procCache.ContainsKey(ctype))
 				return _procCache[ctype];
@@ -62,6 +64,7 @@ namespace Prism.Pipeline
 			{
 				var proc = proctype.Ctor.Invoke(null) as ContentProcessor;
 				_procCache.Add(ctype, proc);
+				pname = proctype.Attr.DisplayName;
 				return proc;
 			}
 			catch (Exception e)
@@ -91,10 +94,91 @@ namespace Prism.Pipeline
 				}
 
 				// Get the processor instance
-				if (getProcessor(order.Item.Type, out var err) is var pinst && (pinst is null))
+				if (getProcessor(order.Item.Type, out var pname, out var err) is var pinst && (pinst is null))
 				{
 					Engine.Logger.ItemFailed(order.Item, order.Index, $"Content processor failed - {err}.");
 					continue;
+				}
+				try
+				{
+					pinst.Reset();
+				}
+				catch (Exception e)
+				{
+					Engine.Logger.ItemFailed(order.Item, order.Index, $"{pname} reset failed - {e.Message}.");
+					continue;
+				}
+
+				// Open the file streams
+				FileStream inStream = null, outStream = null;
+				try
+				{
+					inStream = order.Item.InputFile.Open(FileMode.Open, FileAccess.Read, FileShare.None);
+					outStream = order.Item.OutputFile.Open(FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+				}
+				catch (Exception e)
+				{
+					inStream?.Dispose();
+					outStream?.Dispose();
+					Engine.Logger.ItemFailed(order.Item, order.Index, $"Unable to open file stream - {e.Message}.");
+					continue;
+				}
+
+				// Run through the pipeline
+				try
+				{
+					// Exit check
+					if (ShouldStop)
+					{
+						Engine.Logger.ItemFailed(order.Item, order.Index, "Build cancelled.");
+						break;
+					}
+
+					// Create the streams and context
+					using BinaryReader reader = new BinaryReader(inStream);
+					using BinaryWriter writer = new BinaryWriter(outStream);
+					PipelineContext ctx = new PipelineContext(this, order);
+
+					// Begin the pipeline
+					pinst.Begin(ctx, reader);
+
+					// Perform the processing loop
+					while (!ShouldStop && pinst.Read(ctx, reader))
+					{
+						pinst.Process(ctx);
+						pinst.Write(ctx, writer);
+						writer.Flush();
+						ctx.LoopIndex += 1;
+					}
+
+					// Exit check
+					if (ShouldStop)
+					{
+						Engine.Logger.ItemFailed(order.Item, order.Index, "Build cancelled.");
+						break;
+					}
+
+					// End the pipeline
+					pinst.End(ctx, writer);
+					writer.Flush();
+
+					// TODO: Write the build cache
+				}
+				catch (PipelineItemException e)
+				{
+					Engine.Logger.ItemFailed(order.Item, order.Index, $"[{e.CallingMethod}:{e.CallingLine}] - {e.Message}.");
+					continue;
+				}
+				catch (Exception e)
+				{
+					var sline = e.StackTrace.Substring(0, e.StackTrace.IndexOf('\n')).Trim();
+					Engine.Logger.ItemFailed(order.Item, order.Index, $"[{e.GetType().Name}] - {e.Message} ({sline}).");
+					continue;
+				}
+				finally
+				{
+					inStream?.Dispose();
+					outStream?.Dispose();
 				}
 
 				// Report the end of the item build
