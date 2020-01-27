@@ -24,7 +24,7 @@ namespace Prism
 
 		public static uint Parallel = 1;
 
-		public static bool Debug = false;
+		public static bool Debug = true;
 		#endregion // Fields
 
 		public static bool Parse(string[] args)

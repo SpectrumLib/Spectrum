@@ -175,6 +175,22 @@ namespace Prism.Pipeline
 					return;
 				}
 
+				// Continue to the output stage, prepare the output task
+				Logger.BuildContinue(timer.Elapsed);
+				var outTask = new OutputTask(this, _tasks);
+
+				// Move the content files into output
+				if (!outTask.GenerateOutputFiles(release))
+					return;
+
+				// Final exit check
+				if (ShouldStop)
+					return;
+
+				// Output the cpak file
+				if (!outTask.GenerateContentPack(release))
+					return;
+
 				success = true;
 			}
 			finally

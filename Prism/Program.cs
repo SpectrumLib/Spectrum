@@ -90,8 +90,8 @@ namespace Prism
 				"\n   > p;parallel     - For 'build' and 'rebuild' tasks, this sets the number" +
 				"\n     [=<int>]           of threads to use. Not specifying a count will use" +
 				"\n                        the number of cores on the system." +
-				"\n   > r;release      - Set (re)build tasks to be release (default)." +
-				"\n   > d;debug        - Set (re)build tasks to be debug." +
+				"\n   > r;release      - Set (re)build tasks to be release." +
+				"\n   > d;debug        - Set (re)build tasks to be debug (default)." +
 				"\n" + 
 				"\nParameters can be specified with '-', '--', and '/' (on Windows)." +
 				"\n\n"
