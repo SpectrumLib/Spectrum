@@ -30,8 +30,10 @@ namespace Prism.Pipeline
 		}
 
 		// Checks against the build output and cache to check if the order needs a rebuild
-		public bool NeedsRebuild()
+		public bool NeedsRebuild(out bool compress)
 		{
+			compress = false;
+
 			if (!Item.CacheFile.Exists || !Item.OutputFile.Exists)
 				return true;
 
@@ -52,6 +54,9 @@ namespace Prism.Pipeline
 				var typeName = reader.ReadString();
 				if (Item.Type != typeName)
 					return true;
+
+				// Get last build settings
+				compress = reader.ReadBoolean();
 
 				// Check parameters
 				var pcount = reader.ReadUInt32();
@@ -85,6 +90,7 @@ namespace Prism.Pipeline
 				writer.Write(C_VERSION);
 				writer.Write(Item.OutputFile.LastWriteTimeUtc.ToBinary());
 				writer.Write(Item.Type);
+				writer.Write(res.Compress);
 				writer.Write((uint)Item.Params.Count);
 				foreach (var pair in Item.Params)
 				{

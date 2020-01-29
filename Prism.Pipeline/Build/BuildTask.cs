@@ -114,10 +114,10 @@ namespace Prism.Pipeline
 				}
 
 				// Check the build cache
-				if (!rebuild && !order.NeedsRebuild())
+				if (!rebuild && !order.NeedsRebuild(out var lastCompress))
 				{
 					Engine.Logger.ItemSkipped(order.Item, order.Index);
-					res.Complete(TimeSpan.Zero, (ulong)order.Item.OutputFile.Length);
+					res.Complete(TimeSpan.Zero, (ulong)order.Item.OutputFile.Length, lastCompress);
 					continue;
 				}
 
@@ -154,6 +154,7 @@ namespace Prism.Pipeline
 
 				// Run through the pipeline
 				ulong outSize = 0;
+				bool outCompress = false;
 				try
 				{
 					// Exit check
@@ -188,7 +189,7 @@ namespace Prism.Pipeline
 					}
 
 					// End the pipeline
-					pinst.End(ctx, writer);
+					pinst.End(ctx, writer, out outCompress);
 					writer.Flush();
 					outSize = (ulong)outStream.Length;
 				}
@@ -210,7 +211,7 @@ namespace Prism.Pipeline
 				}
 
 				// Report the end of the item build, write the cache
-				res.Complete(timer.Elapsed, outSize);
+				res.Complete(timer.Elapsed, outSize, outCompress && IsRelease);
 				if (!order.WriteCacheFile(res))
 					Engine.Logger.ItemWarn(order.Item, order.Index, "Unable to write build cache file.");
 				Engine.Logger.ItemFinished(order.Item, order.Index, timer.Elapsed);

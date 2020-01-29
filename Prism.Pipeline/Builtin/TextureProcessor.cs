@@ -48,10 +48,11 @@ namespace Prism.Pipeline
 			
 		}
 
-		public override void End(PipelineContext ctx, BinaryWriter stream)
+		public override void End(PipelineContext ctx, BinaryWriter stream, out bool compress)
 		{
 			stream.Write(_name.AsSpan()); stream.Write('\n');
 			stream.Write($"Size = {_size}".AsSpan());
+			compress = true;
 		}
 
 		protected override void onDispose(bool disposing)

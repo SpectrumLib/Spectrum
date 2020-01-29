@@ -17,6 +17,7 @@ namespace Prism.Pipeline
 		public bool Success { get; private set; }
 		public TimeSpan BuildTime { get; private set; }
 		public ulong Size { get; private set; } // Final size of the generated binary data
+		public bool Compress { get; private set; } // If the item data should be compressed
 		#endregion // Fields
 
 		public ItemResult(BuildOrder order)
@@ -27,14 +28,16 @@ namespace Prism.Pipeline
 			Success = false;
 			BuildTime = TimeSpan.Zero;
 			Size = 0;
+			Compress = false;
 		}
 
 		// Marks the result as a success
-		public void Complete(TimeSpan time, ulong size)
+		public void Complete(TimeSpan time, ulong size, bool compress)
 		{
 			Success = true;
 			BuildTime = time;
 			Size = size;
+			Compress = compress;
 		}
 	}
 }

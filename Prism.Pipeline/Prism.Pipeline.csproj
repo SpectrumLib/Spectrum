@@ -42,6 +42,15 @@
     <Reference Include="YamlDotNet">
       <HintPath>..\Dependencies\Managed\YamlDotNet.dll</HintPath>
     </Reference>
+    <Reference Include="K4os.Compression.LZ4">
+      <HintPath>..\Dependencies\Managed\K4os.Compression.LZ4.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Compression.LZ4.Streams">
+      <HintPath>..\Dependencies\Managed\K4os.Compression.LZ4.Streams.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Hash.xxHash">
+      <HintPath>..\Dependencies\Managed\K4os.Hash.xxHash.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

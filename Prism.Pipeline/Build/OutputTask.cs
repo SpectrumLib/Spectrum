@@ -81,16 +81,18 @@ namespace Prism.Pipeline
 					// Write each content file into the bin stream, update the entry
 					for (int i = 0; i < _entries.Count; ++i)
 					{
-						var bidx = _entries[i].BinIndex;
-						using var instream = _entries[i].Item.OutputFile.OpenRead();
-						var outstream = bstreams[bidx];
+						var ent = _entries[i];
 
-						var off = outstream.Position;
-						instream.CopyTo(outstream);
-						var size = outstream.Position - off;
+						var bidx = ent.BinIndex;
+						using var instream = ent.Item.OutputFile.OpenRead();
+						var ostream = bstreams[bidx];
+
+						var off = ostream.Position;
+						instream.CopyTo(ostream);
+						var size = ostream.Position - off;
 
 						_entries[i] = new PackEntry {
-							Result = _entries[i].Result,
+							Result = ent.Result,
 							BinIndex = bidx,
 							BinSize = (ulong)size,
 							Offset = (ulong)off
@@ -165,6 +167,7 @@ namespace Prism.Pipeline
 					writer.Write(entry.Item.Type);
 					writer.Write(entry.DataSize);
 					writer.Write(entry.BinSize);
+					writer.Write(entry.Compress);
 					writer.Write(entry.Offset);
 					writer.Write(entry.BinIndex);
 				}
@@ -187,6 +190,7 @@ namespace Prism.Pipeline
 
 			public ContentItem Item => Result.Item;
 			public ulong DataSize => Result.Size; // Uncompressed (real) size
+			public bool Compress => Result.Compress;
 		}
 
 		private static class Kernel32
