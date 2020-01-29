@@ -41,14 +41,95 @@ namespace Prism.Pipeline
 
 		public bool GenerateOutputFiles(bool release)
 		{
-			// Switch the output based on the build type
 			if (release) // Perform compression and binning -  !!TODO!! actually perform compression
 			{
-				
+				// This assumes that the compression can only make the data smaller (not a bad assumption)
+				//   Even if the data does get bigger, it will only get bigger by a factor of 1/256
+
+				// Prepare the bin files (and find any that are too large)
+				ulong packSize = Engine.Project.Properties.PackSize * 1024 * 1024; // MB to B
+				ulong totalSize = (ulong)_entries.Sum(ent => (long)ent.DataSize);
+				if (_entries.FirstOrDefault(ent => ent.DataSize > packSize) is var badEnt && badEnt.Result != null)
+				{
+					Engine.Logger.EngineError($"The item {badEnt.Item.ItemName} is too large for the pack size setting.");
+					return false;
+				}
+				ulong[] bins = new ulong[(uint)Math.Ceiling(totalSize / (double)packSize)];
+				Array.Fill(bins, 0ul);
+
+				// Assign the entries into bin files
+				uint[] indices = new uint[_entries.Count];
+				for (int i = 0; i < _entries.Count; ++i)
+				{
+					// Find and shrink the first bin file that fits the item
+					int bidx = Array.FindIndex(bins, bin => (bin + _entries[i].DataSize) <= packSize);
+					bins[bidx] += _entries[i].DataSize;
+					indices[i] = (uint)bidx;
+				}
+
+				// Perform the binning
+				FileStream[] bstreams = new FileStream[bins.Length];
+				try
+				{
+					// Open the bin streams
+					for (int i = 0; i < bins.Length; ++i)
+					{
+						var binpath = Path.Combine(Engine.Project.Paths.Output.FullName, $"{i}.cbin");
+						bstreams[i] = File.Open(binpath, FileMode.Create, FileAccess.Write, FileShare.None);
+					}
+
+					// Write each content file into the bin stream, update the entry
+					for (int i = 0; i < _entries.Count; ++i)
+					{
+						var bidx = _entries[i].BinIndex;
+						using var instream = _entries[i].Item.OutputFile.OpenRead();
+						var outstream = bstreams[bidx];
+
+						var off = outstream.Position;
+						instream.CopyTo(outstream);
+						var size = outstream.Position - off;
+
+						_entries[i] = new PackEntry {
+							Result = _entries[i].Result,
+							BinIndex = bidx,
+							BinSize = (ulong)size,
+							Offset = (ulong)off
+						};
+					}
+				}
+				catch (Exception e)
+				{
+					Engine.Logger.EngineError($"Failed to back bin file: {e.Message}.");
+					return false;
+				}
+				finally
+				{
+					foreach (var bs in bstreams)
+						bs?.Dispose();
+				}
 			}
 			else // For debug builds, simply link the cache binaries to the output directory
 			{
-					
+				// Try to link, otherwise perform a direct copy
+				foreach (var entry in _entries)
+				{
+					var linkPath = Path.Combine(Engine.Project.Paths.Output.FullName, 
+						$"{entry.Item.ItemName}.cbin");
+
+					if (!PathUtils.CreateFileLink(entry.Item.OutputFile.FullName, linkPath))
+					{
+						Engine.Logger.EngineWarn($"Failed to create link for '{entry.Item.ItemName}', copying file...");
+						try
+						{
+							entry.Item.OutputFile.CopyTo(linkPath);
+						}
+						catch
+						{
+							Engine.Logger.EngineError($"Failed to copy item '{entry.Item.ItemName}' to output.");
+							return false;
+						}
+					}
+				}
 			}
 
 			return true;
@@ -103,7 +184,6 @@ namespace Prism.Pipeline
 			public uint BinIndex;
 			public ulong BinSize; // Compressed size
 			public ulong Offset;
-			public bool Placed;
 
 			public ContentItem Item => Result.Item;
 			public ulong DataSize => Result.Size; // Uncompressed (real) size

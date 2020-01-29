@@ -24,8 +24,8 @@ namespace Prism.Pipeline
 		public readonly string LinkPath;        // The path of the link, as it appears in the project file
 		public readonly string ItemName;		// The final name of the item, as it appears in the content pack
 		public readonly FileInfo InputFile;		// The path to the true input file (respecting link)
-		public readonly FileInfo OutputFile;	// The path to the output file (cache directory)
-		public readonly FileInfo CacheFile;     // The path to the cache file (.bcache in cache directory)
+		public readonly FileInfo OutputFile;	// The path to the output file (.bin in cache directory)
+		public readonly FileInfo CacheFile;     // The path to the cache file (.cache in cache directory)
 		public readonly string Type;			// The content type, which controls which processor is used
 		public readonly Dictionary<string, string> Params;
 

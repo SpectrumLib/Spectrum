@@ -85,7 +85,6 @@ namespace Prism.Pipeline
 				writer.Write(C_VERSION);
 				writer.Write(Item.OutputFile.LastWriteTimeUtc.ToBinary());
 				writer.Write(Item.Type);
-				writer.Write(res.Size);
 				writer.Write((uint)Item.Params.Count);
 				foreach (var pair in Item.Params)
 				{

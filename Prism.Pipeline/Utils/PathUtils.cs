@@ -131,5 +131,21 @@ namespace Prism.Pipeline
 				return false;
 			}
 		}
+
+		/// <summary>
+		/// Attempts to create a symbolic link (or hard link on Windows).
+		/// </summary>
+		/// <param name="srcPath">The path to the real file to link to.</param>
+		/// <param name="linkPath">The path to the link to create.</param>
+		/// <returns>If the filesystem link could be created.</returns>
+		public static bool CreateFileLink(string srcPath, string linkPath)
+		{
+			if (RuntimeUtils.IsWindows)
+			{
+				return (RuntimeUtils.Win32.CreateHardLink(linkPath, srcPath, IntPtr.Zero) != 0);
+			}
+			else
+				return RuntimeUtils.Posix.symlink(srcPath, linkPath) == 0;
+		}
 	}
 }
