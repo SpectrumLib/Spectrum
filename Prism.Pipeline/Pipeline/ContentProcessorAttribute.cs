@@ -45,7 +45,8 @@ namespace Prism.Pipeline
 		{
 			DisplayName = name;
 			ContentType = cType.ToLowerInvariant();
-			_extensions = exts?.Split(',').Select(ex => (ex[0] == '.') ? ex : '.' + ex).ToArray();
+			_extensions = (exts.Length > 0) ? 
+				exts?.Split(',').Select(ex => (ex[0] == '.') ? ex : '.' + ex).ToArray() ?? new string[0] : new string[0];
 		}
 	}
 }

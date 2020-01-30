@@ -21,6 +21,8 @@ namespace Prism.Pipeline
 
 		private readonly List<ProcessorType> _procTypes = new List<ProcessorType>();
 		public IReadOnlyList<ProcessorType> ProcTypes => _procTypes;
+
+		public ProcessorType NoneType { get; private set; } = null;
 		#endregion // Fields
 
 		public ProcessorTypeCache(BuildEngine engine)
@@ -87,7 +89,7 @@ namespace Prism.Pipeline
 							$"between '{tinfo.Type.Name}' and '{proctype.Name}'.");
 						return false;
 					}
-					var extUn = tinfo.Attr.Extensions.Union(attr.Extensions);
+					var extUn = tinfo.Attr.Extensions.Intersect(attr.Extensions);
 					if (extUn.Any())
 					{
 						Logger.EngineWarn($"Duplicate default extension(s) '{String.Join(',', extUn)}' - " +
@@ -95,8 +97,10 @@ namespace Prism.Pipeline
 					}
 				}
 
-				// Add the processor type
+				// Add the processor type (and set as none type if applicable)
 				_procTypes.Add(new ProcessorType(proctype, attr, ctor));
+				if ((NoneType == null) && (attr.ContentType == "None"))
+					NoneType = _procTypes[^1];
 			}
 
 			_loadedAssemblies.Add(assembly.FullName);

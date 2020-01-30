@@ -43,6 +43,15 @@ namespace Prism.Pipeline
 
 		public bool GenerateOutputFiles()
 		{
+			// Clean the current output
+			if (Engine.Project.Paths.Output.Exists)
+			{
+				foreach (var file in Engine.Project.Paths.Output.EnumerateFiles("*.cpak", SearchOption.TopDirectoryOnly))
+					file.Delete();
+				foreach (var file in Engine.Project.Paths.Output.EnumerateFiles("*.cbin", SearchOption.TopDirectoryOnly))
+					file.Delete();
+			}
+
 			if (Settings.Release) // Perform compression and binning
 			{
 				// This assumes that the compression can only make the data smaller (not a bad assumption)
