@@ -117,7 +117,7 @@ namespace Prism.Pipeline
 				if (!Settings.Rebuild && !order.NeedsRebuild(out var lastCompress))
 				{
 					Engine.Logger.ItemSkipped(order.Item, order.Index);
-					res.Complete(TimeSpan.Zero, (ulong)order.Item.OutputFile.Length, lastCompress);
+					res.Skip(TimeSpan.Zero, (ulong)order.Item.OutputFile.Length, lastCompress);
 					continue;
 				}
 

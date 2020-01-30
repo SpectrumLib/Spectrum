@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Microsoft Public License (Ms-PL) - Copyright (c) 2018-2020 The Spectrum Team
  * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
@@ -189,6 +189,40 @@ namespace Prism.Pipeline
 			}
 
 			return true;
+		}
+
+		// Attempts to read the old CPAK file to check if build settings have changed
+		public static bool NeedsRebuild(BuildEngine engine)
+		{
+			try
+			{
+				// Check if the CPAK exists
+				if (!PathUtils.TryGetFileInfo(Path.Combine(engine.Project.Paths.Output.FullName, PACK_NAME), out var finfo))
+					return true;
+				using var ins = new BinaryReader(finfo.Open(FileMode.Open, FileAccess.Read, FileShare.None));
+
+				// Extract info
+				var header = ins.ReadBytes(PACK_HEADER.Length);
+				var version = ins.ReadByte();
+				var flags = ins.ReadByte();
+				var timestamp = ins.ReadInt64();
+				var icnt = ins.ReadUInt32();
+
+				// Current states
+				uint currflags = (engine.Settings.Release ? 0x01u : 0x00u) |
+								 (engine.Project.Properties.Compress ? (engine.Settings.HighCompression ? 0x04u : 0x02u) : 0x00u);
+
+				// Compare info
+				return
+					!Enumerable.SequenceEqual(header, PACK_HEADER) ||
+					 (version != PACK_VERSION) ||
+					 (flags != currflags) ||
+					 (icnt != engine.Project.Items.Count);
+			}
+			catch
+			{
+				return true;
+			}
 		}
 
 		private struct PackEntry

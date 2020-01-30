@@ -168,11 +168,23 @@ namespace Prism.Pipeline
 				// Clean up, most likely lots of temp items by now
 				GC.Collect();
 
-				// Exit from pipeline if any items failed
-				if (_tasks.Any(t => t.Results.Any(r => !r.Success)))
+				// Collate results, and check for failure, or early exit
+				var resCount = _tasks.SelectMany(task => task.Results.Select(res => (fail: !res.Success, skip: res.Skipped)))
+									 .Aggregate((fail: 0u, skip: 0u), (acc, res) =>
+										(acc.Item1 + (res.fail ? 1u : 0u), acc.Item2 + (res.skip ? 1u : 0u)));
+				if (resCount.fail > 0)
 				{
 					Logger.EngineError("One or more items failed to build, skipping output step.");
 					return;
+				}
+				if (resCount.skip == Project.Items.Count)
+				{
+					if (!OutputTask.NeedsRebuild(this))
+					{
+						Logger.EngineInfo($"Skipping content output - all items are up to date.", true);
+						success = true;
+						return;
+					}
 				}
 
 				// Continue to the output stage, prepare the output task
@@ -217,13 +229,30 @@ namespace Prism.Pipeline
 				Project.Paths.Output.Refresh();
 
 				if (Project.Paths.Cache.Exists)
-					Project.Paths.Cache.Delete(true);
-
-				if (ShouldStop)
-					return;
+				{
+					foreach (var file in Project.Paths.Cache.EnumerateFiles("*.bin", SearchOption.TopDirectoryOnly))
+						file.Delete();
+					if (ShouldStop)
+						return;
+					foreach (var file in Project.Paths.Cache.EnumerateFiles("*.cache", SearchOption.TopDirectoryOnly))
+						file.Delete();
+					if (ShouldStop)
+						return;
+					foreach (var file in Project.Paths.Cache.EnumerateFiles(".__tmp__/*", SearchOption.TopDirectoryOnly))
+						file.Delete();
+					if (ShouldStop)
+						return;
+				}
 
 				if (Project.Paths.Output.Exists)
-					Project.Paths.Output.Delete(true);
+				{
+					foreach (var file in Project.Paths.Output.EnumerateFiles("*.cpak", SearchOption.TopDirectoryOnly))
+						file.Delete();
+					if (ShouldStop)
+						return;
+					foreach (var file in Project.Paths.Output.EnumerateFiles("*.cbin", SearchOption.TopDirectoryOnly))
+						file.Delete();
+				}
 
 				success = true;
 			}

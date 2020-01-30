@@ -15,6 +15,7 @@ namespace Prism.Pipeline
 		public readonly uint Index;
 
 		public bool Success { get; private set; }
+		public bool Skipped { get; private set; }
 		public TimeSpan BuildTime { get; private set; }
 		public ulong Size { get; private set; } // Final size of the generated binary data
 		public bool Compress { get; private set; } // If the item data should be compressed
@@ -26,6 +27,7 @@ namespace Prism.Pipeline
 			Index = order.Index;
 
 			Success = false;
+			Skipped = false;
 			BuildTime = TimeSpan.Zero;
 			Size = 0;
 			Compress = false;
@@ -35,9 +37,16 @@ namespace Prism.Pipeline
 		public void Complete(TimeSpan time, ulong size, bool compress)
 		{
 			Success = true;
+			Skipped = false;
 			BuildTime = time;
 			Size = size;
 			Compress = compress;
+		}
+
+		public void Skip(TimeSpan time, ulong size, bool compress)
+		{
+			Complete(time, size, compress);
+			Skipped = true;
 		}
 	}
 }
