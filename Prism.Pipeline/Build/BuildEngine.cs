@@ -44,10 +44,10 @@ namespace Prism.Pipeline
 
 		// If the current task is a cleaning task
 		public bool IsCleaning { get; private set; } = false;
-		// If the current task is a release build task
-		public bool IsRelease { get; private set; } = false;
+		// The current build settings
+		public BuildSettings Settings { get; private set; } = default;
 		// If output compression is used
-		public bool Compress => Project.Properties.Compress && IsRelease;
+		public bool Compress => Project.Properties.Compress && Settings.Release;
 		#endregion // Fields
 
 		public BuildEngine(ContentProject proj, BuildLogger logger, uint threads)
@@ -92,12 +92,12 @@ namespace Prism.Pipeline
 		}
 
 		#region Actions
-		public Task Build(bool rebuild, bool release)
+		public Task Build(BuildSettings settings)
 		{
 			if (Busy)
 				throw new InvalidOperationException("Cannot start a build task on a running engine");
 
-			return new Task(() => doBuild(rebuild, release));
+			return new Task(() => doBuild(settings));
 		}
 
 		public Task Clean()
@@ -118,18 +118,18 @@ namespace Prism.Pipeline
 		#endregion // Actions
 
 		#region Task Impl
-		private void doBuild(bool rebuild, bool release)
+		private void doBuild(BuildSettings settings)
 		{
 			Busy = true;
 			ShouldStop = false;
-			IsRelease = release;
+			Settings = settings;
 			IsCleaning = false;
 
 			Stopwatch timer = Stopwatch.StartNew();
 			bool success = false;
 			try
 			{
-				Logger.BuildStart(rebuild, release);
+				Logger.BuildStart(settings.Rebuild, settings.Release);
 
 				// Reset the item enumerator
 				_itemIndex = 0;
@@ -157,7 +157,7 @@ namespace Prism.Pipeline
 
 				// Start, then join, the build tasks
 				foreach (var task in _tasks)
-					task.Start(rebuild);
+					task.Start();
 				foreach (var task in _tasks)
 					task.Join();
 
@@ -180,7 +180,7 @@ namespace Prism.Pipeline
 				var outTask = new OutputTask(this, _tasks);
 
 				// Move the content files into output
-				if (!outTask.GenerateOutputFiles(release))
+				if (!outTask.GenerateOutputFiles())
 					return;
 
 				// Final exit check
@@ -188,7 +188,7 @@ namespace Prism.Pipeline
 					return;
 
 				// Output the cpak file
-				if (!outTask.GenerateContentPack(release))
+				if (!outTask.GenerateContentPack())
 					return;
 
 				success = true;
@@ -197,7 +197,7 @@ namespace Prism.Pipeline
 			{
 				Logger.BuildEnd(success, timer.Elapsed, ShouldStop);
 				Busy = false;
-				IsRelease = false;
+				Settings = default;
 			}
 		}
 
@@ -205,7 +205,6 @@ namespace Prism.Pipeline
 		{
 			Busy = true;
 			ShouldStop = false;
-			IsRelease = false;
 			IsCleaning = true;
 
 			Stopwatch timer = Stopwatch.StartNew();
@@ -267,5 +266,13 @@ namespace Prism.Pipeline
 			Cancel().Wait();
 		}
 		#endregion // IDisposable
+	}
+
+	// Settings to control build engine build tasks
+	internal struct BuildSettings
+	{
+		public bool Rebuild;
+		public bool Release;
+		public bool HighCompression;
 	}
 }

@@ -25,6 +25,8 @@ namespace Prism
 		public static uint Parallel = 1;
 
 		public static bool Debug = true;
+
+		public static bool HighCompression = false;
 		#endregion // Fields
 
 		public static bool Parse(string[] args)
@@ -116,6 +118,10 @@ namespace Prism
 					case "debug":
 						if (param.value == null)
 							Debug = true;
+						break;
+					case "hc":
+						if (param.value == null)
+							HighCompression = true;
 						break;
 				}
 			}

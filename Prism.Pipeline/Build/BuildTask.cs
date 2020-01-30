@@ -17,7 +17,7 @@ namespace Prism.Pipeline
 		#region Fields
 		public readonly BuildEngine Engine;
 		public bool ShouldStop => Engine.ShouldStop;
-		public bool IsRelease => Engine.IsRelease;
+		public BuildSettings Settings => Engine.Settings;
 		public bool Compress => Engine.Compress;
 
 		private readonly Dictionary<string, ContentProcessor> _procCache = 
@@ -35,13 +35,13 @@ namespace Prism.Pipeline
 			Engine = engine;
 		}
 
-		public void Start(bool rebuild)
+		public void Start()
 		{
 			if (Running)
 				throw new InvalidOperationException("Cannot start a build task that is already running.");
 
 			_thread = new Thread(() => {
-				_thread_func(rebuild);
+				_thread_func();
 				_thread = null;
 			});
 			_thread.Start();
@@ -77,7 +77,7 @@ namespace Prism.Pipeline
 			}
 		}
 
-		private void _thread_func(bool rebuild)
+		private void _thread_func()
 		{
 			Stopwatch timer = Stopwatch.StartNew();
 			_results.Clear();
@@ -114,7 +114,7 @@ namespace Prism.Pipeline
 				}
 
 				// Check the build cache
-				if (!rebuild && !order.NeedsRebuild(out var lastCompress))
+				if (!Settings.Rebuild && !order.NeedsRebuild(out var lastCompress))
 				{
 					Engine.Logger.ItemSkipped(order.Item, order.Index);
 					res.Complete(TimeSpan.Zero, (ulong)order.Item.OutputFile.Length, lastCompress);
@@ -211,7 +211,7 @@ namespace Prism.Pipeline
 				}
 
 				// Report the end of the item build, write the cache
-				res.Complete(timer.Elapsed, outSize, outCompress && IsRelease);
+				res.Complete(timer.Elapsed, outSize, outCompress && Settings.Release);
 				if (!order.WriteCacheFile(res))
 					Engine.Logger.ItemWarn(order.Item, order.Index, "Unable to write build cache file.");
 				Engine.Logger.ItemFinished(order.Item, order.Index, timer.Elapsed);

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Microsoft Public License (Ms-PL) - Copyright (c) 2018-2020 The Spectrum Team
  * This file is subject to the terms and conditions of the Microsoft Public License, the text of which can be found in
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
@@ -7,8 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
+using K4os.Compression.LZ4;
+using K4os.Compression.LZ4.Streams;
 
 namespace Prism.Pipeline
 {
@@ -21,6 +22,7 @@ namespace Prism.Pipeline
 
 		#region Fields
 		public readonly BuildEngine Engine;
+		public BuildSettings Settings => Engine.Settings;
 		public bool ShouldStop => Engine.ShouldStop;
 		public BuildLogger Logger => Engine.Logger;
 
@@ -39,9 +41,9 @@ namespace Prism.Pipeline
 							.ToList();
 		}
 
-		public bool GenerateOutputFiles(bool release)
+		public bool GenerateOutputFiles()
 		{
-			if (release) // Perform compression and binning -  !!TODO!! actually perform compression
+			if (Settings.Release) // Perform compression and binning
 			{
 				// This assumes that the compression can only make the data smaller (not a bad assumption)
 				//   Even if the data does get bigger, it will only get bigger by a factor of 1/256
@@ -82,20 +84,27 @@ namespace Prism.Pipeline
 					for (int i = 0; i < _entries.Count; ++i)
 					{
 						var ent = _entries[i];
-
 						var bidx = ent.BinIndex;
 						using var instream = ent.Item.OutputFile.OpenRead();
 						var ostream = bstreams[bidx];
 
-						var off = ostream.Position;
-						instream.CopyTo(ostream);
-						var size = ostream.Position - off;
+						ulong off = (ulong)ostream.Position;
+						if (ent.Compress)
+						{
+							var clvl = Settings.HighCompression ? LZ4Level.L12_MAX : LZ4Level.L00_FAST;
+							using var cstream = LZ4Stream.Encode(ostream, clvl, 8192, true);
+							instream.CopyTo(cstream);
+							cstream.Flush();
+						}
+						else
+							instream.CopyTo(ostream);
+						var size = (ulong)ostream.Position - off;
 
 						_entries[i] = new PackEntry {
 							Result = ent.Result,
 							BinIndex = bidx,
-							BinSize = (ulong)size,
-							Offset = (ulong)off
+							BinSize = size,
+							Offset = off
 						};
 					}
 				}
@@ -138,7 +147,7 @@ namespace Prism.Pipeline
 		}
 
 		// Writes the content pack file
-		public bool GenerateContentPack(bool release)
+		public bool GenerateContentPack()
 		{
 			// Write the cpak
 			try
@@ -155,7 +164,8 @@ namespace Prism.Pipeline
 				// Header info
 				writer.Write(PACK_HEADER);
 				writer.Write(PACK_VERSION);
-				uint flags = (release ? 0x01u : 0x00u);
+				uint flags = (Settings.Release ? 0x01u : 0x00u) |
+							 (Engine.Compress ? (Settings.HighCompression ? 0x04u : 0x02u) : 0x00u);
 				writer.Write((byte)flags);
 				writer.Write(DateTime.UtcNow.ToBinary());
 
@@ -191,15 +201,6 @@ namespace Prism.Pipeline
 			public ContentItem Item => Result.Item;
 			public ulong DataSize => Result.Size; // Uncompressed (real) size
 			public bool Compress => Result.Compress;
-		}
-
-		private static class Kernel32
-		{
-			public const uint FLAG_DIRECTORY = 0x1;
-
-			[DllImport("kernel32.dll")]
-			static extern bool CreateSymbolicLink(
-				string lpSymlinkFileName, string lpTargetFileName, uint dwFlags);
 		}
 	}
 }

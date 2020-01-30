@@ -45,7 +45,13 @@ namespace Prism
 						args.Cancel = true; // Cancel the exit, we will exit gracefully once cancelled
 					};
 
-					var task = engine.Build(rebuild, !Arguments.Debug);
+					var settings = new BuildSettings {
+						Rebuild = rebuild,
+						Release = !Arguments.Debug,
+						HighCompression = Arguments.HighCompression
+					};
+
+					var task = engine.Build(settings);
 					task.Start();
 
 					while (!task.IsCompleted)

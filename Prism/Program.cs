@@ -90,6 +90,9 @@ namespace Prism
 				"\n   > p;parallel     - For 'build' and 'rebuild' tasks, this sets the number" +
 				"\n     [=<int>]           of threads to use. Not specifying a count will use" +
 				"\n                        the number of cores on the system." +
+				"\n   > hc             - Use high (max) compression for release builds that" +
+				"\n                        use compression. This will significantly increase" +
+				"\n                        the build time, but not the runtime load time." +
 				"\n   > r;release      - Set (re)build tasks to be release." +
 				"\n   > d;debug        - Set (re)build tasks to be debug (default)." +
 				"\n" + 
