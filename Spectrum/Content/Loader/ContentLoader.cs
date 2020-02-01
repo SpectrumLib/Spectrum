@@ -4,43 +4,51 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.IO;
 
 namespace Spectrum.Content
 {
 	/// <summary>
-	/// Base type for implementing logic for loading a content item. One instance of each ContentLoader subtype will
-	/// be created for each content pack that requries them.
+	/// Base type for implementing runtime loading of content items. One instance of each type will be created for
+	/// each thread that uses the type to load content.
 	/// </summary>
-	/// <typeparam name="T">The content type that is loaded by this type.</typeparam>
+	/// <typeparam name="T">The type (or common base type) of content objects created by the loader.</typeparam>
 	public abstract class ContentLoader<T> : IContentLoader
 		where T : class
 	{
 		/// <summary>
-		/// The type that is loaded by the content loader.
+		/// The type of the content loaded by this type (i.e. the type of <typeparamref name="T"/>).
 		/// </summary>
 		public Type ContentType => typeof(T);
 
 		/// <summary>
-		/// Implements the logic of reading in and loading a runtime content type. Returning null from this function
-		/// will produce a <see cref="ContentLoadException"/>.
+		/// Called before <see cref="Load"/> to prepare the instance to process a new content item.
 		/// </summary>
-		/// <param name="stream">The opaque stream to read file data from.</param>
-		/// <param name="ctx">Additional information about the item being loaded.</param>
-		/// <returns>A new runtime type loaded from the filesystem.</returns>
-		public abstract T Load(ContentStream stream, LoaderContext ctx);
+		public abstract void Reset();
 
 		/// <summary>
-		/// Non-typed version of the <see cref="Load(ContentStream, LoaderContext)"/> function. Do not call directly.
+		/// Called to perform the logic of loading a content item file into a runtime object.
 		/// </summary>
-		[Obsolete("Do not call non-generic ContentLoader.Load() directly.", true)]
-		object IContentLoader.Load(ContentStream stream, LoaderContext ctx) => Load(stream, ctx);
+		/// <param name="reader">
+		/// The binary stream used to read in the content data from the disk. The content, if compressed, is
+		/// decompressed silently by the reader. Note that seeking is supported, but will be slow for compressed
+		/// streams (particularly backwards seeks).
+		/// </param>
+		/// <param name="ctx">Additional information about the load process.</param>
+		/// <returns>The runtime content object loaded from the stream.</returns>
+		public abstract T Load(BinaryReader reader, LoaderContext ctx);
+
+		// This is not accessible outside of Spectrum (explicit implementation of internal interface)
+		object IContentLoader.Load(BinaryReader reader, LoaderContext ctx) => Load(reader, ctx);
 	}
 
-	// Internal type for generic-free references to content loaders
+	// Internal type for generic-free references to content loader instances
 	internal interface IContentLoader
 	{
 		Type ContentType { get; }
 
-		object Load(ContentStream stream, LoaderContext ctx);
+		void Reset();
+
+		object Load(BinaryReader reader, LoaderContext ctx);
 	}
 }

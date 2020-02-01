@@ -8,34 +8,32 @@ using System;
 namespace Spectrum.Content
 {
 	/// <summary>
-	/// Provides metadata information about <see cref="ContentLoader{T}"/> types. Types that implement content loading
-	/// functionality must provide this attribute.
+	/// Annotates <see cref="ContentLoader{T}"/> types with metadata required for loading them at runtime.
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 	public sealed class ContentLoaderAttribute : Attribute
 	{
 		#region Fields
 		/// <summary>
-		/// The name of the content loader. This name is used to locate the loader using the `LoaderName` value in 
-		/// Prism ContentWriter types.
+		/// The display name of the annotated <see cref="ContentLoader{T}"/> type.
 		/// </summary>
-		public readonly string Name;
+		public readonly string DisplayName;
 		/// <summary>
-		/// Gets if the decorated loader is currently usable. Attempting to use a disabled loader will result in an
-		/// exception being thrown.
+		/// The type of content loaded by this type, used to match against ContentProcessor types in the Prism 
+		/// pipeline.
 		/// </summary>
-		public readonly bool Enabled;
+		public readonly string ContentType;
 		#endregion // Fields
 
 		/// <summary>
 		/// Creates a new attribute for a <see cref="ContentLoader{T}"/> type.
 		/// </summary>
-		/// <param name="name">The name of the content loader, must be unique within an assembly.</param>
-		/// <param name="enabled">If the decorated type is useable.</param>
-		public ContentLoaderAttribute(string name, bool enabled = true)
+		/// <param name="name">The display name.</param>
+		/// <param name="type">The loaded content type name.</param>
+		public ContentLoaderAttribute(string name, string type)
 		{
-			Name = name;
-			Enabled = enabled;
+			DisplayName = name;
+			ContentType = type;
 		}
 	}
 }
