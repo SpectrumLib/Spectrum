@@ -4,7 +4,6 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Spectrum.Content

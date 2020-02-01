@@ -11,6 +11,15 @@ namespace Spectrum.Content
 	/// <summary>
 	/// Base type for implementing runtime loading of content items. One instance of each type will be created for
 	/// each thread that uses the type to load content.
+	/// <para>
+	/// A "valid" ContentLoader type meets these criteria:
+	/// <list type="bullet">
+	/// <item>Subclass of <see cref="ContentLoader{T}"/>.</item>
+	/// <item>Annotated with a valid <see cref="ContentLoaderAttribute"/>.</item>
+	/// <item>Contains a public, no-args constructor.</item>
+	/// <item>Is not a generic type.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	/// <typeparam name="T">The type (or common base type) of content objects created by the loader.</typeparam>
 	public abstract class ContentLoader<T> : IContentLoader
@@ -45,6 +54,8 @@ namespace Spectrum.Content
 	// Internal type for generic-free references to content loader instances
 	internal interface IContentLoader
 	{
+		internal static readonly Type TYPE = typeof(IContentLoader);
+
 		Type ContentType { get; }
 
 		void Reset();

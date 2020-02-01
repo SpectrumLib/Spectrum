@@ -13,6 +13,8 @@ namespace Spectrum.Content
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 	public sealed class ContentLoaderAttribute : Attribute
 	{
+		internal static readonly Type TYPE = typeof(ContentLoaderAttribute);
+
 		#region Fields
 		/// <summary>
 		/// The display name of the annotated <see cref="ContentLoader{T}"/> type.
@@ -33,7 +35,7 @@ namespace Spectrum.Content
 		public ContentLoaderAttribute(string name, string type)
 		{
 			DisplayName = name;
-			ContentType = type;
+			ContentType = type.ToLowerInvariant();
 		}
 	}
 }
