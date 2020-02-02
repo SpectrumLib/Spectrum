@@ -39,16 +39,15 @@ namespace Spectrum.Content
 		/// Called to perform the logic of loading a content item file into a runtime object.
 		/// </summary>
 		/// <param name="reader">
-		/// The binary stream used to read in the content data from the disk. The content, if compressed, is
-		/// decompressed silently by the reader. Note that seeking is supported, but will be slow for compressed
-		/// streams (particularly backwards seeks).
+		/// The binary stream used to read in the content data from the disk. This stream exists only for this single
+		/// function call, and <see cref="ContentReader.Duplicate"/> should be called to load data outside of this call.
 		/// </param>
 		/// <param name="ctx">Additional information about the load process.</param>
 		/// <returns>The runtime content object loaded from the stream.</returns>
-		public abstract T Load(BinaryReader reader, LoaderContext ctx);
+		public abstract T Load(ContentReader reader, LoaderContext ctx);
 
 		// This is not accessible outside of Spectrum (explicit implementation of internal interface)
-		object IContentLoader.Load(BinaryReader reader, LoaderContext ctx) => Load(reader, ctx);
+		object IContentLoader.Load(ContentReader reader, LoaderContext ctx) => Load(reader, ctx);
 	}
 
 	// Internal type for generic-free references to content loader instances
@@ -60,6 +59,6 @@ namespace Spectrum.Content
 
 		void Reset();
 
-		object Load(BinaryReader reader, LoaderContext ctx);
+		object Load(ContentReader reader, LoaderContext ctx);
 	}
 }

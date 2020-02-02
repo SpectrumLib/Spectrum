@@ -4,6 +4,7 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.Runtime.InteropServices;
 
 namespace Spectrum
 {
@@ -58,6 +59,32 @@ namespace Spectrum
 		public static ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] arr)
 			where T : struct => arr.AsSpan();
 
+		/// <summary>
+		/// Gets the byte span representation of the non-byte span.
+		/// </summary>
+		/// <typeparam name="T">The incoming span type.</typeparam>
+		/// <param name="span">The span to convert.</param>
+		/// <returns>The input span as a byte span.</returns>
+		public static Span<byte> AsBytes<T>(this Span<T> span)
+			where T : struct => MemoryMarshal.AsBytes(span);
+
+		/// <summary>
+		/// Gets the byte span representation of the non-byte span.
+		/// </summary>
+		/// <typeparam name="T">The incoming span type.</typeparam>
+		/// <param name="span">The span to convert.</param>
+		/// <returns>The input span as a byte span.</returns>
+		public static ReadOnlySpan<byte> AsBytes<T>(this ReadOnlySpan<T> span)
+			where T : struct => MemoryMarshal.AsBytes(span);
+
+		/// <summary>
+		/// Function call style casting of a span to the corresponding read only span type.
+		/// </summary>
+		/// <typeparam name="T">The span type.</typeparam>
+		/// <param name="span">The span to cast.</param>
+		/// <returns>The converted span.</returns>
+		public static ReadOnlySpan<T> AsReadOnly<T>(this Span<T> span) => (ReadOnlySpan<T>)span;
+		
 		/// <summary>
 		/// An enumerator type that is used to implement enumeration logic when splitting <see cref="ReadOnlySpan{T}"/>.
 		/// </summary>

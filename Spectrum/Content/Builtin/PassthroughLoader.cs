@@ -4,7 +4,6 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
-using System.IO;
 using System.Reflection;
 
 namespace Spectrum.Content
@@ -19,10 +18,10 @@ namespace Spectrum.Content
 
 		public override void Reset() { }
 
-		public override byte[] Load(BinaryReader reader, LoaderContext ctx)
+		public override byte[] Load(ContentReader reader, LoaderContext ctx)
 		{
-			var buffer = new byte[ctx.DataSize];
-			if ((ulong)reader.BaseStream.Read(buffer.AsSpan()) != ctx.DataSize)
+			var buffer = new byte[reader.DataSize];
+			if ((ulong)reader.BaseStream.Read(buffer.AsSpan()) != reader.DataSize)
 				ctx.Throw("Could not read expected number of bytes");
 			return buffer;
 		}

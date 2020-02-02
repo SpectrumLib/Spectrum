@@ -20,19 +20,18 @@ namespace Spectrum.Content
 		/// The name of the item being processed.
 		/// </summary>
 		public string ItemName => _item.Name;
+		
 		/// <summary>
-		/// If the item data being processed is compressed.
+		/// The runtime object type being requested for loading. This is the generic type argument provided to the
+		/// <see cref="ContentManager"/> <c>Load</c> and <c>Reload</c> functions.
 		/// </summary>
-		public bool IsCompressed => _item.Compress;
-		/// <summary>
-		/// The total size of the available item data, in bytes.
-		/// </summary>
-		public ulong DataSize => _item.DataSize;
+		public readonly Type LoadedType;
 		#endregion // Fields
 
-		internal LoaderContext(ContentPack.Entry item)
+		internal LoaderContext(ContentPack.Entry item, Type type)
 		{
 			_item = item;
+			LoadedType = type;
 		}
 
 		#region Exceptions

@@ -16,6 +16,8 @@ namespace Spectrum.Audio
 		uint RemainingFrames { get; }
 		// The format of the samples available for streaming
 		AudioFormat Format { get; }
+		// The sample rate of the audio being streamed
+		uint SampleRate { get; }
 
 		// Attempts to stream data into the buffer, returns the actual number of frames read
 		uint ReadFrames(Span<byte> data, uint fcount);

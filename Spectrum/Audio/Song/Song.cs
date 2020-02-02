@@ -20,7 +20,7 @@ namespace Spectrum.Audio
 		// Song objects/values
 		private readonly IAudioStreamer _stream;
 		private readonly uint _blockCount;
-		internal readonly uint SampleRate;
+		internal uint SampleRate => _stream.SampleRate;
 		internal uint Source { get; private set; } = 0;
 		internal bool HasSource => Source != 0;
 		private SoundState _lastState = SoundState.Stopped;
@@ -122,13 +122,12 @@ namespace Spectrum.Audio
 		private bool _isDisposed = false;
 		#endregion // Fields
 
-		internal Song(IAudioStreamer stream, uint rate)
+		internal Song(IAudioStreamer stream)
 		{
 			_stream = stream;
-			SampleRate = rate;
-			Duration = TimeSpan.FromSeconds(stream.TotalFrames / (double)rate);
+			Duration = TimeSpan.FromSeconds(stream.TotalFrames / (double)SampleRate);
 
-			_framesPerBlock = rate * SECONDS_PER_STREAM;
+			_framesPerBlock = SampleRate * SECONDS_PER_STREAM;
 			_blockCount = (uint)Math.Ceiling(stream.TotalFrames / (double)_framesPerBlock);
 			_streamBuffer = new byte[_framesPerBlock * stream.Format.GetFrameSize()];
 			_sourceBuffers = new AudioBuffer[] { new AudioBuffer(), new AudioBuffer() };

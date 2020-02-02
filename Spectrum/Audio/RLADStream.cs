@@ -20,11 +20,17 @@ namespace Spectrum.Audio
 		public const int FULL_TYPE = 2;
 
 		#region Fields
-		public uint TotalFrames { get; private set; }
-		public AudioFormat Format { get; private set; }
+		public uint TotalFrames => _totalFrames;
+		private readonly uint _totalFrames;
+		public uint SampleRate => _sampleRate;
+		private readonly uint _sampleRate;
+		public AudioFormat Format => _format;
+		private readonly AudioFormat _format;
+		public bool IsLossy => _isLossy;
+		private readonly bool _isLossy;
 
 		// Stream info
-		private readonly ContentStream _stream;
+		private readonly ContentReader _reader;
 		private uint _frameOffset = 0;
 		public uint RemainingFrames => TotalFrames - _frameOffset;
 		private Chunk _currChunk; // The current chunk that the stream is ready to read
@@ -36,18 +42,17 @@ namespace Spectrum.Audio
 		private uint _bufferRem => _bufferSize - _bufferOff;
 		#endregion // Fields
 
-		public RLADStream(ContentStream stream, bool stereo, uint fc)
+		public RLADStream(ContentReader reader)
 		{
-			_stream = stream;
-			Format = stereo ? AudioFormat.Stereo16 : AudioFormat.Mono16;
-			TotalFrames = fc;
+			_reader = reader;
 
+			// Read in the header
+			ReadStreamHeader(reader, out _totalFrames, out _sampleRate, out _format, out _isLossy);
 			_buffer = new short[MAX_BUFFER_SIZE * Format.GetChannelCount()];
 
-			// Skip header, read first chunk
+			// Read first chunk
 			_currChunk = default;
-			stream.Seek(10, SeekOrigin.Begin);
-			ReadChunkHeader(stream, ref _currChunk);
+			ReadChunkHeader(reader, ref _currChunk);
 		}
 		~RLADStream()
 		{
@@ -79,17 +84,17 @@ namespace Spectrum.Audio
 			// Perform as many direct writes into the dst array as possible
 			while (_currChunk.FrameCount <= rem)
 			{
-				DecodeChunk(_stream, dst.Slice((int)dstOff), ref _currChunk, Format.GetChannelCount() > 1);
+				DecodeChunk(_reader, dst.Slice((int)dstOff), ref _currChunk, Format.GetChannelCount() > 1);
 				dstOff += (_currChunk.FrameCount * Format.GetChannelCount());
 				rem -= _currChunk.FrameCount;
-				ReadChunkHeader(_stream, ref _currChunk);
+				ReadChunkHeader(_reader, ref _currChunk);
 			}
 
 			// If needed, buffer the next chunk, and copy as much into the dst array as needed
 			if (rem > 0)
 			{
 				// Buffer the next chunk
-				DecodeChunk(_stream, _buffer.AsSpan(), ref _currChunk, Format.GetChannelCount() > 1);
+				DecodeChunk(_reader, _buffer.AsSpan(), ref _currChunk, Format.GetChannelCount() > 1);
 				_bufferSize = (_currChunk.FrameCount * Format.GetChannelCount());
 
 				// Copy as much as is needed into the dst array
@@ -97,7 +102,7 @@ namespace Spectrum.Audio
 				_buffer.AsSpan().Slice(0, (int)_bufferOff).CopyTo(dst.Slice((int)dstOff));
 
 				// Read the chunk for the next call
-				ReadChunkHeader(_stream, ref _currChunk);
+				ReadChunkHeader(_reader, ref _currChunk);
 			}
 
 			// Return the number of frames actually read
@@ -107,31 +112,42 @@ namespace Spectrum.Audio
 
 		public void Reset()
 		{
-			_stream.Seek(10, SeekOrigin.Begin); // Skip the header
+			_reader.Reset();
+			ReadStreamHeader(_reader, out _, out _, out _, out _);
+
 			_frameOffset = 0;
 			_bufferSize = 0;
 			_bufferOff = 0;
+
 			_currChunk = default;
-			ReadChunkHeader(_stream, ref _currChunk); // Read in the first chunk as expected
+			ReadChunkHeader(_reader, ref _currChunk); // Read in the first chunk as expected
+		}
+
+		public static void ReadStreamHeader(ContentReader reader, out uint fcount, out uint rate, out AudioFormat format, out bool lossy)
+		{
+			reader.Reset();
+			fcount = reader.ReadUInt32();
+			rate = reader.ReadUInt32();
+			format = reader.ReadBoolean() ? AudioFormat.Stereo16 : AudioFormat.Mono16;
+			lossy = reader.ReadBoolean();
 		}
 
 		#region Decoding
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private static void ReadChunkHeader(ContentStream stream, ref Chunk c)
+		private static void ReadChunkHeader(ContentReader reader, ref Chunk c)
 		{
-			if (stream.Remaining > 0)
+			if (reader.Remaining > 0)
 			{
-				byte header = stream.ReadByte();
+				byte header = reader.ReadByte();
 				c.Type = (ushort)((header >> 6) & 0x03);
 				c.Extra = (ushort)(header & 0x3F);
-				// DO NOT CHANGE THE CHANNEL COMPONENTS
 				if (c.Type == 3)
 					throw new InvalidDataException("Invalid RLAD header size type.");
 			}
 		}
 
 		// Dst must be large enough to accept up to 512 samples (1024 for stereo)
-		private static unsafe void DecodeChunk(ContentStream stream, Span<short> dst, ref Chunk c, bool stereo)
+		private static unsafe void DecodeChunk(ContentReader reader, Span<short> dst, ref Chunk c, bool stereo)
 		{
 			uint scount = c.FrameCount * (stereo ? 2u : 1);
 
@@ -140,7 +156,7 @@ namespace Spectrum.Audio
 				// Local accumulators
 				short acc1 = c.Acc1, acc2 = c.Acc2;
 				Span<sbyte> deltas = stackalloc sbyte[(int)scount];
-				stream.Read(deltas);
+				reader.Read(deltas);
 
 				// Read in 8 deltas at a time, and accumulate them
 				for (int si = 0; si < scount; si += 8)
@@ -177,7 +193,7 @@ namespace Spectrum.Audio
 				// Local accumulators
 				short acc1 = c.Acc1, acc2 = c.Acc2;
 				Span<byte> deltas = stackalloc byte[(int)(scount * 3) / 2];
-				stream.Read(deltas);
+				reader.Read(deltas);
 
 				// Read/decode/accumulate 8 samples at a time
 				for (int si = 0, doff = 0; si < scount; si += 8, doff += 12)
@@ -233,7 +249,7 @@ namespace Spectrum.Audio
 			else // Full samples
 			{
 				// Directly read the samples into the buffer
-				stream.Read(dst);
+				reader.Read(dst);
 			}
 
 			// Save the channels
@@ -246,7 +262,7 @@ namespace Spectrum.Audio
 				c.Acc1 = dst[(int)scount - 1];
 		}
 
-		public unsafe static void DecodeAll(ContentStream stream, Span<short> dst, bool stereo, uint fcount)
+		public unsafe static void DecodeAll(ContentReader reader, Span<short> dst, AudioFormat fmt, uint fcount)
 		{
 			uint rem = fcount;
 			uint dstOff = 0;
@@ -256,11 +272,11 @@ namespace Spectrum.Audio
 
 			while (rem > 0)
 			{
-				ReadChunkHeader(stream, ref c);
+				ReadChunkHeader(reader, ref c);
 				if (c.FrameCount > rem) break; // Prevents an accidental infinite loop for malformatted input data
 
-				DecodeChunk(stream, dst.Slice((int)dstOff), ref c, stereo);
-				dstOff += (c.FrameCount * (stereo ? 2u : 1));
+				DecodeChunk(reader, dst.Slice((int)dstOff), ref c, fmt.GetChannelCount() > 1);
+				dstOff += (c.FrameCount * fmt.GetChannelCount());
 				rem -= c.FrameCount;
 			}
 		}
@@ -277,7 +293,7 @@ namespace Spectrum.Audio
 		{
 			if (_buffer != null && disposing)
 			{
-				_stream.Dispose();
+				_reader.Dispose();
 			}
 			_buffer = null;
 		}

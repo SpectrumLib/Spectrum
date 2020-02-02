@@ -336,10 +336,10 @@ namespace Spectrum.Content
 			}
 
 			// Open the content stream
-			BinaryReader reader;
+			ContentReader reader;
 			try
 			{
-				reader = new BinaryReader(new ContentStream(_pack.Release, _pack.Directory.FullName, item));
+				reader = new ContentReader(new ContentStream(_pack.Release, _pack.Directory.FullName, item));
 			}
 			catch (Exception e)
 			{
@@ -349,7 +349,7 @@ namespace Spectrum.Content
 			// Perform the object load and final type validation
 			try
 			{
-				LoaderContext ctx = new LoaderContext(item);
+				LoaderContext ctx = new LoaderContext(item, type);
 				object result = loader.Load(reader, ctx);
 				if (result is null)
 					throw new ContentLoadException(item.Name, "Content loader produced a null value");

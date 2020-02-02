@@ -100,7 +100,7 @@ namespace Spectrum
 			// Load global content
 			if (Params.LoadGlobalContent)
 			{
-				GContent = ContentManager.OpenPackFile(Params.GlobalContentPath);
+				GContent = ContentManager.OpenContentPack(Params.GlobalContentPath);
 				LoadContent();
 			}
 

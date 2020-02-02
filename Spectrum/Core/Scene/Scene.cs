@@ -65,7 +65,7 @@ namespace Spectrum
 			Name = name;
 
 			Renderer = new SceneRenderer(this);
-			Content = ContentManager.OpenPackFile(contentPath);
+			Content = ContentManager.OpenContentPack(contentPath);
 		}
 		~Scene()
 		{

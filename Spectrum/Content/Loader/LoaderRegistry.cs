@@ -105,6 +105,7 @@ namespace Spectrum.Content
 		static LoaderRegistry()
 		{
 			_Loaders.Add(new LoaderType(PassthroughLoader.TYPE, PassthroughLoader.ATTR, PassthroughLoader.CTOR));
+			_Loaders.Add(new LoaderType(AudioLoader.TYPE, AudioLoader.ATTR, AudioLoader.CTOR));
 		}
 	}
 
