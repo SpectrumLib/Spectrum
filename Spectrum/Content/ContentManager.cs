@@ -13,50 +13,35 @@ using System.Linq;
 namespace Spectrum.Content
 {
 	/// <summary>
-	/// Manages the loading and lifetime of content items from the file system. Items loaded with this type are
-	/// automatically cleaned up when the manager is destroyed, but can be manually disposed as well.
+	/// Manages the loading and lifetime of content items from the filesystem. Disposable items loaded with manager
+	/// instances are tracked and cleaned up then the manager is disposed, but can manually be disposed as well.
 	/// <para>
-	/// Multiple manager instances can point to the same .cpak content file, since they all use separate read-only
-	/// file streams to the content.
+	/// Additionally, managers can perform caching of items, which allows fast reuse of items that have already been
+	/// loaded once. Each content item can be cached as multiple types, if supported.
+	/// </para>
+	/// <para>
+	/// Multiple manager instances can safely point to and use the same content pack at the same time. Instances of
+	/// this type are *not* threadsafe.
 	/// </para>
 	/// </summary>
 	public sealed class ContentManager : IDisposable
 	{
-		private static readonly List<WeakReference<ContentManager>> _Managers =
+		private static readonly List<WeakReference<ContentManager>> _Managers = 
 			new List<WeakReference<ContentManager>>();
-		private static readonly object _ManagerLock = new object();
+		private static readonly object _ManagersLock = new object();
 
 		#region Fields
-		// The pack that this manager uses
+		// Pack and loaders
 		private readonly ContentPack _pack;
+		private readonly Dictionary<string, IContentLoader> _loaderCache = new Dictionary<string, IContentLoader>();
 
-		// A list of the content items that this manager should dispose on cleanup
-		// Note: This can result in a memory leak for certain poorly-desgined objects that are collected without being
-		//       disposed, because they are stored as weak references.
-		private readonly List<WeakReference<IDisposableContent>> _disposableItems;
-		private bool _isUnloading = false;
-
-		private readonly object _cacheLock = new object();
-		private readonly BiDictionary<string, object> _itemCache;
-
-		// Filestreams to the bin files (index by bin index), null for debug builds
-		private readonly List<FileStream> _binStreams;
-		// List of loader instances in this content manager
-		private readonly Dictionary<uint, IContentLoader> _loaders;
+		// Cache objects
+		private readonly List<IDisposable> _disposables = new List<IDisposable>();
+		private readonly Dictionary<(string, Type), object> _cache = new Dictionary<(string, Type), object>();
 
 		/// <summary>
-		/// The absolute path to the .cpak file this content manager was opened with.
-		/// </summary>
-		public string FilePath => _pack.FilePath;
-		/// <summary>
-		/// Gets if the content managed by the instance was built in release mode.
-		/// </summary>
-		public bool IsRelease => _pack.ReleaseMode;
-
-		/// <summary>
-		/// Gets the amount of time that it took to load the last content item using one of the <see cref="LoadRaw(string)"/>,
-		/// <see cref="Load{T}(string, bool, bool)"/>, <see cref="LoadLocalized{T}(string, CultureInfo, bool, bool, bool)"/>,
-		/// or <see cref="Reload{T}(string, bool, bool)"/> functions.
+		/// The load time of the most recent content item. Checking this value as equal to <see cref="TimeSpan.Zero"/>
+		/// can be used to check if an item was loaded from the cache.
 		/// </summary>
 		public TimeSpan LastLoadTime { get; private set; } = TimeSpan.Zero;
 
@@ -66,12 +51,7 @@ namespace Spectrum.Content
 		private ContentManager(ContentPack pack)
 		{
 			_pack = pack;
-			_disposableItems = new List<WeakReference<IDisposableContent>>();
-			_itemCache = new BiDictionary<string, object>();
 
-			_loaders = new Dictionary<uint, IContentLoader>(pack.Loaders.Count);
-			_binStreams = pack.ReleaseMode ? new List<FileStream>(_pack.BinFiles.Length) : null;
-			
 			AddManager(this);
 		}
 		~ContentManager()
@@ -81,386 +61,425 @@ namespace Spectrum.Content
 
 		#region Load Functions
 		/// <summary>
-		/// Attempts to load the given content item as the provided type. Will first check the cached items, and then
-		/// will load the content item from the disk.
+		/// Attempts to load the content item with the given name as <typeparamref name="T"/>. Will check if the item
+		/// is cached before loading it from the filesystem.
 		/// </summary>
-		/// <typeparam name="T">The type to load the content data into.</typeparam>
-		/// <param name="name">The name of the content item to load, without the extension.</param>
-		/// <param name="cache">If the manager should cache the result of this load operation for later use.</param>
+		/// <typeparam name="T">The type of the content item to create.</typeparam>
+		/// <param name="name">The name of the content item.</param>
+		/// <param name="cache">If the loaded item should be stored in the cache.</param>
 		/// <param name="manage">
-		/// If the manager should manage the lifetime of the result of this load operation. This is only valid if the
-		/// type <typeparamref name="T"/> implements <see cref="IDisposableContent"/>, and is ignored otherwise.
+		/// If the content manager should perform lifetime tracking for <typeparamref name="T"/> types that implement
+		/// <see cref="IDisposable"/>. Content loaded with this option <b>must not</b> manually call 
+		/// <see cref="IDisposable.Dispose"/>, or the content will be disposed twice.
 		/// </param>
-		/// <returns>The cached or newly loaded content item.</returns>
+		/// <returns>The cached item, or newly loaded item.</returns>
 		public T Load<T>(string name, bool cache = true, bool manage = true)
 			where T : class
 		{
 			if (String.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("The content item name cannot be null or whitespace.", nameof(name));
+				throw new ArgumentException("Content item name cannot be null or whitespace", nameof(name));
 
-			// Check the cache first
-			if (_itemCache.TryGetByFirst(name, out var item) && (item is T))
+			// Try the cache first
+			if (_cache.TryGetValue((name, typeof(T)), out var cval))
 			{
 				LastLoadTime = TimeSpan.Zero;
-				return item as T;
+				return cval as T;
 			}
 
+			// Find the item
+			if (!_pack.TryGetItem(name, out var item))
+				throw new ContentLoadException(name, $"The content item '{name}' does not exist");
+
+			// Try loading the item
 			Stopwatch timer = Stopwatch.StartNew();
-			// Load in the new content item
-			item = readContentItem(name, typeof(T));
+			var content = readContentItem(item, typeof(T));
 			if (cache)
-				_itemCache.Add(name, item);
-			if (manage && (item is IDisposableContent))
-			{
-				var ci = item as IDisposableContent;
-				_disposableItems.Add(new WeakReference<IDisposableContent>(ci));
-				ci.ObjectDisposed += disposableContentCallback;
-			}
+				_cache.Add((item.Name, typeof(T)), content);
+			if (manage && (content is IDisposable idc))
+				_disposables.Add(idc);
 			LastLoadTime = timer.Elapsed;
-			return item as T;
+			return content as T;
 		}
 
 		/// <summary>
-		/// Attempts to load a localized content item from the disk. Localized content items are specified by appending
-		/// the language code, or language and region code, to the end of the file name. 
+		/// Similar to <see cref="Load"/>, but will attempt to load localized content items first by appending locale
+		/// codes to the end of the content name.
 		/// <para>
-		/// This function will first look for region-specific items (e.g. `en-US`), then language-specific items 
-		/// (e.g. `en`), then will fall back on the unlocalized version of the item.
+		/// It will first try to load by region identifier (e.g. `en-US`), then by language (e.g. `en`), then will
+		/// fallback to an unlocalized version.
 		/// </para>
 		/// </summary>
-		/// <typeparam name="T">The type to load the content data into.</typeparam>
-		/// <param name="name">The name of the content item to load, without the extension.</param>
-		/// <param name="culture">The culture to use as the localization, or <c>null</c> to use the current culture.</param>
-		/// <param name="cache">If the manager should cache the result of this load operation for later use.</param>
+		/// <typeparam name="T">The type of the content item to create.</typeparam>
+		/// <param name="name">The name of the content item.</param>
+		/// <param name="culture">The culture to use as the localization, or <c>null</c> for the current culture.</param>
+		/// <param name="cache">If the loaded item should be stored in the cache.</param>
 		/// <param name="manage">
-		/// If the manager should manage the lifetime of the result of this load operation. This is only valid if the
-		/// type <typeparamref name="T"/> implements <see cref="IDisposableContent"/>, and is ignored otherwise.
+		/// If the content manager should perform lifetime tracking for <typeparamref name="T"/> types that implement
+		/// <see cref="IDisposable"/>. Content loaded with this option <b>must not</b> manually call 
+		/// <see cref="IDisposable.Dispose"/>, or the content will be disposed twice.
 		/// </param>
-		/// <param name="reload">
-		/// If the <see cref="Reload{T}(string, bool, bool)"/> function should be used to load the localized content
-		/// item, instead of the standard <see cref="Load{T}(string, bool, bool)"/> function.
-		/// </param>
-		/// <returns>The cached or newly loaded content item.</returns>
-		public T LoadLocalized<T>(string name, CultureInfo culture = null, bool cache = true, bool manage = true, bool reload = false)
+		/// <returns>The cached item, or newly loaded item.</returns>
+		public T LoadLocalized<T>(string name, CultureInfo culture = null, bool cache = true, bool manage = true)
 			where T : class
 		{
 			if (String.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("The content item name cannot be null or whitespace.", nameof(name));
+				throw new ArgumentException("Content item name cannot be null or whitespace", nameof(name));
 			culture ??= CultureInfo.CurrentCulture;
 
-			// Try by region first
-			var tname = name + culture.Name; // e.g. "en-US"
-			try
-			{
-				return reload ? Reload<T>(tname, cache, manage) : Load<T>(tname, cache, manage);
-			}
-			catch (ContentLoadException) { }
+			// Region
+			if (_pack.TryGetItem($"{name}.{culture.Name}", out var ritem))
+				return Load<T>(ritem.Name, cache, manage);
 
-			// Try by langauge next
-			tname = name + culture.TwoLetterISOLanguageName; // e.g. "en"
-			try
-			{
-				return reload ? Reload<T>(tname, cache, manage) : Load<T>(tname, cache, manage);
-			}
-			catch (ContentLoadException) { }
+			// Language
+			if (_pack.TryGetItem($"{name}.{culture.TwoLetterISOLanguageName}", out var litem))
+				return Load<T>(litem.Name, cache, manage);
 
-			// Localized asset not found, load the non-localized one
-			return reload ? Reload<T>(name, cache, manage) : Load<T>(name, cache, manage);
+			// Fallback
+			return Load<T>(name, cache, manage);
 		}
 
 		/// <summary>
-		/// Similar to the <see cref="Load{T}(string, bool, bool)"/> function, but does not check the cache for the
-		/// item. It instead attempts to load the item directly off of the disk.
+		/// Similar to <see cref="Load"/>, but does not check the item cache, instead loading directly from the
+		/// filesystem. If <paramref name="cache"/> is <c>true</c>, then the item loaded by this function will
+		/// replace the cached item.
 		/// </summary>
-		/// <typeparam name="T">The type to load the content data into.</typeparam>
-		/// <param name="name">The name of the content item to load, without the extension.</param>
-		/// <param name="cache">If the manager should cache the result of this load operation for later use.</param>
+		/// <typeparam name="T">The type of the content item to create.</typeparam>
+		/// <param name="name">The name of the content item.</param>
+		/// <param name="cache">If the loaded item should be stored in the cache.</param>
 		/// <param name="manage">
-		/// If the manager should manage the lifetime of the result of this load operation. This is only valid if the
-		/// type <typeparamref name="T"/> implements <see cref="IDisposableContent"/>, and is ignored otherwise.
+		/// If the content manager should perform lifetime tracking for <typeparamref name="T"/> types that implement
+		/// <see cref="IDisposable"/>. Content loaded with this option <b>must not</b> manually call 
+		/// <see cref="IDisposable.Dispose"/>, or the content will be disposed twice.
 		/// </param>
-		/// <returns>The newly loaded content item.</returns>
+		/// <returns>The newly loaded item.</returns>
 		public T Reload<T>(string name, bool cache = true, bool manage = true)
 			where T : class
 		{
 			if (String.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("The content item name cannot be null or whitespace.", nameof(name));
+				throw new ArgumentException("Content item name cannot be null or whitespace", nameof(name));
 
-			// Load in the new content item
+			// Find the item
+			if (!_pack.TryGetItem(name, out var item))
+				throw new ContentLoadException(name, $"The content item '{name}' does not exist");
+
+			// Try loading the item
 			Stopwatch timer = Stopwatch.StartNew();
-			var item = readContentItem(name, typeof(T));
+			var content = readContentItem(item, typeof(T));
 			if (cache)
-				_itemCache.Add(name, item);
-			if (manage && (item is IDisposableContent))
-			{
-				var ci = item as IDisposableContent;
-				_disposableItems.Add(new WeakReference<IDisposableContent>(ci));
-				ci.ObjectDisposed += disposableContentCallback;
-			}
+				_cache[(item.Name, typeof(T))] = content;
+			if (manage && (content is IDisposable idc))
+				_disposables.Add(idc);
 			LastLoadTime = timer.Elapsed;
-			return item as T;
+			return content as T;
 		}
 
 		/// <summary>
-		/// Loads the content item data from the disk as a raw byte array, with no processing applied. This function
-		/// performs no caching or lifetime management for the data.
+		/// Similar to <see cref="Reload"/>, but will attempt to load localized content items first by appending locale
+		/// codes to the end of the content name.
 		/// </summary>
-		/// <remarks>
-		/// Note that this loads the entirety of the content data at once, while may cause speed or memory problems 
-		/// for very large files.
-		/// </remarks>
-		/// <param name="name">The name of the content item to load, without the extension.</param>
-		/// <param name="buffer">The memory to read the file contents into.</param>
-		/// <returns>The number of bytes read from the buffer.</returns>
+		/// <typeparam name="T">The type of the content item to create.</typeparam>
+		/// <param name="name">The name of the content item.</param>
+		/// <param name="culture">The culture to use as the localization, or <c>null</c> for the current culture.</param>
+		/// <param name="cache">If the loaded item should be stored in the cache.</param>
+		/// <param name="manage">
+		/// If the content manager should perform lifetime tracking for <typeparamref name="T"/> types that implement
+		/// <see cref="IDisposable"/>. Content loaded with this option <b>must not</b> manually call 
+		/// <see cref="IDisposable.Dispose"/>, or the content will be disposed twice.
+		/// </param>
+		/// <returns>The newly loaded item.</returns>
+		public T ReloadLocalized<T>(string name, CultureInfo culture = null, bool cache = true, bool manage = true)
+			where T : class
+		{
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Content item name cannot be null or whitespace", nameof(name));
+			culture ??= CultureInfo.CurrentCulture;
+
+			// Region
+			if (_pack.TryGetItem($"{name}.{culture.Name}", out var ritem))
+				return Reload<T>(ritem.Name, cache, manage);
+
+			// Language
+			if (_pack.TryGetItem($"{name}.{culture.TwoLetterISOLanguageName}", out var litem))
+				return Reload<T>(litem.Name, cache, manage);
+
+			// Fallback
+			return Reload<T>(name, cache, manage);
+		}
+
+		/// <summary>
+		/// Loads the raw binary data for the content item, performing decompression if needed.
+		/// </summary>
+		/// <param name="name">The name of the content item.</param>
+		/// <param name="buffer">The buffer to read the data into, must be large enough to store the data.</param>
+		/// <returns>The total number of bytes read.</returns>
 		public uint LoadRaw(string name, Span<byte> buffer)
 		{
-			Stopwatch timer = Stopwatch.StartNew();
-			if (_pack.ReleaseMode)
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Content item name cannot be null or whitespace", nameof(name));
+
+			// Find the item
+			if (!_pack.TryGetItem(name, out var item))
+				throw new ContentLoadException(name, $"The content item '{name}' does not exist");
+			if ((ulong)buffer.Length < item.DataSize)
+				throw new ContentLoadException(item.Name, "Buffer too small for item data");
+
+			// Open the content stream
+			ContentStream stream;
+			try
 			{
-				if (!_pack.TryGetItem(name, out var binNum, out var item))
-					throw new ContentLoadException(name, "the item does not exist in the content pack.");
-
-				if (buffer.Length < item.UCSize)
-					throw new ContentLoadException(name, "buffer not large enough for file data.");
-
-				ContentStream stream = null;
-				try
-				{
-					var fstream = getOrOpenBinStream(binNum);
-					stream = ContentStream.FromBin(name, fstream, item.RealSize, item.UCSize, item.Offset);
-					var ret = stream.Read(buffer.Slice(0, (int)stream.Remaining));
-					LastLoadTime = timer.Elapsed;
-					return ret;
-				}
-				catch (Exception e)
-				{
-					throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) when loading raw data: {e.Message}", e);
-				}
-				finally
-				{
-					stream?.Dispose();
-				}
+				stream = new ContentStream(_pack.Release, _pack.Directory.FullName, item);
 			}
-			else
+			catch (ContentLoadException) { throw; }
+			catch (Exception e)
 			{
-				var path = _pack.GetDebugItemPath(name);
-				if (!File.Exists(path))
-					throw new ContentLoadException(name, "the item file does not exist.");
-
-				using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
-				using (var reader = new BinaryReader(file))
-				{
-					loadDebugItemInfo(name, reader, out var hash, out var realSize, out var ucSize);
-					if (buffer.Length < ucSize)
-						throw new ContentLoadException(name, "buffer not large enough for file data.");
-
-					ContentStream stream = null;
-					try
-					{
-						stream = ContentStream.FromDci(name, file, realSize, ucSize);
-						var ret = stream.Read(buffer.Slice(0, (int)stream.Remaining));
-						LastLoadTime = timer.Elapsed;
-						return ret;
-					}
-					catch (Exception e)
-					{
-						throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) when loading raw data: {e.Message}", e);
-					}
-					finally
-					{
-						stream?.Dispose();
-					}
-				}
+				throw new ContentLoadException(item.Name, "Failed to open content stream", e);
 			}
+
+			// Load in the bytes
+			try
+			{
+				return (uint)stream.Read(buffer);
+			}
+			catch (ContentLoadException) { throw; }
+			catch (Exception e)
+			{
+				throw new ContentLoadException(item.Name, "Failed to read content item data", e);
+			}
+		}
+
+		/// <summary>
+		/// Similar to <see cref="LoadRaw"/>, but will attempt to load localized content items first by appending locale
+		/// codes to the end of the content name.
+		/// </summary>
+		/// <param name="name">The name of the content item.</param>
+		/// <param name="buffer">The buffer to read the data into, must be large enough to store the data.</param>
+		/// <param name="culture">The culture to use as the localization, or <c>null</c> for the current culture.</param>
+		/// <returns>The total number of bytes read.</returns>
+		public uint LoadLocalizedRaw(string name, Span<byte> buffer, CultureInfo culture = null)
+		{
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Content item name cannot be null or whitespace", nameof(name));
+			culture ??= CultureInfo.CurrentCulture;
+
+			// Find the item
+			bool found =
+				_pack.TryGetItem($"{name}.{culture.Name}", out var item) ||
+				_pack.TryGetItem($"{name}.{culture.TwoLetterISOLanguageName}", out item) ||
+				_pack.TryGetItem(name, out item);
+			if (!found)
+				throw new ContentLoadException(name, $"The content item '{name}' does not exist");
+			if ((ulong)buffer.Length < item.DataSize)
+				throw new ContentLoadException(item.Name, "Buffer too small for item data");
+
+			// Open the content stream
+			ContentStream stream;
+			try
+			{
+				stream = new ContentStream(_pack.Release, _pack.Directory.FullName, item);
+			}
+			catch (ContentLoadException) { throw; }
+			catch (Exception e)
+			{
+				throw new ContentLoadException(item.Name, "Failed to open content stream", e);
+			}
+
+			// Load in the bytes
+			try
+			{
+				return (uint)stream.Read(buffer);
+			}
+			catch (ContentLoadException) { throw; }
+			catch (Exception e)
+			{
+				throw new ContentLoadException(item.Name, "Failed to read content item data", e);
+			}
+		}
+
+		/// <summary>
+		/// Gets the length of the raw data for the content item. Designed for use with the <see cref="LoadRaw"/>
+		/// function, to get the total size needed for the buffer.
+		/// </summary>
+		/// <param name="name">The content item name.</param>
+		/// <returns>The content item data size, in bytes.</returns>
+		public ulong GetItemDataSize(string name)
+		{
+			if (String.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Content item name cannot be null or whitespace", nameof(name));
+
+			// Find the item
+			if (!_pack.TryGetItem(name, out var item))
+				throw new ContentLoadException(name, $"The content item '{name}' does not exist");
+
+			return item.DataSize;
 		}
 		#endregion // Load Functions
 
 		#region Load Impl
-		// Performs the actual loading of the content item from the disk
-		private object readContentItem(string name, Type type)
+		private object readContentItem(ContentPack.Entry item, Type type)
 		{
-			if (_pack.ReleaseMode)
+			// Get and reset the loader
+			var loader = getOrCreateLoader(item);
+			try
 			{
-				if (!_pack.TryGetItem(name, out var binNum, out var item))
-					throw new ContentLoadException(name, "the item does not exist in the content pack.");
-				var loader = getOrCreateLoader(item.LoaderHash);
-				if (loader == null)
-					throw new ContentLoadException(name, "the item specified a loader that does not exist.");
 				if (!loader.ContentType.IsAssignableFrom(type))
-					throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
-
-				object loadedObj = null;
-				ContentStream stream = null;
-				try
 				{
-					var fstream = getOrOpenBinStream(binNum);
-					stream = ContentStream.FromBin(name, fstream, item.RealSize, item.UCSize, item.Offset);
-					LoaderContext ctx = new LoaderContext(name, true, stream.Compressed, item.UCSize, type);
-					loadedObj = loader.Load(stream, ctx);
+					throw new ContentLoadException(item.Name,
+						$"Loader/Runtime type mismatch ({loader.ContentType.Name} <=> {type.Name})");
 				}
-				catch (Exception e)
-				{
-					throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) in loader function: {e.Message}", e);
-				}
-				finally
-				{
-					stream?.Dispose();
-				}
-
-				if (loadedObj == null)
-					throw new ContentLoadException(name, "the loader produced a null value.");
-
-				return loadedObj;
+				loader.Reset();
 			}
-			else
+			catch (ContentLoadException) { throw; }
+			catch (Exception e)
 			{
-				var path = _pack.GetDebugItemPath(name);
-				if (!File.Exists(path))
-					throw new ContentLoadException(name, "the item file does not exist.");
+				throw new ContentLoadException(item.Name, 
+					$"Failed to reset loader '{loader.GetType().Name}'", e);
+			}
 
-				try
+			// Open the content stream
+			BinaryReader reader;
+			try
+			{
+				reader = new BinaryReader(new ContentStream(_pack.Release, _pack.Directory.FullName, item));
+			}
+			catch (Exception e)
+			{
+				throw new ContentLoadException(item.Name, "Failed to open content stream", e);
+			}
+
+			// Perform the object load and final type validation
+			try
+			{
+				LoaderContext ctx = new LoaderContext(item);
+				object result = loader.Load(reader, ctx);
+				if (result is null)
+					throw new ContentLoadException(item.Name, "Content loader produced a null value");
+				if (!type.IsAssignableFrom(result.GetType()))
 				{
-					using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
-					using (var reader = new BinaryReader(file))
-					{
-						loadDebugItemInfo(name, reader, out var hash, out var realSize, out var ucSize);
-						var loader = getOrCreateLoader(hash);
-						if (loader == null)
-							throw new ContentLoadException(name, "the item specified a loader that does not exist.");
-						if (!loader.ContentType.IsAssignableFrom(type))
-							throw new ContentLoadException(name, $"the item loader cannot produce the type '{type.FullName}'.");
-
-						object loadedObj = null;
-						ContentStream stream = null;
-						try
-						{
-							stream = ContentStream.FromDci(name, file, realSize, ucSize);
-							LoaderContext ctx = new LoaderContext(name, false, false, ucSize, type);
-							loadedObj = loader.Load(stream, ctx);
-						}
-						catch (Exception e)
-						{
-							throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) in loader function: {e.Message}", e);
-						}
-						finally
-						{
-							stream?.Dispose();
-						}
-
-						if (loadedObj == null)
-							throw new ContentLoadException(name, "the loader produced a null value.");
-
-						return loadedObj;
-					}
+					throw new ContentLoadException(item.Name,
+						$"Generated/Requested type mismatch ({result.GetType().Name} <=> {type.Name})");
 				}
-				catch (ContentLoadException) { throw; }
-				catch (Exception e)
-				{
-					throw new ContentLoadException(name, $"unhandled exception ({e.GetType().Name}) while loading content: {e.Message}", e);
-				}
+				return result;
+			}
+			catch (ContentLoadException) { throw; }
+			catch (Exception e)
+			{
+				throw new ContentLoadException(item.Name,
+					$"Unhandled exception in content load ({e.GetType().Name})", e);
+			}
+			finally
+			{
+				reader.Dispose();
 			}
 		}
 
-		// Performs validation and header parsing for a .dci file
-		private void loadDebugItemInfo(string name, BinaryReader reader, out uint hash, out uint realSize, out uint ucSize)
+		private IContentLoader getOrCreateLoader(ContentPack.Entry item)
 		{
-			var header = reader.ReadBytes(4);
-			if (header[0] != 'D' || header[1] != 'C' || header[2] != 'I' || header[3] != 1)
-				throw new ContentLoadException(name, "the debug item file header is invalid.");
-			hash = reader.ReadUInt32();
-			realSize = reader.ReadUInt32();
-			ucSize = reader.ReadUInt32();
+			if (_loaderCache.TryGetValue(item.Type, out var cached))
+				return cached;
+
+			var ltype = LoaderRegistry.FindContentType(item.Type);
+			if (ltype is null)
+				throw new ContentLoadException(item.Name, $"No registered loader for type '{item.Type}'");
+
+			try
+			{
+				var inst = ltype.Ctor.Invoke(null) as IContentLoader;
+				_loaderCache.Add(item.Type, inst);
+				return inst;
+			}
+			catch (Exception e)
+			{
+				throw new ContentLoadException(
+					item.Name, $"Failed to initialize loader for type '{item.Type}'", e);
+			}
 		}
-
-		private IContentLoader getOrCreateLoader(uint hash)
-		{
-			if (_loaders.ContainsKey(hash))
-				return _loaders[hash];
-			if (!_pack.Loaders.ContainsKey(hash))
-				return null;
-
-			var ltype = _pack.Loaders[hash];
-			var inst = ltype.CreateInstance();
-			_loaders.Add(hash, inst);
-			return inst;
-		}
-
-		private FileStream getOrOpenBinStream(uint binNum) =>
-			_binStreams[(int)binNum] ?? (_binStreams[(int)binNum] = _pack.BinFiles[(int)binNum].OpenStream());
 		#endregion // Load Impl
 
 		#region Cache
 		/// <summary>
-		/// Disposes and removes all items that are being tracked by the manager. Note that this will invalidate
-		/// all items that implement <see cref="IDisposableContent"/> that were loaded through this manager. This
-		/// function also clears the cached items.
+		/// Clears the cache, and disposes all items being tracked by the instance. This will invalidate all
+		/// <see cref="IDisposable"/> instances loaded through this instance.
 		/// </summary>
-		public void UnloadAll()
+		/// <returns>The number of items that were cleared from the cache, and were disposed.</returns>
+		public (uint Cache, uint Dispose) UnloadAll()
 		{
-			try
-			{
-				lock (_cacheLock)
-				{
-					_isUnloading = true;
-					foreach (var cref in _disposableItems)
-					{
-						if (cref.TryGetTarget(out var target))
-							target.Dispose();
-					}
-					_disposableItems.Clear();
-					_itemCache.Clear();
-				}
-			}
-			finally
-			{
-				_isUnloading = false;
-			}
+			var res = ((uint)_cache.Count, (uint)_disposables.Count);
+			_cache.Clear();
+			_disposables.ForEach(dis => dis.Dispose());
+			_disposables.Clear();
+			return res;
 		}
 
 		/// <summary>
-		/// Gets if the manager instance is currently caching the content item with the name and matching type.
+		/// Gets if the item with the given name and type is currently cached by this manager.
 		/// </summary>
-		/// <typeparam name="T">The type of the content item to check is cached.</typeparam>
-		/// <param name="name">The content item name to check for.</param>
-		/// <returns>If the content item with the name is cached, and the cached item is the same type.</returns>
-		public bool IsItemCached<T>(string name) where T : class => _itemCache.TryGetByFirst(name, out var obj) && (obj is T);
+		/// <typeparam name="T">The type of the cached item to check for.</typeparam>
+		/// <param name="name">The item name to check for.</param>
+		/// <returns>If the item is cached.</returns>
+		public bool IsItemCached<T>(string name) where T : class => !String.IsNullOrWhiteSpace(name)
+			? (_cache.TryGetValue((name, typeof(T)), out var item) && (item is T))
+			: throw new ArgumentException("Item name cannot be null or whitespace", nameof(name));
 
 		/// <summary>
-		/// Sets the manager to stop tracking the item's lifetime. After this call, the item must be manually managed
-		/// and disposed. This call also removes the item from the cache, if present.
+		/// Gets if the item is cached by this manager.
 		/// </summary>
-		/// <param name="item">The item for this manager to stop tracking.</param>
-		/// <returns>If the item was previously tracked by this manager, and is no longer being tracked.</returns>
-		public bool StopTracking(IDisposableContent item)
+		/// <typeparam name="T">The type of the item.</typeparam>
+		/// <param name="item">The item to check for.</param>
+		/// <returns>If the item is cached.</returns>
+		public bool IsItemCached<T>(T item) where T : class => !(item is null)
+			? _cache.Values.Any(obj => ReferenceEquals(obj, item))
+			: throw new ArgumentNullException(nameof(item));
+
+		/// <summary>
+		/// Gets if the disposable item lifetime is controlled by this manager.
+		/// </summary>
+		/// <typeparam name="T">The item type.</typeparam>
+		/// <param name="item">The item to check for.</param>
+		/// <returns>If the item is disposed by this manager.</returns>
+		public bool IsItemManaged<T>(T item) where T : class, IDisposable => !(item is null)
+			? _disposables.Any(disp => ReferenceEquals(item, disp))
+			: throw new ArgumentNullException(nameof(item));
+
+		/// <summary>
+		/// Removes the content item with the name and type from the cache.
+		/// </summary>
+		/// <typeparam name="T">The item type to remove.</typeparam>
+		/// <param name="name">The item name to remove.</param>
+		/// <returns>If an item with the given name and type was in the cache, and was removed.</returns>
+		public bool RemoveFromCache<T>(string name) where T : class => !String.IsNullOrWhiteSpace(name)
+			? _cache.Remove((name, typeof(T)))
+			: throw new ArgumentException("Item name cannot be null or whitespace", nameof(name));
+
+		/// <summary>
+		/// Removes the content item from the cache.
+		/// </summary>
+		/// <typeparam name="T">The item type to remove.</typeparam>
+		/// <param name="item">The item to remove.</param>
+		/// <returns>If the item was in the cache, and was removed.</returns>
+		public bool RemoveFromCache<T>(T item) where T : class => !(item is null)
+			? (_cache.FirstOrDefault(pair => ReferenceEquals(pair.Value, item)) is var pair) && !(pair.Key.Item1 is null) 
+				&& _cache.Remove(pair.Key)
+			: throw new ArgumentNullException(nameof(item));
+
+		/// <summary>
+		/// Removes the disposable content item from this manager, optionally disposing it. This function can be used
+		/// to take control of the lifetime of a disposable content item. This function will also remove the item
+		/// from the cache, if present.
+		/// </summary>
+		/// <param name="item">The item to remove from the list of managed items.</param>
+		/// <param name="dispose">If the item should be disposed when it is removed.</param>
+		/// <returns>If the item was managed by this manager, and was removed.</returns>
+		public bool StopManaging(IDisposable item, bool dispose = false)
 		{
-			if (item == null)
+			if (item is null)
 				throw new ArgumentNullException(nameof(item));
 
-			// Remove the item from tracking
-			lock (_cacheLock)
-			{
-				var idx = _disposableItems.FindIndex(wref => wref.TryGetTarget(out var target) && ReferenceEquals(target, item));
-				if (idx >= 0)
-				{
-					item.ObjectDisposed -= disposableContentCallback;
-					_disposableItems.RemoveAt(idx);
-					_itemCache.RemoveBySecond(item);
-					return true;
-				}
-				return false;
-			}
-		}
-
-		private void disposableContentCallback(object item, EventArgs args)
-		{
-			if (_isUnloading)
-				return; // Dont need to do anything if we are currently unloading all content
-
-			lock (_cacheLock)
-			{
-				_disposableItems.RemoveAll(wref => wref.TryGetTarget(out var target) && ReferenceEquals(target, item));
-				_itemCache.RemoveBySecond(item);
-			}
+			RemoveFromCache(item);
+			
+			var didx = _disposables.IndexOf(ditem => ReferenceEquals(item, ditem));
+			if (didx >= 0)
+				_disposables.RemoveAt(didx);
+			return (didx >= 0);
 		}
 		#endregion // Cache
 
@@ -475,13 +494,16 @@ namespace Spectrum.Content
 		{
 			if (!_isDisposed)
 			{
+				// Remove the data
+				_cache.Clear();
 				if (disposing)
-				{
-					UnloadAll();
+					_disposables.ForEach(dis => dis.Dispose());
+				_disposables.Clear();
 
-					if (_pack.ReleaseMode)
-						_binStreams.ForEach(bs => bs.Dispose());
-				}
+				// Remove the loaders
+				if (disposing)
+					_loaderCache.Values.ForEach(ldr => (ldr as IDisposable)?.Dispose());
+				_loaderCache.Clear();
 
 				RemoveManager(this);
 			}
@@ -489,48 +511,38 @@ namespace Spectrum.Content
 		}
 		#endregion // IDisposable
 
+		#region ContentManager Lifetime
 		/// <summary>
-		/// Creates a new content manager for loading content from the given content pack file.
+		/// Attempts to open a ContentManager instance which sources content from the given content pack file.
 		/// </summary>
-		/// <param name="path">A path to a `.cpak` file to load, or a directory to search for a `Content.cpak` file.</param>
+		/// <param name="path">The path to the content pack (.cpak) file.</param>
 		/// <returns>The new content manager.</returns>
-		public static ContentManager OpenPackFile(string path)
+		public static ContentManager OpenContentPack(string path)
 		{
-			// Convert to a valid cpak path
+			// Get the content pack
 			if (!path.EndsWith(ContentPack.FILE_EXTENSION))
-				path = Path.Combine(path, $"Content{ContentPack.FILE_EXTENSION}");
-			path = Path.GetFullPath(path);
-
-			// Try to get/load the content pack
+				path += $"Content{ContentPack.FILE_EXTENSION}";
 			var pack = ContentPack.GetOrLoad(path);
+
 			return new ContentManager(pack);
 		}
 
 		private static void AddManager(ContentManager cm)
 		{
-			lock (_ManagerLock)
+			lock (_ManagersLock)
 			{
-				// Add the manager, and also remove any disposed managers from the list
 				_Managers.Add(new WeakReference<ContentManager>(cm));
-				for (int i = _Managers.Count - 2; i >= 0; --i)
-				{
-					if (!_Managers[i].TryGetTarget(out var target))
-						_Managers.RemoveAt(i);
-				}
+				_Managers.RemoveAll(wref => !wref.TryGetTarget(out _));
 			}
 		}
 
 		private static void RemoveManager(ContentManager cm)
 		{
-			lock (_ManagerLock)
+			lock (_ManagersLock)
 			{
-				// Remove the manager, and also remove any disposed managers from the list
-				for (int i = _Managers.Count - 1; i >= 0; --i)
-				{
-					if (!_Managers[i].TryGetTarget(out var target) || ReferenceEquals(cm, target))
-						_Managers.RemoveAt(i);
-				}
+				_Managers.RemoveAll(wref => !wref.TryGetTarget(out var targ) || ReferenceEquals(targ, cm));
 			}
 		}
+		#endregion // ContentManager Lifetime
 	}
 }

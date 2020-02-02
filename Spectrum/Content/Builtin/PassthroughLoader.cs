@@ -4,18 +4,27 @@
  * the 'LICENSE' file at the root of this repository, or online at <https://opensource.org/licenses/MS-PL>.
  */
 using System;
+using System.IO;
+using System.Reflection;
 
 namespace Spectrum.Content
 {
-	// Passthrough loader, no processing, only raw byte stream
-	internal class PassthroughLoader : ContentLoader<byte[]>
+	// Internal default type for "None" content, which is passthrough loaded as a raw byte array
+	[ContentLoader("PassthroughLoader", "None")]
+	internal sealed class PassthroughLoader : ContentLoader<byte[]>
 	{
-		public override byte[] Load(ContentStream stream, LoaderContext ctx)
+		public static readonly Type TYPE = typeof(PassthroughLoader);
+		public static readonly ContentLoaderAttribute ATTR = TYPE.GetCustomAttribute<ContentLoaderAttribute>();
+		public static readonly ConstructorInfo CTOR = TYPE.GetConstructor(Type.EmptyTypes);
+
+		public override void Reset() { }
+
+		public override byte[] Load(BinaryReader reader, LoaderContext ctx)
 		{
-			byte[] data = new byte[ctx.DataLength];
-			if (stream.Read(data.AsSpan()) != ctx.DataLength)
-				throw new ContentLoadException(ctx.ItemName, "could not read expected byte count.");
-			return data;
+			var buffer = new byte[ctx.DataSize];
+			if ((ulong)reader.BaseStream.Read(buffer.AsSpan()) != ctx.DataSize)
+				ctx.Throw("Could not read expected number of bytes");
+			return buffer;
 		}
 	}
 }

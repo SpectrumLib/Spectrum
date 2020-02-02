@@ -10,7 +10,7 @@ namespace Spectrum.Content
 {
 	/// <summary>
 	/// Base type for implementing runtime loading of content items. One instance of each type will be created for
-	/// each thread that uses the type to load content.
+	/// each <see cref="ContentManager"/> instance that uses it.
 	/// <para>
 	/// A "valid" ContentLoader type meets these criteria:
 	/// <list type="bullet">

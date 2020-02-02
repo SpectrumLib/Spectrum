@@ -104,7 +104,7 @@ namespace Spectrum.Content
 
 		static LoaderRegistry()
 		{
-
+			_Loaders.Add(new LoaderType(PassthroughLoader.TYPE, PassthroughLoader.ATTR, PassthroughLoader.CTOR));
 		}
 	}
 
